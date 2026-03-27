@@ -1,0 +1,2 @@
+{"timestamp":"2026-03-25T09:00:00-07:00","provider":"openai-compatible","model":"deepseek-chat","session_id":"demo-1","project_path":"/tmp/demo","usage":{"input_tokens":1200,"cached_input_tokens":400,"output_tokens":260,"reasoning_tokens":40,"total_tokens":1500}}
+{"timestamp":"2026-03-25T09:03:00-07:00","provider":"openai-compatible","model":"glm-4.5","session_id":"demo-2","project_path":"/tmp/demo","usage":{"input_tokens":980,"cached_input_tokens":0,"output_tokens":220,"reasoning_output_tokens":30,"total_tokens":1230}}
