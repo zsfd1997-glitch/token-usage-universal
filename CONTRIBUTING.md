@@ -16,7 +16,7 @@
 2. 运行基础验证：
 
 ```bash
-python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 -m unittest discover -s scripts -t . -p 'test_*.py'
 python3 scripts/token_usage.py --help
 python3 scripts/token_usage.py health --format json
 ```

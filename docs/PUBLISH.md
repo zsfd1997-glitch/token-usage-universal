@@ -50,7 +50,7 @@ git branch -M main
 
 ## 发布前核对
 
-- `python3 -m unittest discover -s scripts -p 'test_*.py'`
+- `python3 -m unittest discover -s scripts -t . -p 'test_*.py'`
 - `python3 scripts/token_usage.py --help`
 - `python3 scripts/token_usage.py health --format json`
 - `python3 scripts/token_usage.py sources --format json`
