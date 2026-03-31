@@ -54,6 +54,9 @@ export TOKEN_USAGE_SKILL="$CODEX_HOME/skills/token-usage-universal"
 python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
 python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" sources
 python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today
+python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --trend 7d
+python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --calendar month
+python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --current-session
 python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --today
 ```
 
@@ -70,10 +73,19 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --to
   - 支持 env override：`TOKEN_USAGE_CODEX_ROOT`
 - `claude-code`
   - transcript 默认路径：`~/.claude/transcripts`
-  - exact total 默认路径：`~/Library/Application Support/Claude/local-agent-mode-sessions/**/timing.json`
+  - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`（Windows 常见等价目录是 `%APPDATA%\Claude\local-agent-mode-sessions`）
+  - exact 文件支持旧版 `timing.json`，也支持任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON
   - 支持 env override：`TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT`、`TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT`
 - `generic-openai-compatible`
   - 通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
+
+## Claude Code 真源矩阵
+
+| 布局版本 | 是否可 exact | 典型文件 | macOS 默认位置 | Windows 默认位置 | 说明 |
+|---|---|---|---|---|---|
+| 旧布局 / exact JSON | 是 | `timing.json` 或其他带 `total_tokens + executor_end/grader_end` 的 JSON | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | skill 会直接统计 total token |
+| 新布局 / 只有 session-config | 否，先 diagnose | `.claude.json`、`cowork_settings.json`、`manifest.json` | 同上 | 同上 | 说明本地目录存在，但当前没有 token 真源 |
+| transcript only | 否，先 diagnose | `~/.claude/transcripts/*.jsonl` | `~/.claude/transcripts` | `%USERPROFILE%\.claude\transcripts` | transcript 是文本，不含 exact token 字段 |
 
 ## 环境变量
 
@@ -92,15 +104,56 @@ export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/openai/*.jsonl,$HOME/logs/opena
 python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
 ```
 
+Windows PowerShell 常见写法：
+
+```powershell
+$env:TOKEN_USAGE_CODEX_ROOT="%USERPROFILE%\.codex\sessions"
+$env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
+$env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
+python "$env:CODEX_HOME\skills\token-usage-universal\scripts\token_usage.py" health
+```
+
 ## 关键命令
 
 ```bash
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
 python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py report --today --by day
 python3 scripts/token_usage.py report --last 7d --by model
+python3 scripts/token_usage.py report --trend 7d
+python3 scripts/token_usage.py report --trend 30d --plain-ascii
+python3 scripts/token_usage.py report --calendar month --month 2026-03
+python3 scripts/token_usage.py report --current-session
+python3 scripts/token_usage.py report --session 019d3d50-b44c-77a3-a817-08a4ffd4dd19
+python3 scripts/token_usage.py explore
 python3 scripts/token_usage.py report --today --by project
 python3 scripts/token_usage.py diagnose --source claude-code --today
+```
+
+## 终端控制面能力
+
+当前 CLI 已经覆盖 Tokdash 的核心数据面，但仍保持纯终端模式：
+
+- `by source / model / project / session / day`
+- `trend_7d / trend_30d`
+- `calendar_month`
+- `current_session`
+- `session_detail`
+- `estimated cost`
+
+设计原则：
+
+- token 继续 `exact-first`
+- `estimated cost` 只做本地价格表估算，永远不当作账单真源
+- 图形统一用 CLI 语法表达，不引入 HTML/TUI 前端
+
+常用图形视图：
+
+```bash
+python3 scripts/token_usage.py report --trend 7d
+python3 scripts/token_usage.py report --calendar month --month 2026-03
+python3 scripts/token_usage.py report --today --plain-ascii
 ```
 
 ## 开发与验证

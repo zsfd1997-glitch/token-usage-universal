@@ -48,6 +48,20 @@ export TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT="$HOME/path/to/claude/transcripts"
 export TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="$HOME/path/to/local-agent-mode-sessions"
 ```
 
+说明：
+
+- `Claude` exact 真源不是只认 `timing.json` 这个文件名。
+- 现在会接受任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON。
+- 如果目录里只有 `.claude.json / cowork_settings.json / manifest.json` 这类 session-config 文件，skill 会明确诊断为“有本地布局，但没有 token 真源”。
+
+Windows PowerShell 常见写法：
+
+```powershell
+$env:TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT="%USERPROFILE%\.claude\transcripts"
+$env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
+python "$env:CODEX_HOME\skills\token-usage-universal\scripts\token_usage.py" health
+```
+
 ### Generic exact logs
 
 ```bash

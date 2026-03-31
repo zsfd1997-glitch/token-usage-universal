@@ -14,3 +14,6 @@ class BaseAdapter:
 
     def collect(self, window: TimeWindow) -> SourceCollectResult:
         raise NotImplementedError
+
+    def collect_chart(self, window: TimeWindow) -> SourceCollectResult:
+        return self.collect(window)

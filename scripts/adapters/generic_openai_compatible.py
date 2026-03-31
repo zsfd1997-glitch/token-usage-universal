@@ -6,8 +6,11 @@ import os
 from pathlib import Path
 
 from adapters.base import BaseAdapter
-from core.config import TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV
+from core.day_rollup import build_day_rollups, day_key, split_window_days
+from core.config import TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV, expand_path_text
+from core.file_cache import FileEventCache
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
+from core.pricing import PricingDatabase
 from core.time_window import parse_timestamp, within_window
 
 
@@ -80,15 +83,17 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
     display_name = "Generic OpenAI Compatible"
     provider = "openai-compatible"
     accuracy_level = "exact"
+    parser_version = "generic-openai-compatible-v1"
 
     def __init__(self) -> None:
         self.glob_env = TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV
+        self.cache = FileEventCache()
 
     def _resolve_paths(self) -> list[Path]:
         patterns = _flatten_candidates(os.environ.get(self.glob_env, ""))
         paths: list[Path] = []
         for pattern in patterns:
-            matches = glob.glob(os.path.expanduser(pattern), recursive=True)
+            matches = glob.glob(expand_path_text(pattern), recursive=True)
             paths.extend(Path(match) for match in matches)
         return sorted({path for path in paths if path.is_file()})
 
@@ -134,6 +139,105 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
         else:
             yield payload
 
+    def _collect_file(self, path: Path, fallback_tz, pricing: PricingDatabase) -> tuple[list[UsageEvent], list[str]]:
+        events: list[UsageEvent] = []
+        verification_issues: list[str] = []
+
+        try:
+            for record in self._iter_records(path):
+                usage = _find_usage_dict(record)
+                timestamp_value = _find_first_value(record, _TIMESTAMP_KEYS)
+                if not usage or not timestamp_value:
+                    continue
+                usage_values = _normalize_usage(usage)
+                timestamp = parse_timestamp(str(timestamp_value), fallback_tz)
+                provider = str(_find_first_value(record, _PROVIDER_KEYS) or self.provider)
+                raw_model = _find_first_value(record, _MODEL_KEYS)
+                canonical_model = pricing.canonical_model(raw_model, provider) if raw_model else None
+                normalized_raw_model = pricing.normalize_model_name(raw_model) if raw_model else None
+                model_resolution = "unknown"
+                if canonical_model:
+                    model_resolution = "exact" if canonical_model == normalized_raw_model else "alias"
+                events.append(
+                    UsageEvent(
+                        source=self.source_id,
+                        provider=provider,
+                        timestamp=timestamp,
+                        session_id=str(_find_first_value(record, _SESSION_KEYS) or path.stem),
+                        project_path=_find_first_value(record, _PROJECT_KEYS),
+                        model=canonical_model or raw_model,
+                        input_tokens=usage_values["input_tokens"],
+                        cached_input_tokens=usage_values["cached_input_tokens"],
+                        output_tokens=usage_values["output_tokens"],
+                        reasoning_tokens=usage_values["reasoning_tokens"],
+                        total_tokens=usage_values["total_tokens"],
+                        accuracy_level=self.accuracy_level,
+                        raw_event_kind="generic_usage:delta",
+                        source_path=str(path),
+                        raw_model=str(raw_model) if raw_model not in (None, "") else None,
+                        model_resolution=model_resolution,
+                        model_source="generic_record" if raw_model not in (None, "") else None,
+                    )
+                )
+        except (OSError, json.JSONDecodeError) as exc:
+            verification_issues.append(f"failed parsing {path}: {exc}")
+
+        return events, verification_issues
+
+    def _load_or_parse_file(
+        self,
+        path: Path,
+        *,
+        fallback_tz,
+        pricing: PricingDatabase,
+    ) -> tuple[list[UsageEvent], list[str]]:
+        cached = self.cache.load(
+            source_id=self.source_id,
+            parser_version=self.parser_version,
+            path=path,
+        )
+        if cached is not None:
+            return cached
+
+        file_events, file_issues = self._collect_file(path, fallback_tz, pricing)
+        self.cache.save(
+            source_id=self.source_id,
+            parser_version=self.parser_version,
+            path=path,
+            events=file_events,
+            verification_issues=file_issues,
+        )
+        return file_events, file_issues
+
+    def _load_or_build_day_rollups(
+        self,
+        path: Path,
+        *,
+        fallback_tz,
+        pricing: PricingDatabase,
+        timezone_name: str,
+    ) -> tuple[list[UsageEvent], list[str]]:
+        cached = self.cache.load_day_rollups(
+            source_id=self.source_id,
+            parser_version=self.parser_version,
+            path=path,
+            timezone_name=timezone_name,
+        )
+        if cached is not None:
+            return cached
+
+        file_events, file_issues = self._load_or_parse_file(path, fallback_tz=fallback_tz, pricing=pricing)
+        rollups = build_day_rollups(file_events, tz_name=timezone_name)
+        self.cache.save_day_rollups(
+            source_id=self.source_id,
+            parser_version=self.parser_version,
+            path=path,
+            timezone_name=timezone_name,
+            events=rollups,
+            verification_issues=file_issues,
+        )
+        return rollups, file_issues
+
     def collect(self, window) -> SourceCollectResult:
         detection = self.detect()
         if not detection.available:
@@ -142,41 +246,73 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
         paths = self._resolve_paths()
         events: list[UsageEvent] = []
         verification_issues: list[str] = []
+        pricing = PricingDatabase()
+        fallback_tz = (
+            window.start.tzinfo
+            if window.start
+            else __import__("datetime").datetime.now().astimezone().tzinfo
+        )
 
         for path in paths:
-            try:
-                for record in self._iter_records(path):
-                    usage = _find_usage_dict(record)
-                    timestamp_value = _find_first_value(record, _TIMESTAMP_KEYS)
-                    if not usage or not timestamp_value:
-                        continue
-                    usage_values = _normalize_usage(usage)
-                    timestamp = parse_timestamp(
-                        str(timestamp_value),
-                        window.start.tzinfo if window.start else __import__("datetime").datetime.now().astimezone().tzinfo,
-                    )
-                    if not within_window(window, timestamp):
-                        continue
-                    events.append(
-                        UsageEvent(
-                            source=self.source_id,
-                            provider=str(_find_first_value(record, _PROVIDER_KEYS) or self.provider),
-                            timestamp=timestamp,
-                            session_id=str(_find_first_value(record, _SESSION_KEYS) or path.stem),
-                            project_path=_find_first_value(record, _PROJECT_KEYS),
-                            model=_find_first_value(record, _MODEL_KEYS),
-                            input_tokens=usage_values["input_tokens"],
-                            cached_input_tokens=usage_values["cached_input_tokens"],
-                            output_tokens=usage_values["output_tokens"],
-                            reasoning_tokens=usage_values["reasoning_tokens"],
-                            total_tokens=usage_values["total_tokens"],
-                            accuracy_level=self.accuracy_level,
-                            raw_event_kind="generic_usage:delta",
-                            source_path=str(path),
-                        )
-                    )
-            except (OSError, json.JSONDecodeError) as exc:
-                verification_issues.append(f"failed parsing {path}: {exc}")
+            file_events, file_issues = self._load_or_parse_file(path, fallback_tz=fallback_tz, pricing=pricing)
+            events.extend(event for event in file_events if within_window(window, event.timestamp))
+            verification_issues.extend(file_issues)
+
+        if not events:
+            verification_issues.append("no exact usage records found in configured generic logs")
+
+        return SourceCollectResult(
+            detection=detection,
+            events=events,
+            scanned_files=len(paths),
+            verification_issues=verification_issues[:10],
+        )
+
+    def collect_chart(self, window) -> SourceCollectResult:
+        detection = self.detect()
+        if not detection.available:
+            return SourceCollectResult(detection=detection, skipped_reasons=[detection.summary])
+
+        full_days, partial_days = split_window_days(window)
+        if not full_days:
+            return self.collect(window)
+
+        paths = self._resolve_paths()
+        events: list[UsageEvent] = []
+        verification_issues: list[str] = []
+        pricing = PricingDatabase()
+        fallback_tz = (
+            window.start.tzinfo
+            if window.start
+            else __import__("datetime").datetime.now().astimezone().tzinfo
+        )
+
+        for path in paths:
+            rollups, rollup_issues = self._load_or_build_day_rollups(
+                path,
+                fallback_tz=fallback_tz,
+                pricing=pricing,
+                timezone_name=window.timezone_name,
+            )
+            rollup_days = {day_key(event.timestamp, tz_name=window.timezone_name) for event in rollups}
+            events.extend(
+                event
+                for event in rollups
+                if day_key(event.timestamp, tz_name=window.timezone_name) in full_days
+            )
+            verification_issues.extend(rollup_issues)
+
+            if not (rollup_days & partial_days):
+                continue
+
+            file_events, file_issues = self._load_or_parse_file(path, fallback_tz=fallback_tz, pricing=pricing)
+            events.extend(
+                event
+                for event in file_events
+                if within_window(window, event.timestamp)
+                and day_key(event.timestamp, tz_name=window.timezone_name) in partial_days
+            )
+            verification_issues.extend(file_issues)
 
         if not events:
             verification_issues.append("no exact usage records found in configured generic logs")

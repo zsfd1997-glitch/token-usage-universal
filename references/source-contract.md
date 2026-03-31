@@ -33,7 +33,7 @@
 
 - `codex`: cumulative total -> convert to per-event delta
 - `generic-openai-compatible`: explicit per-record usage delta
-- `claude-code`: `timing.json` session total -> exact total-token session event
+- `claude-code`: token-bearing Claude exact JSON (`timing.json` or equivalent) -> exact total-token session event
   - 时间语义: 使用 `executor_end` / `grader_end`
   - 数量语义: 使用 `total_tokens`
-  - 限制: 常见样本只有 `total_tokens`，没有 `input/output/cache` 拆分；仅 transcript 时继续 `unsupported`
+  - 限制: 常见样本只有 `total_tokens`，没有 `input/output/cache` 拆分；只有 transcript 或 session-config、没有 exact JSON 时继续 `unsupported`

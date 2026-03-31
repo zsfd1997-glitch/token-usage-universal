@@ -19,6 +19,7 @@ from core.config import (
     TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
     TOKEN_USAGE_CODEX_ROOT_ENV,
+    default_claude_local_agent_root,
 )
 from core.health import build_health_report
 from core.models import SourceCollectResult, SourceDetection
@@ -81,6 +82,28 @@ class EnvironmentOverrideTests(unittest.TestCase):
             self.assertFalse(detection.available)
             self.assertIn(TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV, detection.summary)
 
+    def test_codex_env_override_expands_windows_style_percent_variable(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "USERPROFILE": "C:/Users/tester",
+                TOKEN_USAGE_CODEX_ROOT_ENV: "%USERPROFILE%/.codex/sessions",
+            },
+            clear=False,
+        ):
+            adapter = CodexAdapter()
+
+        self.assertEqual(adapter.root, Path("C:/Users/tester/.codex/sessions"))
+
+    def test_windows_default_claude_local_agent_root_prefers_appdata(self) -> None:
+        path = default_claude_local_agent_root(
+            os_name="nt",
+            home=Path("/unused"),
+            appdata="C:/Users/tester/AppData/Roaming",
+        )
+
+        self.assertEqual(path, Path("C:/Users/tester/AppData/Roaming/Claude/local-agent-mode-sessions"))
+
 
 class HealthReportTests(unittest.TestCase):
     def test_health_report_marks_partial_and_includes_next_steps(self) -> None:
@@ -95,6 +118,8 @@ class HealthReportTests(unittest.TestCase):
         self.assertEqual(report["overall_status"], "partial")
         self.assertEqual(report["ready_sources"], 1)
         self.assertGreaterEqual(len(report["next_steps"]), 3)
+        self.assertIn("local-agent-mode-sessions", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_GENERIC_LOG_GLOBS", " ".join(report["next_steps"]))
 
 

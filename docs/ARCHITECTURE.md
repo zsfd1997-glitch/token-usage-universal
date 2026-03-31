@@ -9,6 +9,7 @@ SKILL.md
   -> scripts/token_usage.py
       -> adapters/*
       -> core/*
+      -> core/pricing.py
       -> ascii_hifi.py
 ```
 
@@ -40,7 +41,15 @@ SKILL.md
 - 处理时间窗口
 - 构建 health 报告
 - 聚合 usage 数据
+- 估算 cost（严格标记为 estimated）
 - 做最基本的结果校验
+
+当前已输出：
+
+- `by_source / by_model / by_project / by_session / by_day`
+- `current_session`
+- `session_detail`
+- `charts.trend_7d / charts.trend_30d / charts.calendar_month`
 
 ### 3. Rendering Layer
 
@@ -48,14 +57,26 @@ SKILL.md
 
 职责：
 
-- 把聚合结果渲染成 ASCII-HIFI 面板
-- 支持 `report / sources / diagnose / health`
+- 把聚合结果渲染成 ASCII-HIFI 终端控制面
+- 支持条形图、sparkline、月历热力图和当前会话卡片
+- 支持 `report / sources / diagnose / health / explore`
+
+### 4. Explore Layer
+
+位于 `scripts/token_usage.py` 中的轻量交互入口。
+
+职责：
+
+- 在 TTY 中提供“弹出可选”的视图选择
+- 只做交互收集与路由，不单独实现聚合逻辑
+- 非 TTY 下优雅降级，提示改用纯 flags/subcommands
 
 ## 非目标
 
 - 不做 provider billing API 联网依赖
 - 不做 GUI / SaaS 面板
 - 不把 CLI 单独包装成第二个对外产品
+- 不把 `estimated cost` 伪装成账单真源
 
 ## Task Master 关系
 

@@ -11,6 +11,14 @@ class TimeWindow:
     label: str
     timezone_name: str
 
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "start": self.start.isoformat() if self.start else None,
+            "end": self.end.isoformat() if self.end else None,
+            "label": self.label,
+            "timezone_name": self.timezone_name,
+        }
+
 
 @dataclass(frozen=True)
 class UsageEvent:
@@ -28,11 +36,36 @@ class UsageEvent:
     accuracy_level: str
     raw_event_kind: str
     source_path: str
+    raw_model: str | None = None
+    model_resolution: str = "unknown"
+    model_source: str | None = None
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["timestamp"] = self.timestamp.isoformat()
         return payload
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "UsageEvent":
+        return cls(
+            source=str(payload["source"]),
+            provider=str(payload["provider"]),
+            timestamp=datetime.fromisoformat(str(payload["timestamp"])),
+            session_id=str(payload["session_id"]),
+            project_path=payload.get("project_path"),
+            model=payload.get("model"),
+            input_tokens=payload.get("input_tokens"),
+            cached_input_tokens=payload.get("cached_input_tokens"),
+            output_tokens=payload.get("output_tokens"),
+            reasoning_tokens=payload.get("reasoning_tokens"),
+            total_tokens=int(payload["total_tokens"]),
+            accuracy_level=str(payload["accuracy_level"]),
+            raw_event_kind=str(payload["raw_event_kind"]),
+            source_path=str(payload["source_path"]),
+            raw_model=payload.get("raw_model"),
+            model_resolution=str(payload.get("model_resolution", "unknown")),
+            model_source=payload.get("model_source"),
+        )
 
 
 @dataclass

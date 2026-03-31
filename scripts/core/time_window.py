@@ -15,6 +15,9 @@ def resolve_timezone(name: str | None):
         try:
             return ZoneInfo(name)
         except ZoneInfoNotFoundError as exc:
+            local_tz = datetime.now().astimezone().tzinfo
+            if name == (datetime.now(local_tz).tzname() if local_tz else None):
+                return local_tz
             raise ValueError(f"unknown timezone: {name}") from exc
     return datetime.now().astimezone().tzinfo
 
@@ -80,6 +83,34 @@ def build_time_window(
         start=start_dt,
         end=end_dt,
         label=f"Custom ({(start_dt or end_dt).strftime('%Y-%m-%d %H:%M')} -> {end_dt.strftime('%Y-%m-%d %H:%M')} {tz_label})",
+        timezone_name=timezone_name(tzinfo),
+    )
+
+
+def build_month_window(year_month: str | None, tz_name: str | None) -> TimeWindow:
+    tzinfo = resolve_timezone(tz_name)
+    now = datetime.now(tzinfo)
+    tz_label = now.tzname() or timezone_name(tzinfo)
+
+    if year_month:
+        try:
+            anchor = datetime.strptime(year_month, "%Y-%m").replace(tzinfo=tzinfo)
+        except ValueError as exc:
+            raise ValueError("invalid --month value, use YYYY-MM") from exc
+    else:
+        anchor = datetime(now.year, now.month, 1, tzinfo=tzinfo)
+
+    start_dt = datetime(anchor.year, anchor.month, 1, tzinfo=tzinfo)
+    if anchor.month == 12:
+        next_month = datetime(anchor.year + 1, 1, 1, tzinfo=tzinfo)
+    else:
+        next_month = datetime(anchor.year, anchor.month + 1, 1, tzinfo=tzinfo)
+
+    end_dt = min(next_month, now) if start_dt <= now < next_month else next_month
+    return TimeWindow(
+        start=start_dt,
+        end=end_dt,
+        label=f"Month ({start_dt.strftime('%Y-%m')} {tz_label})",
         timezone_name=timezone_name(tzinfo),
     )
 

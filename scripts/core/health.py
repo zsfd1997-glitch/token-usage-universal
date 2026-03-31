@@ -14,7 +14,11 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
 
     claude = by_source.get("claude-code")
     if claude and not claude.available:
-        steps.append("Claude 只有 transcript 不够；要拿 exact total，需要 local-agent-mode-sessions 下的 timing.json。")
+        steps.append(
+            "Claude 要拿 exact，需要 local-agent-mode-sessions 下存在带 total_tokens + executor_end/grader_end 的 JSON"
+            "（旧版常见 timing.json）；mac 默认在 ~/Library/Application Support/Claude/local-agent-mode-sessions，"
+            "Windows 默认在 %APPDATA%\\Claude\\local-agent-mode-sessions，路径不同就设 TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT。"
+        )
 
     generic = by_source.get("generic-openai-compatible")
     if generic and not generic.available:

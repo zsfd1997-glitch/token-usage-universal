@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import textwrap
+from datetime import datetime
 
 from core.models import SourceCollectResult, TimeWindow
 
 
 WIDTH = 94
 INNER = WIDTH - 4
+UNICODE_BAR = "█"
+ASCII_BAR = "#"
+UNICODE_SPARKS = "▁▂▃▄▅▆▇█"
+ASCII_SPARKS = ".:-=+*#@"
+UNICODE_HEAT = ("·", "░", "▒", "▓", "█")
+ASCII_HEAT = (".", ".", ":", "*", "#")
 
 
 def _rule(title: str) -> str:
@@ -20,6 +27,30 @@ def _line(text: str = "") -> str:
 
 def _format_int(value: int) -> str:
     return f"{value:,}"
+
+
+def _format_compact_int(value: int) -> str:
+    absolute = abs(int(value))
+    if absolute >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.1f}B"
+    if absolute >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if absolute >= 1_000:
+        return f"{value / 1_000:.1f}k"
+    return str(value)
+
+
+def _format_cost(value: float) -> str:
+    return f"${value:,.2f}"
+
+
+def _format_compact_cost(value: float) -> str:
+    absolute = abs(float(value))
+    if absolute >= 1_000_000:
+        return f"${value / 1_000_000:.1f}M"
+    if absolute >= 1_000:
+        return f"${value / 1_000:.1f}k"
+    return _format_cost(value)
 
 
 def _truncate_middle(text: str, limit: int) -> str:
@@ -48,146 +79,312 @@ def _append_field(lines: list[str], label: str, text: str) -> None:
         lines.append(_line(f"{current_prefix}{chunk}"))
 
 
-def render_report(report: dict[str, object]) -> str:
+def _format_model_meta(node: dict[str, object] | None) -> str:
+    if not node:
+        return "(unknown model)"
+    model = str(node.get("model") or "(unknown model)")
+    raw_model = node.get("raw_model")
+    resolution = str(node.get("model_resolution") or "unknown")
+    source = node.get("model_source")
+
+    details: list[str] = []
+    if raw_model and str(raw_model) != model:
+        details.append(f"raw {raw_model}")
+    if resolution != "exact":
+        details.append(resolution)
+    if source and resolution != "exact":
+        details.append(f"via {source}")
+    if not details:
+        return model
+    return f"{model} ({'; '.join(details)})"
+
+
+def _project_name(value: str | None) -> str:
+    if not value:
+        return "(unknown project)"
+    normalized = str(value).rstrip("/\\")
+    tail = normalized.rsplit("/", 1)[-1]
+    tail = tail.rsplit("\\", 1)[-1]
+    return tail or normalized
+
+
+def _bar(value: int, max_value: int, *, width: int = 18, plain_ascii: bool) -> str:
+    if max_value <= 0 or value <= 0:
+        return "." * width if plain_ascii else "·" * width
+    filled = max(1, int(round((value / max_value) * width)))
+    filled = min(width, filled)
+    bar_char = ASCII_BAR if plain_ascii else UNICODE_BAR
+    empty_char = "." if plain_ascii else "·"
+    return bar_char * filled + empty_char * (width - filled)
+
+
+def _sparkline(values: list[int], *, plain_ascii: bool) -> str:
+    chars = ASCII_SPARKS if plain_ascii else UNICODE_SPARKS
+    if not values:
+        return ""
+    high = max(values)
+    low = min(values)
+    if high == low:
+        return chars[-1] * len(values) if high > 0 else chars[0] * len(values)
+    scale = len(chars) - 1
+    out = []
+    for value in values:
+        index = int(round(((value - low) / (high - low)) * scale))
+        out.append(chars[index])
+    return "".join(out)
+
+
+def _heat_level(value: int, thresholds: list[int]) -> int:
+    level = 0
+    for threshold in thresholds:
+        if value >= threshold:
+            level += 1
+    return min(level, 4)
+
+
+def _heat_thresholds(values: list[int]) -> list[int]:
+    non_zero = sorted(value for value in values if value > 0)
+    if not non_zero:
+        return [0, 0, 0, 0]
+    if len(non_zero) == 1:
+        return [non_zero[0]] * 4
+    indexes = [0.25, 0.5, 0.75, 0.9]
+    thresholds = []
+    for ratio in indexes:
+        position = min(len(non_zero) - 1, int(round((len(non_zero) - 1) * ratio)))
+        thresholds.append(non_zero[position])
+    return thresholds
+
+
+def _render_group_section(
+    lines: list[str],
+    title: str,
+    rows: list[dict[str, object]],
+    *,
+    key: str,
+    label: str,
+    plain_ascii: bool,
+) -> None:
+    lines.append(_rule(title))
+    if not rows:
+        _append_field(lines, "说明", "当前没有可展示的数据。")
+        return
+
+    max_total = max(int(row.get("effective_tokens", row["total_tokens"])) for row in rows)
+    total_sum = sum(int(row.get("effective_tokens", row["total_tokens"])) for row in rows)
+    for row in rows:
+        raw_name = str(row[key])
+        if label == "项目":
+            raw_name = _project_name(raw_name)
+        name = _truncate_middle(raw_name, 28)
+        total = int(row.get("effective_tokens", row["total_tokens"]))
+        ratio = f"{(total / total_sum * 100):5.1f}%" if total_sum else "  0.0%"
+        graph = _bar(total, max_total, plain_ascii=plain_ascii)
+        _append_field(
+            lines,
+            label,
+            f"{name:<28} {_format_compact_int(total):>8}  {ratio}  {graph}",
+        )
+
+
+def _render_current_session(lines: list[str], current_session: dict[str, object] | None) -> None:
+    lines.append(_rule("当前会话"))
+    if not current_session:
+        _append_field(lines, "说明", "当前时间窗内没有会话级 usage。")
+        return
+
+    effective_tokens = int(current_session.get("effective_tokens", current_session["total_tokens"]))
+    total_tokens = int(current_session["total_tokens"])
+    cached_tokens = int(current_session.get("cached_input_tokens") or 0)
+    _append_field(lines, "项目", _project_name(str(current_session.get("project_path") or "")))
+    _append_field(lines, "模型", _format_model_meta(current_session))
+    _append_field(
+        lines,
+        "用量",
+        (
+            f"去缓存后 token {_format_compact_int(effective_tokens)}   "
+            f"总 token {_format_compact_int(total_tokens)}   "
+            f"缓存 {_format_compact_int(cached_tokens)}"
+        ),
+    )
+
+
+def _render_session_detail(lines: list[str], session_detail: dict[str, object] | None) -> None:
+    if not session_detail:
+        return
+    lines.append(_rule("会话详情"))
+    effective_tokens = int(session_detail.get("effective_tokens", session_detail["total_tokens"]))
+    total_tokens = int(session_detail["total_tokens"])
+    _append_field(lines, "项目", _project_name(str(session_detail.get("project_path") or "")))
+    _append_field(lines, "模型", _format_model_meta(session_detail))
+    _append_field(
+        lines,
+        "摘要",
+        (
+            f"去缓存后 token {_format_compact_int(effective_tokens)}   "
+            f"总 token {_format_compact_int(total_tokens)}   "
+            f"{session_detail['events']} events   "
+            f"费用 {_format_compact_cost(float(session_detail.get('estimated_cost_usd', 0.0)))}"
+        ),
+    )
+
+
+def _render_trend(lines: list[str], trend: dict[str, object], *, plain_ascii: bool) -> None:
+    lines.append(_rule(f"最近 {trend['days']} 天（去缓存后）"))
+    points = trend["points"]
+    if not points:
+        _append_field(lines, "说明", "当前时间窗内没有每日数据。")
+        return
+
+    values = [int(item.get("effective_tokens", item["total_tokens"])) for item in points]
+    max_total = max(values) if values else 0
+    stats = [
+        f"合计 {_format_compact_int(int(trend['total_tokens']))}  估算 {_format_compact_cost(float(trend.get('estimated_cost_usd', 0.0)))}",
+        f"均值 {_format_compact_int(int(trend['avg_tokens']))}",
+        f"最高 {_format_compact_int(int(trend['max_tokens']))}",
+    ]
+    trend_width = 42
+    for row_index, item in enumerate(points):
+        date_label = str(item["date"])[5:]
+        total = int(item.get("effective_tokens", item["total_tokens"]))
+        graph = _bar(total, max_total, width=24, plain_ascii=plain_ascii)
+        left = f"{graph}  {_format_compact_int(total)}"
+        right = stats[row_index] if row_index < len(stats) else ""
+        _append_field(
+            lines,
+            date_label,
+            f"{left:<{trend_width}} {right}".rstrip(),
+        )
+
+
+def _render_calendar(lines: list[str], calendar: dict[str, object], *, plain_ascii: bool) -> None:
+    lines.append(_rule(f"本月分布 {calendar['month']}（去缓存后）"))
+
+    days = calendar["days"]
+    if not days:
+        _append_field(lines, "说明", "当前月份没有 usage 数据。")
+        return
+
+    thresholds = _heat_thresholds([int(item.get("effective_tokens", item["total_tokens"])) for item in days])
+    chars = ASCII_HEAT if plain_ascii else UNICODE_HEAT
+    lines.append(_line("Mo    Tu    We    Th    Fr    Sa    Su"))
+
+    first = datetime.fromisoformat(f"{days[0]['date']}T00:00:00")
+    prefix = []
+    weekday = first.weekday()
+    for _ in range(weekday):
+        prefix.append("     ")
+
+    cells = prefix[:]
+    for item in days:
+        level = _heat_level(int(item.get("effective_tokens", item["total_tokens"])), thresholds)
+        day_label = datetime.fromisoformat(f"{item['date']}T00:00:00").strftime("%d")
+        cells.append(f"{day_label}{chars[level]}  ")
+
+    stats = [
+        f"合计 {_format_compact_int(int(calendar.get('effective_tokens', calendar.get('total_tokens', 0))))}  估算 {_format_compact_cost(float(calendar.get('estimated_cost_usd', 0.0)))}",
+        f"均值 {_format_compact_int(int(calendar.get('avg_tokens', 0)))}",
+        f"最高 {_format_compact_int(int(calendar.get('max_tokens', 0)))}",
+    ]
+    calendar_width = 40
+    for index in range(0, len(cells), 7):
+        row_index = index // 7
+        left = "".join(cells[index:index + 7]).rstrip()
+        right = stats[row_index] if row_index < len(stats) else ""
+        if right:
+            lines.append(_line(f"{left:<{calendar_width}} {right}"))
+        else:
+            lines.append(_line(left))
+
+
+def _render_diagnostics(
+    lines: list[str],
+    diagnostics: list[dict[str, object]] | None,
+    *,
+    show_when_empty: bool,
+) -> None:
+    if not diagnostics and not show_when_empty:
+        return
+
+    lines.append(_rule("诊断 / 缺失来源"))
+    if not diagnostics:
+        _append_field(lines, "说明", "当前未发现缺失来源或校验问题。")
+        return
+
+    for item in diagnostics[:5]:
+        source = str(item.get("source") or "unknown")
+        label = "费用" if source == "estimated-cost" else source
+        _append_field(lines, label, str(item.get("reason") or ""))
+
+
+def render_report(report: dict[str, object], *, plain_ascii: bool = False, show_estimated_cost: bool = False) -> str:
     summary = report["summary"]
-    status_counts = report["status_counts"]
-    insights = report["insights"]
     lines = [
-        _rule("Token Usage Universal · 修行面板"),
+        _rule("Token 用量"),
         _rule("总览"),
     ]
 
-    _append_field(lines, "时间窗口", str(report["window"]["label"]))
-    _append_field(lines, "统计范围", "all exact sources")
-    _append_field(
-        lines,
-        "状态",
-        (
-            f"exact={status_counts['exact']}  "
-            f"derived={status_counts['derived']}  "
-            f"estimated={status_counts['estimated']}  "
-            f"unsupported={status_counts['unsupported']}"
-        ),
-    )
-    _append_field(lines, "总量", _format_int(summary["total_tokens"]))
+    _append_field(lines, "时间", str(report["window"]["label"]))
+    _append_field(lines, "总 token", _format_compact_int(int(summary["total_tokens"])))
+    _append_field(lines, "去缓存后", f"token {_format_compact_int(int(summary.get('effective_tokens', summary['total_tokens'])))}")
     if summary["total_tokens"] and summary["split_detail_events"] == 0:
-        _append_field(lines, "输入", "当前来源只提供 total_tokens，未提供输入 / 缓存 / 输出拆分。")
+        _append_field(lines, "构成", "当前来源只提供 total_tokens，暂时无法精确拆出缓存前后。")
     else:
         input_line = (
-            f"{_format_int(summary['input_tokens'])}   "
-            f"缓存 {_format_int(summary['cached_input_tokens'])}   "
-            f"输出 {_format_int(summary['output_tokens'])}"
+            f"{_format_compact_int(int(summary['input_tokens']))}   "
+            f"缓存 {_format_compact_int(int(summary['cached_input_tokens']))}   "
+            f"输出 {_format_compact_int(int(summary['output_tokens']))}   "
+            f"推理 {_format_compact_int(int(summary['reasoning_tokens']))}"
         )
         if summary["total_only_events"]:
             input_line += f"   另有 {summary['total_only_events']} 个事件仅含 total_tokens"
-        _append_field(lines, "输入", input_line)
-    _append_field(
-        lines,
-        "推理",
-        (
-            f"{_format_int(summary['reasoning_tokens'])}   "
-            f"来源 {summary['sources']}   "
-            f"模型 {summary['models']}   "
-            f"会话 {summary['sessions']}   "
-            f"事件 {summary['events']}"
-        ),
-    )
-    _append_field(lines, "折算天数", f"{report['window']['days_equivalent']} day")
-
-    lines.append(_rule("等级评定"))
-    _append_field(
-        lines,
-        "模型口径",
-        (
-            f"{insights['model_anchor_openai']}；"
-            f"{insights['model_anchor_anthropic']}（核验日期：{insights['model_anchor_verified_at']}）"
-        ),
-    )
-    _append_field(
-        lines,
-        "等级",
-        f"{insights['realm_name']}（{insights['realm_label']}，{insights['realm_band']}）",
-    )
-    _append_field(lines, "岗位对标", str(insights["role_anchor"]))
-    _append_field(lines, "团队场景", str(insights["team_anchor"]))
-    _append_field(lines, "模型锚点", str(insights["model_reference"]))
-    _append_field(lines, "日等效", f"{insights['compact_daily_equivalent']} / day")
-    if insights["tokens_to_next_realm"]:
+        _append_field(lines, "构成", f"输入 {input_line}")
+    if show_estimated_cost or float(summary.get("estimated_cost_usd", 0.0)):
         _append_field(
             lines,
-            "升级进度",
-            (
-                f"{insights['meter']}  当前 {insights['compact_daily_equivalent']}/day，"
-                f"距离 {insights['next_realm_name']} 还差 {insights['compact_to_next_realm']}/day"
-            ),
+            "费用",
+            f"估算 {_format_cost(float(summary.get('estimated_cost_usd', 0.0)))}",
         )
-    else:
-        _append_field(lines, "升级进度", f"{insights['meter']}  已达当前最高等级")
-    _append_field(
-        lines,
-        "参考说明",
-        f"{insights['business_comment']} {insights['reference_note']}",
-    )
-    _append_field(lines, "建议", str(insights["business_suggestion"]))
-    _append_field(
-        lines,
-        "修行数据",
-        (
-            f"avg/session {_format_int(insights['avg_per_session'])}   "
-            f"avg/event {_format_int(insights['avg_per_event'])}   "
-            f"cache ratio {insights['cache_ratio'] * 100:.2f}%"
-        ),
-    )
 
-    lines.append(_rule("按来源"))
-    if report["by_source"]:
-        for row in report["by_source"]:
-            _append_field(
-                lines,
-                _truncate_middle(str(row["name"]), 10),
-                f"{_format_int(row['total_tokens'])}   {str(row['sessions']).rjust(3)} sessions",
-            )
-    else:
-        _append_field(lines, "说明", "所选时间窗内未发现 exact usage 事件。")
+    _render_current_session(lines, report.get("current_session"))
 
-    lines.append(_rule("按模型"))
-    if report["by_model"]:
-        for row in report["by_model"]:
-            _append_field(
-                lines,
-                "模型",
-                f"{_truncate_middle(str(row['name']), 52)}   {_format_int(row['total_tokens'])}",
-            )
-    else:
-        _append_field(lines, "说明", "当前没有可展示的模型级 usage。")
+    dashboard_mode = report.get("dashboard_mode")
+    show_dashboard_groups = dashboard_mode in {"today", "recent"}
+    if report.get("requested_group") == "source" or len(report["by_source"]) > 1:
+        _render_group_section(lines, "按来源（去缓存后）", report["by_source"], key="name", label="来源", plain_ascii=plain_ascii)
+    if report.get("requested_group") == "model" or show_dashboard_groups or len(report["by_model"]) > 1:
+        _render_group_section(lines, "按模型（去缓存后）", report["by_model"], key="name", label="模型", plain_ascii=plain_ascii)
+    if report.get("requested_group") == "project" or show_dashboard_groups or len(report["by_project"]) > 1:
+        _render_group_section(lines, "按项目（去缓存后）", report["by_project"], key="name", label="项目", plain_ascii=plain_ascii)
 
-    lines.append(_rule("按项目"))
-    if report["by_project"]:
-        for row in report["by_project"]:
-            _append_field(
-                lines,
-                "项目",
-                f"{_truncate_middle(str(row['name']), 52)}   {_format_int(row['total_tokens'])}",
-            )
-    else:
-        _append_field(lines, "说明", "当前没有可展示的项目级 usage。")
+    if report.get("requested_group") == "session":
+        _render_group_section(lines, "按会话（去缓存后）", report["by_session"], key="name", label="会话", plain_ascii=plain_ascii)
+    if report.get("requested_group") == "day":
+        day_rows = [
+            {
+                "name": item["date"],
+                **item,
+            }
+            for item in report["by_day"][-5:]
+        ]
+        _render_group_section(lines, "按天（去缓存后）", day_rows, key="name", label="日期", plain_ascii=plain_ascii)
 
-    if report["requested_group"] == "session":
-        lines.append(_rule("按会话"))
-        for row in report["by_session"]:
-            _append_field(
-                lines,
-                "会话",
-                f"{_truncate_middle(str(row['name']), 52)}   {_format_int(row['total_tokens'])}",
-            )
+    requested_trend = report.get("requested_trend")
+    if requested_trend == "7d":
+        _render_trend(lines, report["charts"]["trend_7d"], plain_ascii=plain_ascii)
+    elif requested_trend == "30d":
+        _render_trend(lines, report["charts"]["trend_30d"], plain_ascii=plain_ascii)
+    elif dashboard_mode == "today":
+        _render_trend(lines, report["charts"]["trend_7d"], plain_ascii=plain_ascii)
+    elif dashboard_mode == "recent":
+        _render_trend(lines, report["charts"]["trend_30d"], plain_ascii=plain_ascii)
 
-    lines.append(_rule("诊断"))
-    diagnostics = report["diagnostics"]
-    if diagnostics:
-        for item in diagnostics:
-            _append_field(lines, item["source"], str(item["reason"]))
-    else:
-        _append_field(lines, "说明", "没有额外诊断警告。")
+    if report.get("requested_calendar") == "month":
+        _render_calendar(lines, report["charts"]["calendar_month"], plain_ascii=plain_ascii)
+    elif dashboard_mode in {"today", "recent"}:
+        _render_calendar(lines, report["charts"]["calendar_month"], plain_ascii=plain_ascii)
+
+    _render_session_detail(lines, report.get("session_detail"))
 
     lines.append("+" + "-" * (WIDTH - 2) + "+")
     return "\n".join(lines)
@@ -228,6 +425,10 @@ def render_diagnose(result: SourceCollectResult, window: TimeWindow) -> str:
         lines.append(_rule("候选路径"))
         for path in detection.candidate_paths[:5]:
             _append_field(lines, "路径", _truncate_middle(path, INNER - 10))
+    if detection.details:
+        lines.append(_rule("识别"))
+        for detail in detection.details[:5]:
+            _append_field(lines, "说明", _truncate_middle(detail, INNER - 10))
     if result.verification_issues:
         lines.append(_rule("校验"))
         for issue in result.verification_issues[:5]:

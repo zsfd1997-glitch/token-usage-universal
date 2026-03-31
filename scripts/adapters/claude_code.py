@@ -7,10 +7,14 @@ from adapters.base import BaseAdapter
 from core.config import (
     TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
+    default_claude_local_agent_root,
     resolve_path_override,
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.time_window import parse_timestamp, within_window
+
+_CLAUDE_TIMESTAMP_KEYS = ("executor_end", "grader_end")
+_CLAUDE_LAYOUT_MARKER_NAMES = (".claude.json", "cowork_settings.json", "manifest.json")
 
 
 class ClaudeCodeAdapter(BaseAdapter):
@@ -31,32 +35,73 @@ class ClaudeCodeAdapter(BaseAdapter):
         )
         self.local_agent_root = local_agent_root or resolve_path_override(
             TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
-            Path.home()
-            / "Library"
-            / "Application Support"
-            / "Claude"
-            / "local-agent-mode-sessions",
+            default_claude_local_agent_root(),
         )
+        self._local_agent_inventory: dict[str, object] | None = None
 
     def _transcript_files(self) -> list[Path]:
         if not self.transcript_root.exists():
             return []
         return sorted(self.transcript_root.glob("*.jsonl"))
 
-    def _timing_files(self) -> list[Path]:
+    def _local_agent_json_files(self) -> list[Path]:
         if not self.local_agent_root.exists():
             return []
-        return sorted(self.local_agent_root.rglob("timing.json"))
+        matches: list[Path] = []
+        for pattern in ("*.json", ".*.json"):
+            matches.extend(path for path in self.local_agent_root.rglob(pattern) if path.is_file())
+        return sorted({path for path in matches})
+
+    def _build_local_agent_inventory(self) -> dict[str, object]:
+        if self._local_agent_inventory is not None:
+            return self._local_agent_inventory
+
+        json_files = self._local_agent_json_files()
+        exact_files: list[Path] = []
+        candidate_files: list[Path] = []
+        marker_files: list[Path] = []
+        parse_issues: list[str] = []
+
+        for path in json_files:
+            if path.name in _CLAUDE_LAYOUT_MARKER_NAMES and len(marker_files) < 5:
+                marker_files.append(path)
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                parse_issues.append(f"failed parsing {path}: {exc}")
+                continue
+
+            if not isinstance(payload, dict):
+                continue
+
+            total_tokens = payload.get("total_tokens")
+            has_timestamp = any(payload.get(key) not in (None, "") for key in _CLAUDE_TIMESTAMP_KEYS)
+            if "timing" in path.name.lower() or total_tokens not in (None, "") or has_timestamp:
+                candidate_files.append(path)
+            if total_tokens not in (None, "") and has_timestamp:
+                exact_files.append(path)
+
+        self._local_agent_inventory = {
+            "json_files": json_files,
+            "candidate_files": candidate_files,
+            "exact_files": exact_files,
+            "marker_files": marker_files,
+            "parse_issues": parse_issues,
+        }
+        return self._local_agent_inventory
 
     def detect(self) -> SourceDetection:
         transcripts = self._transcript_files()
-        timing_files = self._timing_files()
-        candidate_paths = [str(path) for path in timing_files[:2] + transcripts[:1]]
+        inventory = self._build_local_agent_inventory()
+        exact_files = list(inventory["exact_files"])
+        marker_files = list(inventory["marker_files"])
+        json_files = list(inventory["json_files"])
+        candidate_paths = [str(path) for path in exact_files[:2] + transcripts[:1]]
         details: list[str] = []
 
-        if timing_files:
-            details.append("timing.json exposes total_tokens and executor_end for finished local runs")
-            details.append("Claude timing.json does not expose input/output/cache breakdown fields")
+        if exact_files:
+            details.append("supports old timing.json and any Claude JSON that exposes total_tokens + executor_end/grader_end")
+            details.append("Claude exact JSON does not expose input/output/cache breakdown fields")
             return SourceDetection(
                 source_id=self.source_id,
                 display_name=self.display_name,
@@ -64,14 +109,19 @@ class ClaudeCodeAdapter(BaseAdapter):
                 accuracy_level=self.accuracy_level,
                 supported=True,
                 available=True,
-                summary="captured timing.json files found for exact total-token collection",
+                summary="captured Claude exact JSON files found for exact total-token collection",
                 candidate_paths=candidate_paths,
                 details=details,
             )
 
-        if transcripts:
+        if json_files:
+            marker_names = ", ".join(sorted({path.name for path in marker_files})) or "session/config JSONs"
+            details.append(f"detected local-agent JSON layout markers: {marker_names}")
+            details.append("none of the JSON files under local-agent-mode-sessions expose both total_tokens and executor_end/grader_end")
+            if transcripts:
+                details.append("transcripts are text-only and cannot recover exact totals")
             details.append("local transcripts are text-only and do not contain exact token usage fields")
-            details.append("Claude exact totals are only recoverable when task notifications were persisted into timing.json")
+            details.append("Claude exact totals are only recoverable when local-agent-mode-sessions persisted a token-bearing exact JSON")
             return SourceDetection(
                 source_id=self.source_id,
                 display_name=self.display_name,
@@ -80,15 +130,16 @@ class ClaudeCodeAdapter(BaseAdapter):
                 supported=True,
                 available=False,
                 summary=(
-                    "transcripts detected, but no timing.json captured for exact totals; "
+                    "Claude local-agent layout detected, but no token-bearing exact JSON was found; "
                     f"override with {TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV} if needed"
                 ),
-                candidate_paths=candidate_paths or [str(self.transcript_root)],
+                candidate_paths=[str(self.local_agent_root), *[str(path) for path in marker_files[:2]], *candidate_paths][:5],
                 details=details,
             )
 
-        if self.local_agent_root.exists():
-            details.append("local-agent-mode-sessions directory exists, but no timing.json files were found")
+        if transcripts:
+            details.append("local transcripts are text-only and do not contain exact token usage fields")
+            details.append("Claude exact totals need a token-bearing local-agent JSON (old builds commonly used timing.json)")
             return SourceDetection(
                 source_id=self.source_id,
                 display_name=self.display_name,
@@ -96,7 +147,25 @@ class ClaudeCodeAdapter(BaseAdapter):
                 accuracy_level=self.accuracy_level,
                 supported=True,
                 available=False,
-                summary="Claude local session artifacts found, but no exact timing.json records yet",
+                summary=(
+                    "transcripts detected, but no Claude exact JSON was found for total-token collection; "
+                    f"override with {TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV} if needed"
+                ),
+                candidate_paths=[str(path) for path in transcripts[:1]] + [str(self.transcript_root), str(self.local_agent_root)],
+                details=details,
+            )
+
+        if self.local_agent_root.exists():
+            details.append("local-agent-mode-sessions directory exists, but no JSON files with total_tokens + executor_end/grader_end were found")
+            details.append("older Claude builds commonly persisted timing.json; newer layouts may only keep session/config artifacts")
+            return SourceDetection(
+                source_id=self.source_id,
+                display_name=self.display_name,
+                provider=self.provider,
+                accuracy_level=self.accuracy_level,
+                supported=True,
+                available=False,
+                summary="Claude local session directory exists, but no exact JSON records were found yet",
                 candidate_paths=[str(self.local_agent_root)],
                 details=details,
             )
@@ -117,11 +186,18 @@ class ClaudeCodeAdapter(BaseAdapter):
 
     def collect(self, window) -> SourceCollectResult:
         detection = self.detect()
-        timing_files = self._timing_files()
-        if not timing_files:
+        inventory = self._build_local_agent_inventory()
+        json_files = list(inventory["json_files"])
+        candidate_files = list(inventory["candidate_files"])
+        if not candidate_files:
             return SourceCollectResult(
                 detection=detection,
-                scanned_files=0,
+                scanned_files=len(json_files),
+                verification_issues=(
+                    ["inspected local-agent JSON files, but none exposed total_tokens + executor_end/grader_end"]
+                    if json_files
+                    else []
+                ),
                 skipped_reasons=[detection.summary],
             )
 
@@ -133,7 +209,7 @@ class ClaudeCodeAdapter(BaseAdapter):
             else __import__("datetime").datetime.now().astimezone().tzinfo
         )
 
-        for path in timing_files:
+        for path in candidate_files:
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
@@ -143,7 +219,7 @@ class ClaudeCodeAdapter(BaseAdapter):
             total_tokens = payload.get("total_tokens")
             timestamp_value = payload.get("executor_end") or payload.get("grader_end")
             if total_tokens in (None, "") or timestamp_value in (None, ""):
-                verification_issues.append(f"missing total_tokens or executor_end in {path}")
+                verification_issues.append(f"missing total_tokens or executor_end/grader_end in {path}")
                 continue
 
             try:
@@ -170,21 +246,21 @@ class ClaudeCodeAdapter(BaseAdapter):
                     reasoning_tokens=None,
                     total_tokens=total_value,
                     accuracy_level=self.accuracy_level,
-                    raw_event_kind="timing.json:session_total",
+                    raw_event_kind=f"{path.name}:session_total",
                     source_path=str(path),
                 )
             )
 
         if events:
             verification_issues.append(
-                "Claude timing.json only provides total_tokens; input/output/cache breakdown is unavailable"
+                "Claude exact JSON only provides total_tokens; input/output/cache breakdown is unavailable"
             )
         elif not verification_issues:
-            verification_issues.append("no Claude timing.json sessions landed inside the selected time window")
+            verification_issues.append("no Claude exact JSON sessions landed inside the selected time window")
 
         return SourceCollectResult(
             detection=detection,
             events=events,
-            scanned_files=len(timing_files),
+            scanned_files=len(candidate_files),
             verification_issues=verification_issues[:10],
         )
