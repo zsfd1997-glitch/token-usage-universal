@@ -79,6 +79,8 @@ flowchart LR
 - 初始化 SQLite 数据库
 - 创建后台管理员账号
 - 签发设备上报令牌
+- 查看、禁用、重新启用设备令牌
+- 执行 SQLite 在线备份
 - 接收成员机器自动上报
 - 提供 Web 后台和统计 API
 
@@ -187,6 +189,45 @@ python3 token-usage-universal团队版/scripts/team_backend.py run-server \
 http://<内网IP>:8787/login
 ```
 
+### 4.1 查看或禁用设备令牌
+
+```bash
+python3 token-usage-universal团队版/scripts/team_backend.py list-agent-tokens --team-id platform
+
+python3 token-usage-universal团队版/scripts/team_backend.py disable-agent-token \
+  --token-prefix tuat_xxxxx
+
+python3 token-usage-universal团队版/scripts/team_backend.py enable-agent-token \
+  --token-prefix tuat_xxxxx
+```
+
+适用场景：
+
+- 某台机器丢失或离职，需要立刻停止上报
+- 想盘点当前哪些设备 token 还在用
+- 先暂停某台设备，排查后再恢复
+
+### 4.2 执行数据库备份
+
+```bash
+python3 token-usage-universal团队版/scripts/team_backend.py backup-db
+```
+
+默认会把快照备份到：
+
+```text
+token-usage-universal团队版/data/backups/
+```
+
+也可以指定单独文件：
+
+```bash
+python3 token-usage-universal团队版/scripts/team_backend.py backup-db \
+  --output /srv/backups/team_usage-20260331.db
+```
+
+这个备份是 SQLite 原生在线备份，不需要先停服务。
+
 ### 5. 在成员机器启动自动上报
 
 ```bash
@@ -235,12 +276,29 @@ python3 token-usage-universal团队版/scripts/team_agent.py \
 - 不依赖 Docker 才能运行
 - 不依赖 Redis、Kafka、云数据库
 - 只要求 Python 3 和本地磁盘权限
+- 常见运维动作可直接走本地 CLI，不依赖额外管理台
 
 这意味着它很适合：
 
 - 研发内网
 - 金融 / 制造 / 政企隔离网
 - 无公网出口或出口受限环境
+
+## 生产强化现状
+
+当前已经具备的生产强化能力：
+
+- 管理员本地账号登录
+- 设备级 Agent Token
+- Token 查看 / 禁用 / 启用
+- SQLite 在线备份
+
+还没有做的更重能力：
+
+- 多角色权限
+- 告警通知
+- 自动备份保留策略
+- Postgres 迁移工具
 
 ## 自动化运行建议
 

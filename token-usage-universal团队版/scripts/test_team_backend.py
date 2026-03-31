@@ -14,7 +14,16 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from team_backend import create_admin_user, create_server, init_database, issue_agent_token
+from team_backend import (
+    authenticate_agent_token,
+    command_backup_db,
+    create_admin_user,
+    create_server,
+    init_database,
+    issue_agent_token,
+    list_agent_tokens,
+    set_agent_token_enabled,
+)
 
 
 class TeamBackendIntegrationTests(unittest.TestCase):
@@ -95,6 +104,41 @@ class TeamBackendIntegrationTests(unittest.TestCase):
             finally:
                 server.shutdown()
                 server.server_close()
+
+    def test_agent_token_lifecycle_and_backup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "team.db"
+            init_database(db_path)
+            token_payload = issue_agent_token(
+                db_path,
+                team_id="demo-team",
+                user_id="alice",
+                machine_id="alice-mbp",
+                machine_label="Alice MacBook Pro",
+                note="integration",
+            )
+
+            tokens = list_agent_tokens(db_path, team_id="demo-team", include_disabled=True)
+            self.assertEqual(len(tokens), 1)
+            token_prefix = tokens[0]["token_prefix"]
+            self.assertTrue(tokens[0]["enabled"])
+
+            disabled = set_agent_token_enabled(db_path, token_prefix=token_prefix, enabled=False)
+            self.assertEqual(disabled["token_prefix"], token_prefix)
+            self.assertFalse(disabled["enabled"])
+            self.assertIsNone(authenticate_agent_token(db_path, token_payload["token"]))
+
+            enabled = set_agent_token_enabled(db_path, token_prefix=token_prefix, enabled=True)
+            self.assertTrue(enabled["enabled"])
+            self.assertIsNotNone(authenticate_agent_token(db_path, token_payload["token"]))
+
+            backup_dir = Path(tmp) / "backups"
+            args = type("Args", (), {"db_path": db_path, "output": backup_dir})()
+            rc = command_backup_db(args)
+            self.assertEqual(rc, 0)
+            backups = sorted(backup_dir.glob("team.*.db"))
+            self.assertEqual(len(backups), 1)
+            self.assertGreater(backups[0].stat().st_size, 0)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import hmac
 import json
 import os
 import secrets
+import shutil
 import sqlite3
 import threading
 from datetime import datetime, timedelta, timezone
@@ -252,6 +253,53 @@ def issue_agent_token(db_path: Path, *, team_id: str, user_id: str, machine_id: 
             "machine_label": machine_label,
             "note": note,
         }
+    finally:
+        conn.close()
+
+
+def list_agent_tokens(db_path: Path, *, team_id: str | None = None, include_disabled: bool = True) -> list[dict[str, Any]]:
+    conn = db_connect(db_path)
+    try:
+        sql = """
+            SELECT id, token_prefix, team_id, user_id, machine_id, machine_label, note, enabled, created_at, last_seen_at
+            FROM agent_tokens
+        """
+        clauses: list[str] = []
+        params: list[Any] = []
+        if team_id:
+            clauses.append("team_id = ?")
+            params.append(team_id)
+        if not include_disabled:
+            clauses.append("enabled = 1")
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY team_id, user_id, machine_id, created_at DESC"
+        rows = conn.execute(sql, params).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def set_agent_token_enabled(db_path: Path, *, token_prefix: str, enabled: bool) -> dict[str, Any]:
+    conn = db_connect(db_path)
+    try:
+        cursor = conn.execute(
+            "UPDATE agent_tokens SET enabled = ? WHERE token_prefix = ?",
+            (1 if enabled else 0, token_prefix),
+        )
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise ValueError(f"agent token not found: {token_prefix}")
+        row = conn.execute(
+            """
+            SELECT id, token_prefix, team_id, user_id, machine_id, machine_label, note, enabled, created_at, last_seen_at
+            FROM agent_tokens
+            WHERE token_prefix = ?
+            """,
+            (token_prefix,),
+        ).fetchone()
+        assert row is not None
+        return dict(row)
     finally:
         conn.close()
 
@@ -1144,6 +1192,68 @@ def command_issue_agent_token(args) -> int:
     return 0
 
 
+def command_list_agent_tokens(args) -> int:
+    init_database(args.db_path)
+    payload = {
+        "tokens": list_agent_tokens(
+            args.db_path,
+            team_id=args.team_id,
+            include_disabled=args.include_disabled,
+        )
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_set_agent_token_enabled(args) -> int:
+    init_database(args.db_path)
+    payload = set_agent_token_enabled(
+        args.db_path,
+        token_prefix=args.token_prefix,
+        enabled=args.enabled,
+    )
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_backup_db(args) -> int:
+    init_database(args.db_path)
+    output_path = args.output.expanduser()
+    timestamp = utc_now().strftime("%Y%m%dT%H%M%SZ")
+    if output_path.is_dir() or str(output_path).endswith(os.sep) or output_path.suffix == "":
+        output_path.mkdir(parents=True, exist_ok=True)
+        destination = output_path / f"{args.db_path.stem}.{timestamp}{args.db_path.suffix}"
+    else:
+        destination = output_path
+        _ensure_parent(destination)
+
+    source_conn = db_connect(args.db_path)
+    dest_conn = sqlite3.connect(str(destination))
+    try:
+        with dest_conn:
+            source_conn.backup(dest_conn)
+    finally:
+        source_conn.close()
+        dest_conn.close()
+
+    wal_path = Path(f"{args.db_path}-wal")
+    shm_path = Path(f"{args.db_path}-shm")
+    sidecars = []
+    for candidate in (wal_path, shm_path):
+        if candidate.exists():
+            copy_path = destination.parent / candidate.name.replace(args.db_path.name, destination.name)
+            shutil.copy2(candidate, copy_path)
+            sidecars.append(str(copy_path))
+    payload = {
+        "db_path": str(args.db_path),
+        "backup_path": str(destination),
+        "sidecars": sidecars,
+        "bytes": destination.stat().st_size,
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
 def command_seed_sample(args) -> int:
     init_database(args.db_path)
     sample_path = Path(args.sample_file).expanduser()
@@ -1202,6 +1312,33 @@ def build_parser() -> argparse.ArgumentParser:
     issue_token.add_argument("--machine-label")
     issue_token.add_argument("--note")
     issue_token.set_defaults(func=command_issue_agent_token)
+
+    list_tokens = subparsers.add_parser("list-agent-tokens", help="list issued device ingest tokens")
+    list_tokens.add_argument("--team-id", help="filter by team id")
+    list_tokens.add_argument(
+        "--include-disabled",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="include disabled tokens in the output",
+    )
+    list_tokens.set_defaults(func=command_list_agent_tokens)
+
+    enable_token = subparsers.add_parser("enable-agent-token", help="enable a previously disabled ingest token")
+    enable_token.add_argument("--token-prefix", required=True, help="prefix shown when the token was issued")
+    enable_token.set_defaults(func=command_set_agent_token_enabled, enabled=True)
+
+    disable_token = subparsers.add_parser("disable-agent-token", help="disable a device ingest token")
+    disable_token.add_argument("--token-prefix", required=True, help="prefix shown when the token was issued")
+    disable_token.set_defaults(func=command_set_agent_token_enabled, enabled=False)
+
+    backup_db = subparsers.add_parser("backup-db", help="create a point-in-time backup of the SQLite database")
+    backup_db.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_DB_PATH.parent / "backups",
+        help="backup file path or directory; defaults to data/backups/",
+    )
+    backup_db.set_defaults(func=command_backup_db)
 
     seed_sample = subparsers.add_parser("seed-sample", help="seed DB with sample team JSONL")
     seed_sample.add_argument("--sample-file", default=str(Path(__file__).resolve().parents[1] / "examples" / "team-usage.sample.jsonl"))
