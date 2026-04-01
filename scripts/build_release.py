@@ -13,7 +13,20 @@ SKILL_ROOT = SCRIPT_DIR.parent
 def _ignore(directory: str, names: list[str]) -> set[str]:
     ignored: set[str] = set()
     for name in names:
-        if name in {"__pycache__", ".pytest_cache", ".DS_Store"}:
+        if name in {
+            "__pycache__",
+            ".pytest_cache",
+            ".DS_Store",
+            ".git",
+            ".superchain",
+            "输出",
+            "task_plan.md",
+            "progress.md",
+            "findings.md",
+            "master-plan.md",
+            "master-report.md",
+            "superchain_observability.config.json",
+        }:
             ignored.add(name)
         if name.endswith(".pyc"):
             ignored.add(name)
