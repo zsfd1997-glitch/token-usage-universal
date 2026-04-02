@@ -12,6 +12,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from adapters.claude_code import ClaudeCodeAdapter
+from adapters.compatible_api_family import build_provider_api_adapters
 from adapters.codex import CodexAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
@@ -30,6 +31,7 @@ def _build_adapters():
         ClaudeCodeAdapter(),
         OpenCodeAdapter(),
         MiniMaxAgentAdapter(),
+        *build_provider_api_adapters(),
         GenericOpenAICompatibleAdapter(),
     ]
     return {adapter.source_id: adapter for adapter in adapters}
@@ -38,7 +40,7 @@ def _build_adapters():
 def _resolve_sources(args, registry):
     requested = args.source or []
     if not requested:
-        return list(registry.values())
+        return [adapter for adapter in registry.values() if getattr(adapter, "default_selected", True)]
 
     selected = []
     for source_id in requested:

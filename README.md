@@ -67,6 +67,36 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 
 ## 当前支持来源
 
+- `native clients`
+  - `codex`
+  - `claude-code`
+  - `opencode`
+  - `minimax-agent`
+- `top provider families`
+  - `openai-api`
+  - `anthropic-api`
+  - `google-gemini-api`
+  - `moonshot-kimi-api`
+  - `zhipu-glm-api`
+  - `qwen-api`
+  - `deepseek-api`
+  - `minimax-api`
+  - `xai-grok-api`
+  - `cohere-api`
+  - `mistral-api`
+  - `perplexity-api`
+  - `openrouter-api`
+  - `togetherai-api`
+  - `fireworks-api`
+  - `azure-openai-api`
+  - `baidu-qianfan-api`
+  - `tencent-hunyuan-api`
+  - `stepfun-api`
+  - `doubao-api`
+- `generic fallback`
+  - `generic-openai-compatible`
+  - 保留给手动 diagnose / 补漏，不再默认参与总览，避免和已拆分的 provider family 重复计数
+
 - `codex`
   - 默认读取 `~/.codex/sessions/**/*.jsonl`
   - 支持 env override：`TOKEN_USAGE_CODEX_ROOT`
@@ -90,6 +120,13 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
   - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
   - 可自动扫描常见目录，也可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
   - 当日志不在标准位置时，可设置 `TOKEN_USAGE_DISCOVERY_ROOTS`
+
+Top20 provider family 的适配规则是统一的：
+
+- 每个 provider family 都是独立 `source_id`
+- 它们共用同一套 exact log 发现机制：`TOKEN_USAGE_GENERIC_LOG_GLOBS` + `TOKEN_USAGE_DISCOVERY_ROOTS`
+- 解析时按 `provider` 字段优先，其次按 `model` 名回退识别
+- `generic-openai-compatible` 只在您显式点名时才参与，避免默认 report 把同一批 API log 重复算两遍
 
 闭源桌面端这条线现在不是“拍脑袋猜目录”，而是：
 

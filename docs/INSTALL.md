@@ -66,6 +66,12 @@ export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/*.jsonl,$HOME/logs/*.json"
 export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.local/share"
 ```
 
+说明：
+
+- 这组配置不只给 `generic-openai-compatible` 用，也会驱动 Top20 provider family source 自动拆分。
+- 也就是说，只要 exact log 里带有 `provider / model / usage`，CLI 就会自动分流到 `openai-api / anthropic-api / kimi-api / glm-api / qwen-api ...` 这类独立来源。
+- `generic-openai-compatible` 现在主要用于您手动指定 `--source generic-openai-compatible` 做补漏或诊断。
+
 ### OpenCode CLI / 本地 roots
 
 ```bash

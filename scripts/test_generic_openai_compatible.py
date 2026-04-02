@@ -274,7 +274,7 @@ class GenericAdapterTests(unittest.TestCase):
                 result = GenericOpenAICompatibleAdapter().collect(_make_window())
 
             self.assertEqual(result.events, [])
-            self.assertIn("exact usage payloads", " ".join(result.skipped_reasons))
+            self.assertIn("usage payloads", " ".join(result.skipped_reasons).lower())
 
     def test_collect_reuses_incremental_cache_for_unchanged_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

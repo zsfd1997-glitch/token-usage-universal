@@ -66,6 +66,12 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
+            env["TOKEN_USAGE_CODEX_ROOT"] = str(root / "unused-codex")
+            env["TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT"] = str(root / "unused-claude-transcripts")
+            env["TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT"] = str(root / "unused-claude-local-agent")
+            env["TOKEN_USAGE_OPENCODE_ROOTS"] = str(root / "unused-opencode")
+            env["TOKEN_USAGE_OPENCODE_BIN"] = str(root / "missing-opencode")
+            env["TOKEN_USAGE_MINIMAX_AGENT_ROOT"] = str(root / "unused-minimax")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -91,6 +97,41 @@ class CliIntegrationTests(unittest.TestCase):
             self.assertEqual(payload["report"]["summary"]["effective_tokens"], 2050)
             self.assertEqual(payload["report"]["summary"]["cost_accuracy"], "estimated")
             self.assertIsNotNone(payload["report"]["current_session"])
+
+    def test_report_default_sources_do_not_double_count_generic_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log_file = self._write_fixture(root)
+
+            env = os.environ.copy()
+            env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
+            env["TOKEN_USAGE_CODEX_ROOT"] = str(root / "unused-codex")
+            env["TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT"] = str(root / "unused-claude-transcripts")
+            env["TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT"] = str(root / "unused-claude-local-agent")
+            env["TOKEN_USAGE_OPENCODE_ROOTS"] = str(root / "unused-opencode")
+            env["TOKEN_USAGE_OPENCODE_BIN"] = str(root / "missing-opencode")
+            env["TOKEN_USAGE_MINIMAX_AGENT_ROOT"] = str(root / "unused-minimax")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI_PATH),
+                    "report",
+                    "--start",
+                    "2026-03-24T00:00:00-07:00",
+                    "--end",
+                    "2026-03-25T23:59:00-07:00",
+                    "--format",
+                    "json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["report"]["summary"]["total_tokens"], 2350)
 
     def test_report_by_day_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -299,10 +340,17 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(
-            source_ids,
-            ["codex", "claude-code", "opencode", "minimax-agent", "generic-openai-compatible"],
-        )
+        self.assertEqual(len(source_ids), 25)
+        self.assertIn("codex", source_ids)
+        self.assertIn("claude-code", source_ids)
+        self.assertIn("opencode", source_ids)
+        self.assertIn("minimax-agent", source_ids)
+        self.assertIn("openai-api", source_ids)
+        self.assertIn("anthropic-api", source_ids)
+        self.assertIn("moonshot-kimi-api", source_ids)
+        self.assertIn("zhipu-glm-api", source_ids)
+        self.assertIn("qwen-api", source_ids)
+        self.assertIn("generic-openai-compatible", source_ids)
         self.assertIn("overall_status", payload)
 
     def test_explore_requires_tty(self) -> None:

@@ -231,6 +231,10 @@ description: "Use when the user asks to view local token usage, summarize today'
 - 对闭源桌面端优先找本地原生真源，例如 `CLI export`、`Chromium Cache_Data`、本地 session artifacts。
 - 如果当前只能确认“客户端存在，但缓存里没有 token 真源”，必须明确报出来，不能伪装成已支持。
 
+5. `Provider-family split`
+- 对 Top20 级 API/provider family 要拆成独立 `source_id`，不能长期堆在一个 `generic` 来源里。
+- `generic-openai-compatible` 只作为手动 fallback / diagnose 入口，不默认参与总览，避免和独立 provider family 重复计数。
+
 ## 维护者命令
 
 这一节是给维护者 / 开发者 / 调试者看的。
