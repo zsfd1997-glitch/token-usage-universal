@@ -65,6 +65,7 @@ class CliIntegrationTests(unittest.TestCase):
 
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -97,6 +98,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -128,6 +130,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -155,6 +158,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -184,6 +188,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -214,6 +219,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -256,6 +262,7 @@ class CliIntegrationTests(unittest.TestCase):
             log_file = self._write_fixture(root)
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
+            env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
             result = subprocess.run(
                 [
                     sys.executable,
@@ -292,7 +299,10 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(source_ids, ["codex", "claude-code", "generic-openai-compatible"])
+        self.assertEqual(
+            source_ids,
+            ["codex", "claude-code", "opencode", "minimax-agent", "generic-openai-compatible"],
+        )
         self.assertIn("overall_status", payload)
 
     def test_explore_requires_tty(self) -> None:

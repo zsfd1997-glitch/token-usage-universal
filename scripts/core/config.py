@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from pathlib import Path
 
 
 TOKEN_USAGE_CODEX_ROOT_ENV = "TOKEN_USAGE_CODEX_ROOT"
 TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV = "TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT"
 TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV = "TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT"
+TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV = "TOKEN_USAGE_MINIMAX_AGENT_ROOT"
+TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
+TOKEN_USAGE_OPENCODE_ROOTS_ENV = "TOKEN_USAGE_OPENCODE_ROOTS"
 TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV = "TOKEN_USAGE_GENERIC_LOG_GLOBS"
+TOKEN_USAGE_DISCOVERY_ROOTS_ENV = "TOKEN_USAGE_DISCOVERY_ROOTS"
 TOKEN_USAGE_CACHE_ROOT_ENV = "TOKEN_USAGE_CACHE_ROOT"
 _WINDOWS_ENV_RE = re.compile(r"%([^%]+)%")
 
@@ -43,6 +48,127 @@ def default_claude_local_agent_root(
     )
 
 
+def default_minimax_agent_root(
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    appdata: str | None = None,
+    platform_name: str | None = None,
+) -> Path:
+    target_os = os_name or os.name
+    home_path = home or Path.home()
+    if target_os == "nt":
+        appdata_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
+        base = Path(appdata_text) if appdata_text else home_path / "AppData" / "Roaming"
+        return base / "MiniMax Agent"
+    if (platform_name or sys.platform) == "darwin":
+        return home_path / "Library" / "Application Support" / "MiniMax Agent"
+    return home_path / ".config" / "MiniMax Agent"
+
+
+def default_opencode_roots(
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    appdata: str | None = None,
+    localappdata: str | None = None,
+    platform_name: str | None = None,
+) -> list[Path]:
+    target_os = os_name or os.name
+    home_path = home or Path.home()
+    if target_os == "nt":
+        roots: list[Path] = []
+        roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
+        local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
+        for base_text in (roaming_text, local_text):
+            if not base_text:
+                continue
+            base = Path(base_text)
+            roots.extend(
+                [
+                    base / "OpenCode",
+                    base / "ai.opencode.desktop",
+                    base / "opencode",
+                ]
+            )
+        if roots:
+            return roots
+        return [
+            home_path / "AppData" / "Roaming" / "OpenCode",
+            home_path / "AppData" / "Roaming" / "ai.opencode.desktop",
+            home_path / "AppData" / "Local" / "opencode",
+        ]
+    roots = [
+        home_path / ".config" / "opencode",
+        home_path / ".local" / "state" / "opencode",
+        home_path / ".local" / "share" / "opencode",
+        home_path / ".opencode",
+    ]
+    if (platform_name or sys.platform) == "darwin":
+        roots.extend(
+            [
+                home_path / "Library" / "Application Support" / "OpenCode",
+                home_path / "Library" / "Application Support" / "ai.opencode.desktop",
+            ]
+        )
+    return roots
+
+
+def default_cache_root(
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    localappdata: str | None = None,
+    appdata: str | None = None,
+    platform_name: str | None = None,
+) -> Path:
+    target_os = os_name or os.name
+    home_path = home or Path.home()
+    if target_os == "nt":
+        local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
+        roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
+        base = Path(local_text or roaming_text) if (local_text or roaming_text) else home_path / "AppData" / "Local"
+        return base / "token-usage-universal" / "cache"
+    if (platform_name or sys.platform) == "darwin":
+        return home_path / "Library" / "Caches" / "token-usage-universal"
+    return home_path / ".cache" / "token-usage-universal"
+
+
+def default_discovery_roots(
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    appdata: str | None = None,
+    localappdata: str | None = None,
+) -> list[Path]:
+    target_os = os_name or os.name
+    home_path = home or Path.home()
+    if target_os == "nt":
+        roots: list[Path] = []
+        local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
+        roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
+        if local_text:
+            roots.append(Path(local_text))
+        if roaming_text:
+            roots.append(Path(roaming_text))
+        if not roots:
+            roots.extend(
+                [
+                    home_path / "AppData" / "Local",
+                    home_path / "AppData" / "Roaming",
+                ]
+            )
+        return roots
+    roots = [
+        home_path / ".config",
+        home_path / ".local" / "state",
+        home_path / ".local" / "share",
+    ]
+    if sys.platform == "darwin":
+        roots.append(home_path / "Library" / "Application Support")
+    return roots
+
+
 ENVIRONMENT_VARIABLES = (
     {
         "name": TOKEN_USAGE_CODEX_ROOT_ENV,
@@ -60,14 +186,34 @@ ENVIRONMENT_VARIABLES = (
         "default": lambda: _path_text(default_claude_local_agent_root()),
     },
     {
+        "name": TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV,
+        "description": "Override the MiniMax Agent desktop data directory.",
+        "default": lambda: _path_text(default_minimax_agent_root()),
+    },
+    {
+        "name": TOKEN_USAGE_OPENCODE_BIN_ENV,
+        "description": "Override the OpenCode CLI executable used for session export and stats.",
+        "default": lambda: "opencode",
+    },
+    {
+        "name": TOKEN_USAGE_OPENCODE_ROOTS_ENV,
+        "description": "Comma-separated OpenCode roots to scan for local logs, storage, and desktop state.",
+        "default": lambda: ",".join(_path_text(path) for path in default_opencode_roots()),
+    },
+    {
         "name": TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV,
-        "description": "Comma-separated JSON/JSONL glob patterns for generic exact logs.",
+        "description": "Comma-separated JSON/JSONL glob patterns for OpenAI/Anthropic-compatible exact usage logs.",
         "default": lambda: "",
+    },
+    {
+        "name": TOKEN_USAGE_DISCOVERY_ROOTS_ENV,
+        "description": "Comma-separated roots for auto-discovering generic API usage logs when they do not live in standard locations.",
+        "default": lambda: ",".join(_path_text(path) for path in default_discovery_roots()),
     },
     {
         "name": TOKEN_USAGE_CACHE_ROOT_ENV,
         "description": "Override the token-usage-universal incremental cache directory.",
-        "default": lambda: _path_text(Path.home() / ".codex" / "cache" / "token-usage-universal"),
+        "default": lambda: _path_text(default_cache_root()),
     },
 )
 

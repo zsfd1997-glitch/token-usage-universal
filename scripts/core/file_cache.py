@@ -6,7 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from core.config import TOKEN_USAGE_CACHE_ROOT_ENV
+from core.config import TOKEN_USAGE_CACHE_ROOT_ENV, default_cache_root
 from core.models import UsageEvent
 
 
@@ -17,7 +17,7 @@ def _default_cache_root() -> Path:
     raw = os.environ.get(TOKEN_USAGE_CACHE_ROOT_ENV, "").strip()
     if raw:
         return Path(os.path.expanduser(raw))
-    return Path.home() / ".codex" / "cache" / "token-usage-universal"
+    return default_cache_root()
 
 
 def _event_from_dict(payload: dict[str, object]) -> UsageEvent:

@@ -9,9 +9,9 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 ## 成品形态
 
-- 对外成品: `token-usage-universal skill`
+- 对外成品: `独立 Python CLI`，也可被 skill / agent / launcher 复用
 - 内部实现: `scripts/token_usage.py` 这个 deterministic CLI core
-- v1 决策: 不把它作为独立品牌 CLI 单独发布；CLI 只作为 skill 的稳定运行时和后续可提取边界
+- `Codex skill` 只是可选包装层，不是唯一运行方式
 - `Task Master` 关系: 仅是可选规划工具，不是运行时依赖，也不是发布门槛
 
 ## 何时使用
@@ -20,6 +20,7 @@ description: "Use when the user asks to view local token usage, summarize today'
 - 用户问“最近 7 天 token 用量”
 - 用户问“按来源 / 按项目统计 token”
 - 用户问“为什么 Claude / Codex / 其他客户端没统计到”
+- 用户问“为什么 OpenCode / MiniMax Agent / 其他桌面端没统计到”
 - 用户要求一个极简、可推广、基于本地日志真源的 usage 统计能力
 
 ## 更丰富的触发说法
@@ -226,6 +227,10 @@ description: "Use when the user asks to view local token usage, summarize today'
 3. `Source-first`
 - 以日志来源适配，不以模型名适配。
 
+4. `Native-client-first`
+- 对闭源桌面端优先找本地原生真源，例如 `CLI export`、`Chromium Cache_Data`、本地 session artifacts。
+- 如果当前只能确认“客户端存在，但缓存里没有 token 真源”，必须明确报出来，不能伪装成已支持。
+
 ## 维护者命令
 
 这一节是给维护者 / 开发者 / 调试者看的。
@@ -233,34 +238,33 @@ description: "Use when the user asks to view local token usage, summarize today'
 普通用户不需要输入这些命令；用户只要直接提需求即可。
 
 ```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export TOKEN_USAGE_SKILL="$CODEX_HOME/skills/token-usage-universal"
-
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --by model
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --by day
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --trend 7d
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --calendar month --month 2026-03
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --current-session
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --session <session-id>
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --plain-ascii
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --last 7d --by source
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --by project
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" explore
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" sources
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --today
+python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py report --today --by model
+python3 scripts/token_usage.py report --today --by day
+python3 scripts/token_usage.py report --trend 7d
+python3 scripts/token_usage.py report --calendar month --month 2026-03
+python3 scripts/token_usage.py report --current-session
+python3 scripts/token_usage.py report --session <session-id>
+python3 scripts/token_usage.py report --today --plain-ascii
+python3 scripts/token_usage.py report --last 7d --by source
+python3 scripts/token_usage.py report --today --by project
+python3 scripts/token_usage.py explore
+python3 scripts/token_usage.py health
+python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py diagnose --source codex --today
 ```
 
-如果后续要把它抽成独立 CLI，应该复用这套 CLI contract，而不是再造一套并行产品入口。
+如果被别的 agent / skill / launcher 复用，直接调用 `scripts/token_usage.py` 即可，不要求宿主一定存在 `~/.codex/skills`。
 
 ## 当前支持
 
 - `codex`: `exact`
   - 读取 `~/.codex/sessions/**/*.jsonl`
   - 基于 `token_count.info.total_token_usage` 的累计变化量精确统计
-- `generic-openai-compatible`: `exact` when configured
-  - 通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式指定日志文件 glob
+- `generic-openai-compatible`: `exact` when configured or auto-discovered
+  - 兼容 OpenAI-compatible / Anthropic-compatible usage 结构
+  - 可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式指定日志文件 glob
+  - 也可通过 `TOKEN_USAGE_DISCOVERY_ROOTS` 扩展自动发现根目录
   - 只接受带明确 usage 数值和时间戳的 JSON / JSONL
 - `claude-code`: `exact` when token-bearing local JSON was captured, otherwise `diagnose`
   - 默认适配 macOS `~/Library/Application Support/Claude/local-agent-mode-sessions/**` 与 Windows `%APPDATA%\Claude\local-agent-mode-sessions\**`
@@ -273,14 +277,14 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --to
 
 - 现在已按跨平台路径处理，不再只按 `/` 解析项目路径，Windows 的 `C:\...` 项目名也能正确显示成最后一级目录。
 - `codex` 默认根目录仍是用户主目录下的 `.codex/sessions`，Windows 下也可直接用 `%USERPROFILE%/.codex/sessions` 这类写法。
-- `generic-openai-compatible` 现在支持 `%USERPROFILE%`、`%APPDATA%` 这类 Windows 风格环境变量占位。
+- `generic-openai-compatible` 现在支持 `%USERPROFILE%`、`%APPDATA%` 这类 Windows 风格环境变量占位，也支持自定义自动发现根目录。
 - `claude-code` 默认会优先适配 Windows 常见路径 `%APPDATA%\Claude\local-agent-mode-sessions`；如果您的安装位置不同，仍然建议用 env override 指明。
 - 结论：Windows 环境不要求联网，也不要求访问百度；只要本地日志可读、Python 可运行，就可以使用。
 
 ## 当前可复用性结论
 
 - 别人现在可以直接复用 `codex` 路径能力，只要本机也使用标准 `~/.codex/sessions`。
-- `generic-openai-compatible` 也能复用，但需要自己配置 `TOKEN_USAGE_GENERIC_LOG_GLOBS`。
+- `generic-openai-compatible` 也能复用；优先靠自动发现，必要时再配置 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 或 `TOKEN_USAGE_DISCOVERY_ROOTS`。
 - `claude-code` 现在已同时覆盖 macOS 和 Windows 常见默认真源路径；如果安装位置不同，再用 env override 即可。
 - 结论：这个 skill 现在已经具备跨平台路径兼容、env override 和 onboarding `health` 自检，不再要求第二位开发者手改源码才能接入。
 
@@ -288,7 +292,8 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --to
 
 ```bash
 export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/path/to/*.jsonl,$HOME/path/to/*.json"
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --source generic-openai-compatible
+export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.local/share"
+python3 scripts/token_usage.py report --today --source generic-openai-compatible
 ```
 
 ## 自检与路径覆写
@@ -297,7 +302,7 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today --source gene
 export TOKEN_USAGE_CODEX_ROOT="$HOME/path/to/codex/sessions"
 export TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT="$HOME/path/to/claude/transcripts"
 export TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="$HOME/path/to/local-agent-mode-sessions"
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
+python3 scripts/token_usage.py health
 ```
 
 Windows 常见写法例如：
@@ -306,7 +311,8 @@ Windows 常见写法例如：
 $env:TOKEN_USAGE_CODEX_ROOT="%USERPROFILE%\.codex\sessions"
 $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
 $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
-python "$env:CODEX_HOME\skills\token-usage-universal\scripts\token_usage.py" health
+$env:TOKEN_USAGE_DISCOVERY_ROOTS="%APPDATA%,%LOCALAPPDATA%"
+python .\scripts\token_usage.py health
 ```
 
 ## 输出形态

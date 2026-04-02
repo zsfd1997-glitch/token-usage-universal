@@ -19,7 +19,13 @@ from core.config import (
     TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
     TOKEN_USAGE_CODEX_ROOT_ENV,
+    TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV,
+    TOKEN_USAGE_OPENCODE_BIN_ENV,
+    TOKEN_USAGE_OPENCODE_ROOTS_ENV,
     default_claude_local_agent_root,
+    default_cache_root,
+    default_minimax_agent_root,
+    default_opencode_roots,
 )
 from core.health import build_health_report
 from core.models import SourceCollectResult, SourceDetection
@@ -104,6 +110,35 @@ class EnvironmentOverrideTests(unittest.TestCase):
 
         self.assertEqual(path, Path("C:/Users/tester/AppData/Roaming/Claude/local-agent-mode-sessions"))
 
+    def test_default_cache_root_is_not_tied_to_codex(self) -> None:
+        path = default_cache_root(
+            os_name="nt",
+            home=Path("/unused"),
+            localappdata="C:/Users/tester/AppData/Local",
+        )
+
+        self.assertEqual(path, Path("C:/Users/tester/AppData/Local/token-usage-universal/cache"))
+
+    def test_windows_default_minimax_agent_root_prefers_appdata(self) -> None:
+        path = default_minimax_agent_root(
+            os_name="nt",
+            home=Path("/unused"),
+            appdata="C:/Users/tester/AppData/Roaming",
+        )
+
+        self.assertEqual(path, Path("C:/Users/tester/AppData/Roaming/MiniMax Agent"))
+
+    def test_windows_default_opencode_roots_include_roaming_and_local(self) -> None:
+        roots = default_opencode_roots(
+            os_name="nt",
+            home=Path("/unused"),
+            appdata="C:/Users/tester/AppData/Roaming",
+            localappdata="C:/Users/tester/AppData/Local",
+        )
+
+        self.assertIn(Path("C:/Users/tester/AppData/Roaming/OpenCode"), roots)
+        self.assertIn(Path("C:/Users/tester/AppData/Local/opencode"), roots)
+
 
 class HealthReportTests(unittest.TestCase):
     def test_health_report_marks_partial_and_includes_next_steps(self) -> None:
@@ -111,6 +146,8 @@ class HealthReportTests(unittest.TestCase):
             [
                 _result("codex", available=True, summary="ready"),
                 _result("claude-code", available=False, summary="missing timing"),
+                _result("opencode", available=False, summary="missing cli"),
+                _result("minimax-agent", available=False, summary="missing cache payload"),
                 _result("generic-openai-compatible", available=False, summary="set env"),
             ]
         )
@@ -120,7 +157,15 @@ class HealthReportTests(unittest.TestCase):
         self.assertGreaterEqual(len(report["next_steps"]), 3)
         self.assertIn("local-agent-mode-sessions", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_OPENCODE_BIN", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_OPENCODE_ROOTS", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_MINIMAX_AGENT_ROOT", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_GENERIC_LOG_GLOBS", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_DISCOVERY_ROOTS", " ".join(report["next_steps"]))
+        self.assertEqual(
+            report["recommended_commands"][0],
+            "python3 scripts/token_usage.py health",
+        )
 
 
 if __name__ == "__main__":

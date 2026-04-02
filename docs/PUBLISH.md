@@ -2,14 +2,14 @@
 
 ## 目标
 
-把当前 skill 整理成一个适合直接推到 GitHub 的仓库目录。
+把当前仓库整理成一个适合直接推到 GitHub 的独立 CLI / skill runtime 项目目录。
 
 ## 方式一：直接把当前目录作为仓库根
 
-如果您就在 skill 根目录操作：
+如果您就在仓库根目录操作：
 
 ```bash
-cd ~/.codex/skills/token-usage-universal
+cd /path/to/token-usage-universal
 git init
 git add .
 git commit -m "Prepare token-usage-universal skill for GitHub"

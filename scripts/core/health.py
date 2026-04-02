@@ -20,9 +20,27 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
             "Windows 默认在 %APPDATA%\\Claude\\local-agent-mode-sessions，路径不同就设 TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT。"
         )
 
+    opencode = by_source.get("opencode")
+    if opencode and not opencode.available:
+        steps.append(
+            "OpenCode 优先走官方 CLI export；如 CLI 不在 PATH，请设置 TOKEN_USAGE_OPENCODE_BIN；"
+            "如果本地数据目录不在默认位置，请设置 TOKEN_USAGE_OPENCODE_ROOTS。"
+        )
+
+    minimax = by_source.get("minimax-agent")
+    if minimax and not minimax.available:
+        steps.append(
+            "MiniMax Agent 目前走桌面端 Chromium Cache_Data exact 解析；"
+            "mac 默认在 ~/Library/Application Support/MiniMax Agent，Windows 常见在 %APPDATA%\\MiniMax Agent，"
+            "路径不同就设 TOKEN_USAGE_MINIMAX_AGENT_ROOT。"
+        )
+
     generic = by_source.get("generic-openai-compatible")
     if generic and not generic.available:
-        steps.append("如要接入通用 OpenAI-compatible 日志，请设置 TOKEN_USAGE_GENERIC_LOG_GLOBS。")
+        steps.append(
+            "如要接入通用 API exact 日志，优先确认常见目录是否已自动发现；"
+            "若日志不在标准位置，请设置 TOKEN_USAGE_GENERIC_LOG_GLOBS 或 TOKEN_USAGE_DISCOVERY_ROOTS。"
+        )
 
     steps.append("先运行 sources 看来源状态，再运行 report --today 拿今日主结论。")
     return steps
@@ -51,9 +69,9 @@ def build_health_report(results: list[SourceCollectResult]) -> dict[str, object]
         "sources": [item.as_dict() for item in detections],
         "environment_variables": environment_variable_statuses(),
         "recommended_commands": [
-            'python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health',
-            'python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" sources',
-            'python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today',
+            "python3 scripts/token_usage.py health",
+            "python3 scripts/token_usage.py sources",
+            "python3 scripts/token_usage.py report --today",
         ],
         "next_steps": _next_steps(detections),
     }

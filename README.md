@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml)
 
-一个面向本地 AI 工作流的 `token usage skill`。
+一个面向本地 AI 工作流的 `token usage CLI / skill runtime`。
 
 它回答的不是“账单页上写了什么”，而是：
 
@@ -13,9 +13,9 @@
 
 ## 成品定位
 
-- 对外成品：`Codex skill`
+- 对外成品：`独立 Python CLI`，可被不同 agent / skill / launcher 复用
+- 兼容形态：`Codex skill` 只是可选包装层，不是唯一运行方式
 - 内部运行时：`Python CLI core`
-- 非目标：不把 v1 包装成独立品牌 CLI 产品
 
 `Task Master` 不是本 skill 的运行时依赖。
 它最多只是可选的内部规划工具，用来把 PRD 拆成任务；即使完全不装 `Task Master`，这个 skill 也可以安装、健康检查、统计和诊断。
@@ -23,41 +23,40 @@
 ## 适用场景
 
 - 查看今天或最近几天的本地 token 用量
-- 对比 `codex / claude-code / generic-openai-compatible` 等来源
+- 对比 `codex / claude-code / generic-api logs` 等来源
+- 统计经由 `MiniMax / Kimi / GLM / Qwen / OpenAI / Anthropic` 等 provider 返回的 exact usage
 - 按项目、模型、会话做 usage 归因
-- 诊断为什么某个来源当前没有被统计到
+- 诊断为什么某个本地客户端或日志来源当前没有被统计到
 
 ## 快速安装
 
-最直接的安装方式，是把这个仓库 clone 到您的 Codex skills 目录：
+推荐直接把仓库 clone 到任意工作目录：
 
 ```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-git clone https://github.com/zsfd1997-glitch/token-usage-universal.git \
-  "$CODEX_HOME/skills/token-usage-universal"
+git clone https://github.com/zsfd1997-glitch/token-usage-universal.git
+cd token-usage-universal
 ```
 
-如果您已经在本地拿到源码目录，也可以直接复制过去：
-
-```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-mkdir -p "$CODEX_HOME/skills"
-cp -R ./token-usage-universal "$CODEX_HOME/skills/token-usage-universal"
-```
+如果您确实要把它挂进 Codex skills，也可以额外复制一份过去，但这不是必需步骤。
 
 ## 快速开始
 
-```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export TOKEN_USAGE_SKILL="$CODEX_HOME/skills/token-usage-universal"
+默认从仓库根目录运行：
 
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" sources
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --today
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --trend 7d
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --calendar month
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" report --current-session
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --today
+```bash
+python3 scripts/token_usage.py health
+python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py report --trend 7d
+python3 scripts/token_usage.py report --calendar month
+python3 scripts/token_usage.py report --current-session
+python3 scripts/token_usage.py diagnose --source codex --today
+```
+
+如果您是通过别的 agent / skill / launcher 调用，只需要让对方执行这个脚本即可：
+
+```bash
+python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 ```
 
 建议第一次先跑 `health`，它会告诉您：
@@ -76,8 +75,28 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --to
   - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`（Windows 常见等价目录是 `%APPDATA%\Claude\local-agent-mode-sessions`）
   - exact 文件支持旧版 `timing.json`，也支持任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON
   - 支持 env override：`TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT`、`TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT`
+- `opencode`
+  - 优先走官方 `opencode session list` + `opencode export [sessionID]`
+  - 本地会同时扫描 `~/.config/opencode`、`~/.local/share/opencode`、`~/.local/state/opencode`、桌面端 app data，用于判断“有没有会话/有没有真源/CLI 是否缺失”
+  - 支持 env override：`TOKEN_USAGE_OPENCODE_BIN`、`TOKEN_USAGE_OPENCODE_ROOTS`
+- `minimax-agent`
+  - 原生解析桌面端 `Chromium Cache_Data` 里的 MiniMax Agent HTTP JSON 响应
+  - 当前 exact 依赖客户端是否把 token-bearing chat/completion 响应缓存到本地
+  - mac 默认根目录：`~/Library/Application Support/MiniMax Agent`
+  - Windows 常见根目录：`%APPDATA%\MiniMax Agent`
+  - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
 - `generic-openai-compatible`
-  - 通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
+  - 当前显示名是 `Generic API Compatible`
+  - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
+  - 可自动扫描常见目录，也可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
+  - 当日志不在标准位置时，可设置 `TOKEN_USAGE_DISCOVERY_ROOTS`
+
+闭源桌面端这条线现在不是“拍脑袋猜目录”，而是：
+
+- 先识别客户端本地真实数据目录
+- 再走客户端对应的原生真源路径
+- Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
+- 拿不到 exact 时明确告诉您是“没 parser”还是“当前缓存里确实没有 token 真源”
 
 ## Claude Code 真源矩阵
 
@@ -94,14 +113,23 @@ python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" diagnose --source codex --to
 | `TOKEN_USAGE_CODEX_ROOT` | 覆写 Codex session 根目录 |
 | `TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT` | 覆写 Claude transcript 目录 |
 | `TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT` | 覆写 Claude local-agent-mode-sessions 目录 |
-| `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置 generic exact log 的逗号分隔 glob |
+| `TOKEN_USAGE_MINIMAX_AGENT_ROOT` | 覆写 MiniMax Agent 桌面端数据目录 |
+| `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |
+| `TOKEN_USAGE_OPENCODE_ROOTS` | 覆写 OpenCode 本地 roots 列表 |
+| `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置兼容 API exact log 的逗号分隔 glob |
+| `TOKEN_USAGE_DISCOVERY_ROOTS` | 覆写兼容 API 日志自动发现根目录 |
+| `TOKEN_USAGE_CACHE_ROOT` | 覆写本地增量缓存目录 |
 
 示例：
 
 ```bash
 export TOKEN_USAGE_CODEX_ROOT="$HOME/work/codex-sessions"
+export TOKEN_USAGE_OPENCODE_BIN="$HOME/.local/bin/opencode"
+export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/opencode"
+export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax Agent"
 export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/openai/*.jsonl,$HOME/logs/openai/*.json"
-python3 "$TOKEN_USAGE_SKILL/scripts/token_usage.py" health
+export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.local/share"
+python3 scripts/token_usage.py health
 ```
 
 Windows PowerShell 常见写法：
@@ -109,8 +137,12 @@ Windows PowerShell 常见写法：
 ```powershell
 $env:TOKEN_USAGE_CODEX_ROOT="%USERPROFILE%\.codex\sessions"
 $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
+$env:TOKEN_USAGE_MINIMAX_AGENT_ROOT="%APPDATA%\MiniMax Agent"
+$env:TOKEN_USAGE_OPENCODE_BIN="%USERPROFILE%\.local\bin\opencode.exe"
+$env:TOKEN_USAGE_OPENCODE_ROOTS="%USERPROFILE%\.config\opencode,%USERPROFILE%\.local\share\opencode"
 $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
-python "$env:CODEX_HOME\skills\token-usage-universal\scripts\token_usage.py" health
+$env:TOKEN_USAGE_DISCOVERY_ROOTS="%APPDATA%,%LOCALAPPDATA%"
+python .\scripts\token_usage.py health
 ```
 
 ## 关键命令

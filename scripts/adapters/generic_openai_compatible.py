@@ -7,89 +7,93 @@ from pathlib import Path
 
 from adapters.base import BaseAdapter
 from core.day_rollup import build_day_rollups, day_key, split_window_days
-from core.config import TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV, expand_path_text
+from core.config import (
+    TOKEN_USAGE_DISCOVERY_ROOTS_ENV,
+    TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV,
+    default_discovery_roots,
+    expand_path_text,
+)
 from core.file_cache import FileEventCache
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.pricing import PricingDatabase
 from core.time_window import parse_timestamp, within_window
-
-
-_TIMESTAMP_KEYS = ("timestamp", "created_at", "time")
-_SESSION_KEYS = ("session_id", "conversation_id", "request_id", "id")
-_PROJECT_KEYS = ("project_path", "cwd", "project")
-_PROVIDER_KEYS = ("provider", "model_provider", "vendor")
-_MODEL_KEYS = ("model", "model_name")
+from core.usage_records import (
+    MODEL_KEYS,
+    PROJECT_KEYS,
+    PROVIDER_KEYS,
+    SESSION_KEYS,
+    TIMESTAMP_KEYS,
+    find_first_value,
+    find_usage_dict,
+    normalize_usage,
+)
+_DISCOVERY_KEYWORDS = (
+    "anthropic",
+    "bigmodel",
+    "dashscope",
+    "glm",
+    "helicone",
+    "kimi",
+    "langfuse",
+    "litellm",
+    "llm",
+    "minimax",
+    "moonshot",
+    "openai",
+    "opencode",
+    "qwen",
+    "zhipu",
+)
+_DISCOVERY_FILE_PATTERNS = (
+    "*.jsonl",
+    "*export*.json",
+    "*export*.jsonl",
+    "*history*.jsonl",
+    "*response*.json",
+    "*response*.jsonl",
+    "*session*.json",
+    "*session*.jsonl",
+    "*usage*.json",
+    "*usage*.jsonl",
+    "data/**/*.json",
+    "data/**/*.jsonl",
+    "export*/**/*.json",
+    "export*/**/*.jsonl",
+    "history/**/*.json",
+    "history/**/*.jsonl",
+    "log/**/*.json",
+    "log/**/*.jsonl",
+    "logs/**/*.json",
+    "logs/**/*.jsonl",
+    "session/**/*.json",
+    "session/**/*.jsonl",
+    "sessions/**/*.json",
+    "sessions/**/*.jsonl",
+    "telemetry/**/*.json",
+    "telemetry/**/*.jsonl",
+    "trace*/**/*.json",
+    "trace*/**/*.jsonl",
+)
+_MAX_DISCOVERED_FILES = 200
 
 
 def _flatten_candidates(raw_value: str) -> list[str]:
     return [item.strip() for item in raw_value.split(",") if item.strip()]
 
 
-def _find_first_value(node, keys: tuple[str, ...]):
-    if isinstance(node, dict):
-        for key in keys:
-            if key in node and node[key] not in (None, ""):
-                return node[key]
-        for value in node.values():
-            found = _find_first_value(value, keys)
-            if found not in (None, ""):
-                return found
-    elif isinstance(node, list):
-        for value in node:
-            found = _find_first_value(value, keys)
-            if found not in (None, ""):
-                return found
-    return None
-
-
-def _find_usage_dict(node):
-    if isinstance(node, dict):
-        has_input = "input_tokens" in node or "prompt_tokens" in node
-        has_output = "output_tokens" in node or "completion_tokens" in node
-        has_total = "total_tokens" in node
-        if has_total and (has_input or has_output):
-            return node
-        for value in node.values():
-            found = _find_usage_dict(value)
-            if found:
-                return found
-    elif isinstance(node, list):
-        for value in node:
-            found = _find_usage_dict(value)
-            if found:
-                return found
-    return None
-
-
-def _normalize_usage(payload: dict[str, object]) -> dict[str, int]:
-    input_tokens = int(payload.get("input_tokens", payload.get("prompt_tokens", 0)) or 0)
-    cached_input_tokens = int(payload.get("cached_input_tokens", 0) or 0)
-    output_tokens = int(payload.get("output_tokens", payload.get("completion_tokens", 0)) or 0)
-    reasoning_tokens = int(
-        payload.get("reasoning_tokens", payload.get("reasoning_output_tokens", 0)) or 0
-    )
-    total_tokens = int(payload.get("total_tokens", input_tokens + output_tokens) or 0)
-    return {
-        "input_tokens": input_tokens,
-        "cached_input_tokens": cached_input_tokens,
-        "output_tokens": output_tokens,
-        "reasoning_tokens": reasoning_tokens,
-        "total_tokens": total_tokens,
-    }
-
-
 class GenericOpenAICompatibleAdapter(BaseAdapter):
     source_id = "generic-openai-compatible"
-    display_name = "Generic OpenAI Compatible"
-    provider = "openai-compatible"
+    display_name = "Generic API Compatible"
+    provider = "api-compatible"
     accuracy_level = "exact"
-    parser_version = "generic-openai-compatible-v1"
+    parser_version = "generic-api-compatible-v2"
 
     def __init__(self) -> None:
         self.glob_env = TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV
+        self.discovery_root_env = TOKEN_USAGE_DISCOVERY_ROOTS_ENV
         self.cache = FileEventCache()
 
-    def _resolve_paths(self) -> list[Path]:
+    def _resolve_explicit_paths(self) -> list[Path]:
         patterns = _flatten_candidates(os.environ.get(self.glob_env, ""))
         paths: list[Path] = []
         for pattern in patterns:
@@ -97,8 +101,71 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
             paths.extend(Path(match) for match in matches)
         return sorted({path for path in paths if path.is_file()})
 
+    def _resolve_discovery_roots(self) -> list[Path]:
+        configured = _flatten_candidates(os.environ.get(self.discovery_root_env, ""))
+        if configured:
+            return [Path(expand_path_text(item)).expanduser() for item in configured]
+        return default_discovery_roots()
+
+    def _candidate_bases(self) -> list[Path]:
+        configured = bool(_flatten_candidates(os.environ.get(self.discovery_root_env, "")))
+        bases: list[Path] = []
+        seen: set[Path] = set()
+        for root in self._resolve_discovery_roots():
+            if not root.exists() or not root.is_dir():
+                continue
+            if configured and root not in seen:
+                bases.append(root)
+                seen.add(root)
+            try:
+                children = list(root.iterdir())
+            except OSError:
+                continue
+            for child in children:
+                if not child.is_dir():
+                    continue
+                lowered = child.name.lower()
+                if any(keyword in lowered for keyword in _DISCOVERY_KEYWORDS) and child not in seen:
+                    bases.append(child)
+                    seen.add(child)
+        return bases
+
+    def _discover_paths(self) -> list[Path]:
+        discovered: set[Path] = set()
+        for base in self._candidate_bases():
+            for pattern in _DISCOVERY_FILE_PATTERNS:
+                try:
+                    for match in base.glob(pattern):
+                        if not match.is_file() or match.suffix not in {".json", ".jsonl"}:
+                            continue
+                        discovered.add(match)
+                        if len(discovered) >= _MAX_DISCOVERED_FILES:
+                            return sorted(discovered)
+                except OSError:
+                    continue
+        return sorted(discovered)
+
+    def _resolve_paths(self) -> list[Path]:
+        explicit = self._resolve_explicit_paths()
+        discovered = self._discover_paths()
+        return sorted({*explicit, *discovered})
+
+    def _path_has_exact_usage(self, path: Path) -> bool:
+        try:
+            for index, record in enumerate(self._iter_records(path)):
+                usage = find_usage_dict(record)
+                timestamp_value = find_first_value(record, TIMESTAMP_KEYS)
+                if usage and timestamp_value and normalize_usage(usage)["total_tokens"] > 0:
+                    return True
+                if index >= 19:
+                    break
+        except (OSError, json.JSONDecodeError):
+            return False
+        return False
+
     def detect(self) -> SourceDetection:
         configured_paths = self._resolve_paths()
+        ready_paths = [path for path in configured_paths if self._path_has_exact_usage(path)]
         if not configured_paths:
             return SourceDetection(
                 source_id=self.source_id,
@@ -107,9 +174,28 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
                 accuracy_level=self.accuracy_level,
                 supported=True,
                 available=False,
-                summary=f"set {self.glob_env} to enable explicit generic logs",
+                summary=(
+                    "no compatible usage logs found; set "
+                    f"{self.glob_env} for exact files or {self.discovery_root_env} for custom search roots"
+                ),
+            )
+        if not ready_paths:
+            return SourceDetection(
+                source_id=self.source_id,
+                display_name=self.display_name,
+                provider=self.provider,
+                accuracy_level=self.accuracy_level,
+                supported=True,
+                available=False,
+                summary=(
+                    "compatible logs were found, but none exposed exact usage payloads yet; "
+                    f"set {self.glob_env} to point at token-bearing JSON/JSONL files if needed"
+                ),
+                candidate_paths=[str(path) for path in configured_paths[:2]],
             )
 
+        has_explicit = bool(self._resolve_explicit_paths())
+        summary = "configured API usage logs found" if has_explicit else "auto-discovered compatible API usage logs"
         return SourceDetection(
             source_id=self.source_id,
             display_name=self.display_name,
@@ -117,8 +203,8 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
             accuracy_level=self.accuracy_level,
             supported=True,
             available=True,
-            summary="configured generic logs found",
-            candidate_paths=[str(path) for path in configured_paths[:2]],
+            summary=summary,
+            candidate_paths=[str(path) for path in ready_paths[:2]],
         )
 
     def _iter_records(self, path: Path):
@@ -145,14 +231,16 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
 
         try:
             for record in self._iter_records(path):
-                usage = _find_usage_dict(record)
-                timestamp_value = _find_first_value(record, _TIMESTAMP_KEYS)
+                usage = find_usage_dict(record)
+                timestamp_value = find_first_value(record, TIMESTAMP_KEYS)
                 if not usage or not timestamp_value:
                     continue
-                usage_values = _normalize_usage(usage)
+                usage_values = normalize_usage(usage)
+                if usage_values["total_tokens"] <= 0:
+                    continue
                 timestamp = parse_timestamp(str(timestamp_value), fallback_tz)
-                provider = str(_find_first_value(record, _PROVIDER_KEYS) or self.provider)
-                raw_model = _find_first_value(record, _MODEL_KEYS)
+                provider = str(find_first_value(record, PROVIDER_KEYS) or self.provider)
+                raw_model = find_first_value(record, MODEL_KEYS)
                 canonical_model = pricing.canonical_model(raw_model, provider) if raw_model else None
                 normalized_raw_model = pricing.normalize_model_name(raw_model) if raw_model else None
                 model_resolution = "unknown"
@@ -163,8 +251,8 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
                         source=self.source_id,
                         provider=provider,
                         timestamp=timestamp,
-                        session_id=str(_find_first_value(record, _SESSION_KEYS) or path.stem),
-                        project_path=_find_first_value(record, _PROJECT_KEYS),
+                        session_id=str(find_first_value(record, SESSION_KEYS) or path.stem),
+                        project_path=find_first_value(record, PROJECT_KEYS),
                         model=canonical_model or raw_model,
                         input_tokens=usage_values["input_tokens"],
                         cached_input_tokens=usage_values["cached_input_tokens"],
@@ -259,7 +347,7 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
             verification_issues.extend(file_issues)
 
         if not events:
-            verification_issues.append("no exact usage records found in configured generic logs")
+            verification_issues.append("no exact usage records found in compatible API logs")
 
         return SourceCollectResult(
             detection=detection,
@@ -315,7 +403,7 @@ class GenericOpenAICompatibleAdapter(BaseAdapter):
             verification_issues.extend(file_issues)
 
         if not events:
-            verification_issues.append("no exact usage records found in configured generic logs")
+            verification_issues.append("no exact usage records found in compatible API logs")
 
         return SourceCollectResult(
             detection=detection,

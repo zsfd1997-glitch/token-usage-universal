@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Internal CLI core for the token-usage-universal skill."""
+"""Standalone CLI runtime for token-usage-universal."""
 from __future__ import annotations
 
 import argparse
@@ -14,6 +14,8 @@ if str(SCRIPT_DIR) not in sys.path:
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.codex import CodexAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
+from adapters.minimax_agent import MiniMaxAgentAdapter
+from adapters.opencode import OpenCodeAdapter
 from ascii_hifi import render_diagnose, render_health, render_report, render_sources
 from core.health import build_health_report
 from core.aggregator import build_report
@@ -26,6 +28,8 @@ def _build_adapters():
     adapters = [
         CodexAdapter(),
         ClaudeCodeAdapter(),
+        OpenCodeAdapter(),
+        MiniMaxAgentAdapter(),
         GenericOpenAICompatibleAdapter(),
     ]
     return {adapter.source_id: adapter for adapter in adapters}
@@ -255,7 +259,7 @@ def command_explore(args) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Internal CLI core for the token-usage-universal skill"
+        description="Standalone CLI runtime for token-usage-universal"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

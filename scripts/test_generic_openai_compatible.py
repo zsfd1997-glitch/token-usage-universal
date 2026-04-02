@@ -16,7 +16,11 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
-from core.config import TOKEN_USAGE_CACHE_ROOT_ENV, TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV
+from core.config import (
+    TOKEN_USAGE_CACHE_ROOT_ENV,
+    TOKEN_USAGE_DISCOVERY_ROOTS_ENV,
+    TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV,
+)
 from core.models import TimeWindow
 
 
@@ -40,25 +44,78 @@ def _window(start: datetime, end: datetime, label: str = "Custom") -> TimeWindow
 
 
 class GenericAdapterTests(unittest.TestCase):
-    def test_detect_requires_explicit_glob_configuration(self) -> None:
-        with patch.dict(os.environ, {}, clear=True):
-            detection = GenericOpenAICompatibleAdapter().detect()
+    def test_detect_reports_missing_logs_when_custom_discovery_root_is_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(
+                os.environ,
+                {
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: tmp,
+                },
+                clear=True,
+            ):
+                detection = GenericOpenAICompatibleAdapter().detect()
 
         self.assertFalse(detection.available)
         self.assertEqual(detection.status, "not-found")
         self.assertIn(TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV, detection.summary)
 
+    def test_detect_can_auto_discover_matching_logs_from_custom_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            provider_root = root / "moonshot-telemetry"
+            log_file = provider_root / "logs" / "usage.jsonl"
+            log_file.parent.mkdir(parents=True)
+            log_file.write_text(
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-25T11:00:00-07:00",
+                        "provider": "moonshot",
+                        "model": "kimi-k2",
+                        "session_id": "auto-1",
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 30, "total_tokens": 130},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root),
+                },
+                clear=True,
+            ):
+                detection = GenericOpenAICompatibleAdapter().detect()
+
+        self.assertTrue(detection.available)
+        self.assertIn("auto-discovered", detection.summary)
+        self.assertIn(str(log_file), detection.candidate_paths[0])
+
     def test_detect_expands_windows_style_percent_variable_glob(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             log_file = root / "generic.jsonl"
-            log_file.write_text("{}", encoding="utf-8")
+            log_file.write_text(
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-25T11:00:00-07:00",
+                        "provider": "openai-compatible",
+                        "model": "deepseek-chat",
+                        "session_id": "windows-1",
+                        "usage": {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
 
             with patch.dict(
                 os.environ,
                 {
                     "GENERIC_LOG_ROOT": str(root),
                     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: "%GENERIC_LOG_ROOT%/*.jsonl",
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
                 },
                 clear=False,
             ):
@@ -117,7 +174,10 @@ class GenericAdapterTests(unittest.TestCase):
             env_value = str(log_file)
             with patch.dict(
                 os.environ,
-                {TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: env_value},
+                {
+                    TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: env_value,
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
+                },
                 clear=False,
             ):
                 result = GenericOpenAICompatibleAdapter().collect(_make_window())
@@ -132,6 +192,68 @@ class GenericAdapterTests(unittest.TestCase):
             self.assertEqual(result.events[1].output_tokens, 220)
             self.assertEqual(result.events[1].reasoning_tokens, 30)
 
+    def test_collect_reads_openai_responses_and_anthropic_cache_usage_shapes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log_file = root / "generic.jsonl"
+            log_file.write_text(
+                "\n".join(
+                    [
+                        json.dumps(
+                            {
+                                "type": "response.done",
+                                "response": {
+                                    "id": "resp_123",
+                                    "created_at": "2026-03-25T12:00:00-07:00",
+                                    "provider": "openai",
+                                    "model": "gpt-5",
+                                    "usage": {
+                                        "input_tokens": 132,
+                                        "output_tokens": 121,
+                                        "total_tokens": 253,
+                                        "input_token_details": {"cached_tokens": 64},
+                                    },
+                                },
+                            }
+                        ),
+                        json.dumps(
+                            {
+                                "created_at": "2026-03-25T12:05:00-07:00",
+                                "provider": "anthropic",
+                                "model": "claude-opus-4-1",
+                                "message": {
+                                    "id": "msg_456",
+                                    "usage": {
+                                        "input_tokens": 300,
+                                        "cache_read_input_tokens": 120,
+                                        "output_tokens": 90,
+                                    },
+                                },
+                            }
+                        ),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with patch.dict(
+                os.environ,
+                {
+                    TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
+                },
+                clear=False,
+            ):
+                result = GenericOpenAICompatibleAdapter().collect(_make_window())
+
+        self.assertEqual(len(result.events), 2)
+        self.assertEqual(result.events[0].cached_input_tokens, 64)
+        self.assertEqual(result.events[0].total_tokens, 253)
+        self.assertEqual(result.events[1].provider, "anthropic")
+        self.assertEqual(result.events[1].cached_input_tokens, 120)
+        self.assertEqual(result.events[1].total_tokens, 390)
+
     def test_collect_reports_no_exact_usage_when_records_lack_usage_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -143,13 +265,16 @@ class GenericAdapterTests(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file)},
+                {
+                    TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
+                },
                 clear=False,
             ):
                 result = GenericOpenAICompatibleAdapter().collect(_make_window())
 
             self.assertEqual(result.events, [])
-            self.assertIn("no exact usage records found", " ".join(result.verification_issues))
+            self.assertIn("exact usage payloads", " ".join(result.skipped_reasons))
 
     def test_collect_reuses_incremental_cache_for_unchanged_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -181,6 +306,7 @@ class GenericAdapterTests(unittest.TestCase):
                 os.environ,
                 {
                     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
                     TOKEN_USAGE_CACHE_ROOT_ENV: str(cache_root),
                 },
                 clear=False,
@@ -223,6 +349,7 @@ class GenericAdapterTests(unittest.TestCase):
                 os.environ,
                 {
                     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
                     TOKEN_USAGE_CACHE_ROOT_ENV: str(cache_root),
                 },
                 clear=False,
@@ -343,6 +470,7 @@ class GenericAdapterTests(unittest.TestCase):
                 os.environ,
                 {
                     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
                     TOKEN_USAGE_CACHE_ROOT_ENV: str(cache_root),
                 },
                 clear=False,
@@ -404,6 +532,7 @@ class GenericAdapterTests(unittest.TestCase):
                 os.environ,
                 {
                     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV: str(log_file),
+                    TOKEN_USAGE_DISCOVERY_ROOTS_ENV: str(root / "unused"),
                     TOKEN_USAGE_CACHE_ROOT_ENV: str(cache_root),
                 },
                 clear=False,
