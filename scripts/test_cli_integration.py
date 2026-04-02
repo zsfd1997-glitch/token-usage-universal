@@ -340,11 +340,17 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 25)
+        self.assertEqual(len(source_ids), 31)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
+        self.assertIn("claude-desktop", source_ids)
         self.assertIn("opencode", source_ids)
         self.assertIn("minimax-agent", source_ids)
+        self.assertIn("kimi-desktop", source_ids)
+        self.assertIn("glm-desktop", source_ids)
+        self.assertIn("qwen-desktop", source_ids)
+        self.assertIn("doubao-desktop", source_ids)
+        self.assertIn("perplexity-desktop", source_ids)
         self.assertIn("openai-api", source_ids)
         self.assertIn("anthropic-api", source_ids)
         self.assertIn("moonshot-kimi-api", source_ids)

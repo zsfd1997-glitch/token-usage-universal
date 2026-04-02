@@ -276,6 +276,17 @@ python3 scripts/token_usage.py diagnose --source codex --today
   - 该真源可精确提供 `total_tokens` 与完成时间，但通常不含 `input/output/cache` 拆分
   - 如果只有 `.claude.json / cowork_settings.json / manifest.json` 这类 session-config 文件，明确诊断为“有布局、没 token 真源”
   - 只有 transcript、没有 exact JSON 时，明确降级，不输出伪精确数据
+- `claude-desktop`: `exact` when token-bearing desktop API cache exists, otherwise `diagnose`
+  - 默认适配 macOS `~/Library/Application Support/Claude` 与 Windows `%APPDATA%\Claude`
+  - 原生解析 `Chromium Cache_Data`，并把 `IndexedDB / Local Storage` 当作桌面端痕迹诊断层
+  - 如果当前缓存快照没有 token-bearing API 响应，明确报“有桌面痕迹但没有 exact token 真源”
+- `minimax-agent`: `exact` when token-bearing desktop API cache exists, otherwise `diagnose`
+  - 默认适配 macOS `~/Library/Application Support/MiniMax Agent` 与 Windows `%APPDATA%\MiniMax Agent`
+  - 原生解析桌面端 `Chromium Cache_Data`
+- `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`: `diagnose-first`, `exact` when token-bearing desktop API cache exists
+  - 已拆成独立 `source_id`
+  - 统一走原生 `Chromium / Electron` 桌面适配框架，不再只靠 generic fallback
+  - 默认目录没命中时，分别用 `TOKEN_USAGE_KIMI_DESKTOP_ROOT / TOKEN_USAGE_GLM_DESKTOP_ROOT / TOKEN_USAGE_QWEN_DESKTOP_ROOT / TOKEN_USAGE_DOUBAO_DESKTOP_ROOT / TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
 
 ## Windows 支持
 
@@ -283,6 +294,7 @@ python3 scripts/token_usage.py diagnose --source codex --today
 - `codex` 默认根目录仍是用户主目录下的 `.codex/sessions`，Windows 下也可直接用 `%USERPROFILE%/.codex/sessions` 这类写法。
 - `generic-openai-compatible` 现在支持 `%USERPROFILE%`、`%APPDATA%` 这类 Windows 风格环境变量占位，也支持自定义自动发现根目录。
 - `claude-code` 默认会优先适配 Windows 常见路径 `%APPDATA%\Claude\local-agent-mode-sessions`；如果您的安装位置不同，仍然建议用 env override 指明。
+- `claude-desktop / minimax-agent / kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop` 也都按 Windows 常见 app-data 路径做了默认探测；如果安装位置不同，再用各自 env override。
 - 结论：Windows 环境不要求联网，也不要求访问百度；只要本地日志可读、Python 可运行，就可以使用。
 
 ## 当前可复用性结论
@@ -290,6 +302,7 @@ python3 scripts/token_usage.py diagnose --source codex --today
 - 别人现在可以直接复用 `codex` 路径能力，只要本机也使用标准 `~/.codex/sessions`。
 - `generic-openai-compatible` 也能复用；优先靠自动发现，必要时再配置 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 或 `TOKEN_USAGE_DISCOVERY_ROOTS`。
 - `claude-code` 现在已同时覆盖 macOS 和 Windows 常见默认真源路径；如果安装位置不同，再用 env override 即可。
+- 闭源桌面端这条线现在也有独立 source：`claude-desktop / minimax-agent / kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`。
 - 结论：这个 skill 现在已经具备跨平台路径兼容、env override 和 onboarding `health` 自检，不再要求第二位开发者手改源码才能接入。
 
 ## 显式配置 generic 日志
@@ -306,6 +319,9 @@ python3 scripts/token_usage.py report --today --source generic-openai-compatible
 export TOKEN_USAGE_CODEX_ROOT="$HOME/path/to/codex/sessions"
 export TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT="$HOME/path/to/claude/transcripts"
 export TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="$HOME/path/to/local-agent-mode-sessions"
+export TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="$HOME/Library/Application Support/Claude"
+export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax Agent"
+export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
 python3 scripts/token_usage.py health
 ```
 
@@ -314,6 +330,8 @@ Windows 常见写法例如：
 ```powershell
 $env:TOKEN_USAGE_CODEX_ROOT="%USERPROFILE%\.codex\sessions"
 $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
+$env:TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="%APPDATA%\Claude"
+$env:TOKEN_USAGE_MINIMAX_AGENT_ROOT="%APPDATA%\MiniMax Agent"
 $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
 $env:TOKEN_USAGE_DISCOVERY_ROOTS="%APPDATA%,%LOCALAPPDATA%"
 python .\scripts\token_usage.py health

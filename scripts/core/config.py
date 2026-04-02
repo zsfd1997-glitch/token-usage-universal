@@ -9,7 +9,13 @@ from pathlib import Path
 TOKEN_USAGE_CODEX_ROOT_ENV = "TOKEN_USAGE_CODEX_ROOT"
 TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV = "TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT"
 TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV = "TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT"
+TOKEN_USAGE_CLAUDE_DESKTOP_ROOT_ENV = "TOKEN_USAGE_CLAUDE_DESKTOP_ROOT"
 TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV = "TOKEN_USAGE_MINIMAX_AGENT_ROOT"
+TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV = "TOKEN_USAGE_KIMI_DESKTOP_ROOT"
+TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GLM_DESKTOP_ROOT"
+TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_QWEN_DESKTOP_ROOT"
+TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV = "TOKEN_USAGE_DOUBAO_DESKTOP_ROOT"
+TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV = "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
 TOKEN_USAGE_OPENCODE_ROOTS_ENV = "TOKEN_USAGE_OPENCODE_ROOTS"
 TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV = "TOKEN_USAGE_GENERIC_LOG_GLOBS"
@@ -64,6 +70,43 @@ def default_minimax_agent_root(
     if (platform_name or sys.platform) == "darwin":
         return home_path / "Library" / "Application Support" / "MiniMax Agent"
     return home_path / ".config" / "MiniMax Agent"
+
+
+def default_desktop_app_roots(
+    app_names: tuple[str, ...],
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    appdata: str | None = None,
+    localappdata: str | None = None,
+    platform_name: str | None = None,
+) -> list[Path]:
+    target_os = os_name or os.name
+    home_path = home or Path.home()
+    names = tuple(dict.fromkeys(name for name in app_names if name))
+    if not names:
+        return []
+
+    roots: list[Path] = []
+    if target_os == "nt":
+        roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
+        local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
+        roaming_base = Path(roaming_text) if roaming_text else home_path / "AppData" / "Roaming"
+        local_base = Path(local_text) if local_text else home_path / "AppData" / "Local"
+        for name in names:
+            roots.append(roaming_base / name)
+            roots.append(local_base / name)
+        return roots
+
+    if (platform_name or sys.platform) == "darwin":
+        for name in names:
+            roots.append(home_path / "Library" / "Application Support" / name)
+        return roots
+
+    for name in names:
+        roots.append(home_path / ".config" / name)
+        roots.append(home_path / ".local" / "share" / name)
+    return roots
 
 
 def default_opencode_roots(
@@ -186,9 +229,47 @@ ENVIRONMENT_VARIABLES = (
         "default": lambda: _path_text(default_claude_local_agent_root()),
     },
     {
+        "name": TOKEN_USAGE_CLAUDE_DESKTOP_ROOT_ENV,
+        "description": "Override the Claude Desktop app-data directory.",
+        "default": lambda: ",".join(_path_text(path) for path in default_desktop_app_roots(("Claude",))),
+    },
+    {
         "name": TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV,
         "description": "Override the MiniMax Agent desktop data directory.",
         "default": lambda: _path_text(default_minimax_agent_root()),
+    },
+    {
+        "name": TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV,
+        "description": "Override the Kimi Desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Kimi", "Moonshot", "Moonshot AI"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
+        "description": "Override the GLM Desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("GLM", "Z.ai", "Zhipu AI", "BigModel"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV,
+        "description": "Override the Qwen / DashScope desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Qwen", "DashScope", "Tongyi"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
+        "description": "Override the Doubao desktop app-data directory.",
+        "default": lambda: ",".join(_path_text(path) for path in default_desktop_app_roots(("Doubao",))),
+    },
+    {
+        "name": TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
+        "description": "Override the Perplexity desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Perplexity", "Perplexity Desktop"))
+        ),
     },
     {
         "name": TOKEN_USAGE_OPENCODE_BIN_ENV,

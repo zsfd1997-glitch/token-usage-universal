@@ -12,6 +12,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from adapters.claude_code import ClaudeCodeAdapter
+from adapters.claude_desktop import ClaudeDesktopAdapter
+from adapters.chromium_desktop_family import build_chromium_desktop_family_adapters
 from adapters.compatible_api_family import build_provider_api_adapters
 from adapters.codex import CodexAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
@@ -29,8 +31,10 @@ def _build_adapters():
     adapters = [
         CodexAdapter(),
         ClaudeCodeAdapter(),
+        ClaudeDesktopAdapter(),
         OpenCodeAdapter(),
         MiniMaxAgentAdapter(),
+        *build_chromium_desktop_family_adapters(),
         *build_provider_api_adapters(),
         GenericOpenAICompatibleAdapter(),
     ]

@@ -16,14 +16,21 @@ if str(SCRIPT_DIR) not in sys.path:
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.codex import CodexAdapter
 from core.config import (
+    TOKEN_USAGE_CLAUDE_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
     TOKEN_USAGE_CODEX_ROOT_ENV,
+    TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_MINIMAX_AGENT_ROOT_ENV,
     TOKEN_USAGE_OPENCODE_BIN_ENV,
     TOKEN_USAGE_OPENCODE_ROOTS_ENV,
+    TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV,
     default_claude_local_agent_root,
     default_cache_root,
+    default_desktop_app_roots,
     default_minimax_agent_root,
     default_opencode_roots,
 )
@@ -128,6 +135,26 @@ class EnvironmentOverrideTests(unittest.TestCase):
 
         self.assertEqual(path, Path("C:/Users/tester/AppData/Roaming/MiniMax Agent"))
 
+    def test_default_desktop_app_roots_cover_mac_and_windows(self) -> None:
+        mac_roots = default_desktop_app_roots(
+            ("Kimi", "Moonshot"),
+            os_name="posix",
+            home=Path("/Users/tester"),
+            platform_name="darwin",
+        )
+        windows_roots = default_desktop_app_roots(
+            ("Perplexity",),
+            os_name="nt",
+            home=Path("/unused"),
+            appdata="C:/Users/tester/AppData/Roaming",
+            localappdata="C:/Users/tester/AppData/Local",
+        )
+
+        self.assertIn(Path("/Users/tester/Library/Application Support/Kimi"), mac_roots)
+        self.assertIn(Path("/Users/tester/Library/Application Support/Moonshot"), mac_roots)
+        self.assertIn(Path("C:/Users/tester/AppData/Roaming/Perplexity"), windows_roots)
+        self.assertIn(Path("C:/Users/tester/AppData/Local/Perplexity"), windows_roots)
+
     def test_windows_default_opencode_roots_include_roaming_and_local(self) -> None:
         roots = default_opencode_roots(
             os_name="nt",
@@ -146,8 +173,14 @@ class HealthReportTests(unittest.TestCase):
             [
                 _result("codex", available=True, summary="ready"),
                 _result("claude-code", available=False, summary="missing timing"),
+                _result("claude-desktop", available=False, summary="missing desktop cache payload"),
                 _result("opencode", available=False, summary="missing cli"),
                 _result("minimax-agent", available=False, summary="missing cache payload"),
+                _result("kimi-desktop", available=False, summary="missing desktop payload"),
+                _result("glm-desktop", available=False, summary="missing desktop payload"),
+                _result("qwen-desktop", available=False, summary="missing desktop payload"),
+                _result("doubao-desktop", available=False, summary="missing desktop payload"),
+                _result("perplexity-desktop", available=False, summary="missing desktop payload"),
                 _result("generic-openai-compatible", available=False, summary="set env"),
             ]
         )
@@ -157,9 +190,15 @@ class HealthReportTests(unittest.TestCase):
         self.assertGreaterEqual(len(report["next_steps"]), 3)
         self.assertIn("local-agent-mode-sessions", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT", " ".join(report["next_steps"]))
+        self.assertIn("TOKEN_USAGE_CLAUDE_DESKTOP_ROOT", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_OPENCODE_BIN", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_OPENCODE_ROOTS", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_MINIMAX_AGENT_ROOT", " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_GENERIC_LOG_GLOBS", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_DISCOVERY_ROOTS", " ".join(report["next_steps"]))
         self.assertEqual(

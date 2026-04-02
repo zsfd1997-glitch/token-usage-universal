@@ -23,7 +23,7 @@
 ## 适用场景
 
 - 查看今天或最近几天的本地 token 用量
-- 对比 `codex / claude-code / generic-api logs` 等来源
+- 对比 `codex / claude-code / claude-desktop / minimax-agent / desktop clients / provider API logs` 等来源
 - 统计经由 `MiniMax / Kimi / GLM / Qwen / OpenAI / Anthropic` 等 provider 返回的 exact usage
 - 按项目、模型、会话做 usage 归因
 - 诊断为什么某个本地客户端或日志来源当前没有被统计到
@@ -70,8 +70,15 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 - `native clients`
   - `codex`
   - `claude-code`
+  - `claude-desktop`
   - `opencode`
   - `minimax-agent`
+- `desktop-native closed clients`
+  - `kimi-desktop`
+  - `glm-desktop`
+  - `qwen-desktop`
+  - `doubao-desktop`
+  - `perplexity-desktop`
 - `top provider families`
   - `openai-api`
   - `anthropic-api`
@@ -105,6 +112,12 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
   - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`（Windows 常见等价目录是 `%APPDATA%\Claude\local-agent-mode-sessions`）
   - exact 文件支持旧版 `timing.json`，也支持任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON
   - 支持 env override：`TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT`、`TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT`
+- `claude-desktop`
+  - 原生解析桌面端 `Chromium Cache_Data / IndexedDB` 痕迹
+  - 当前 exact 依赖 Claude Desktop 是否把 token-bearing API 响应缓存到本地
+  - mac 默认根目录：`~/Library/Application Support/Claude`
+  - Windows 常见根目录：`%APPDATA%\Claude`
+  - 支持 env override：`TOKEN_USAGE_CLAUDE_DESKTOP_ROOT`
 - `opencode`
   - 优先走官方 `opencode session list` + `opencode export [sessionID]`
   - 本地会同时扫描 `~/.config/opencode`、`~/.local/share/opencode`、`~/.local/state/opencode`、桌面端 app data，用于判断“有没有会话/有没有真源/CLI 是否缺失”
@@ -115,6 +128,11 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
   - mac 默认根目录：`~/Library/Application Support/MiniMax Agent`
   - Windows 常见根目录：`%APPDATA%\MiniMax Agent`
   - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
+- `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`
+  - 现在已经是独立 `source_id`，不再混进 generic fallback
+  - 统一走原生 `Chromium / Electron` 桌面适配框架：优先扫本地 `Cache_Data`，同时保留 `IndexedDB / Local Storage` 痕迹诊断
+  - exact 是否可得，取决于当前客户端是否把 token-bearing API 响应缓存到本地
+  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
 - `generic-openai-compatible`
   - 当前显示名是 `Generic API Compatible`
   - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
@@ -133,6 +151,7 @@ Top20 provider family 的适配规则是统一的：
 - 先识别客户端本地真实数据目录
 - 再走客户端对应的原生真源路径
 - Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
+- Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
 - 拿不到 exact 时明确告诉您是“没 parser”还是“当前缓存里确实没有 token 真源”
 
 ## Claude Code 真源矩阵
@@ -150,7 +169,13 @@ Top20 provider family 的适配规则是统一的：
 | `TOKEN_USAGE_CODEX_ROOT` | 覆写 Codex session 根目录 |
 | `TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT` | 覆写 Claude transcript 目录 |
 | `TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT` | 覆写 Claude local-agent-mode-sessions 目录 |
+| `TOKEN_USAGE_CLAUDE_DESKTOP_ROOT` | 覆写 Claude Desktop app-data 目录 |
 | `TOKEN_USAGE_MINIMAX_AGENT_ROOT` | 覆写 MiniMax Agent 桌面端数据目录 |
+| `TOKEN_USAGE_KIMI_DESKTOP_ROOT` | 覆写 Kimi Desktop app-data 目录 |
+| `TOKEN_USAGE_GLM_DESKTOP_ROOT` | 覆写 GLM Desktop app-data 目录 |
+| `TOKEN_USAGE_QWEN_DESKTOP_ROOT` | 覆写 Qwen / DashScope app-data 目录 |
+| `TOKEN_USAGE_DOUBAO_DESKTOP_ROOT` | 覆写 Doubao Desktop app-data 目录 |
+| `TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT` | 覆写 Perplexity Desktop app-data 目录 |
 | `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |
 | `TOKEN_USAGE_OPENCODE_ROOTS` | 覆写 OpenCode 本地 roots 列表 |
 | `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置兼容 API exact log 的逗号分隔 glob |
@@ -163,7 +188,9 @@ Top20 provider family 的适配规则是统一的：
 export TOKEN_USAGE_CODEX_ROOT="$HOME/work/codex-sessions"
 export TOKEN_USAGE_OPENCODE_BIN="$HOME/.local/bin/opencode"
 export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/opencode"
+export TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="$HOME/Library/Application Support/Claude"
 export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax Agent"
+export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
 export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/openai/*.jsonl,$HOME/logs/openai/*.json"
 export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.local/share"
 python3 scripts/token_usage.py health
@@ -174,7 +201,9 @@ Windows PowerShell 常见写法：
 ```powershell
 $env:TOKEN_USAGE_CODEX_ROOT="%USERPROFILE%\.codex\sessions"
 $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sessions"
+$env:TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="%APPDATA%\Claude"
 $env:TOKEN_USAGE_MINIMAX_AGENT_ROOT="%APPDATA%\MiniMax Agent"
+$env:TOKEN_USAGE_KIMI_DESKTOP_ROOT="%APPDATA%\Kimi"
 $env:TOKEN_USAGE_OPENCODE_BIN="%USERPROFILE%\.local\bin\opencode.exe"
 $env:TOKEN_USAGE_OPENCODE_ROOTS="%USERPROFILE%\.config\opencode,%USERPROFILE%\.local\share\opencode"
 $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
@@ -198,6 +227,8 @@ python3 scripts/token_usage.py report --session 019d3d50-b44c-77a3-a817-08a4ffd4
 python3 scripts/token_usage.py explore
 python3 scripts/token_usage.py report --today --by project
 python3 scripts/token_usage.py diagnose --source claude-code --today
+python3 scripts/token_usage.py diagnose --source claude-desktop --today
+python3 scripts/token_usage.py diagnose --source kimi-desktop --today
 ```
 
 ## 终端控制面能力

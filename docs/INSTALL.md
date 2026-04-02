@@ -59,6 +59,18 @@ $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sess
 python .\scripts\token_usage.py health
 ```
 
+### Claude Desktop / Electron 桌面端
+
+```bash
+export TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="$HOME/Library/Application Support/Claude"
+```
+
+说明：
+
+- `Claude Desktop` 现在是独立 `source_id=claude-desktop`，不再被塞进 `claude-code` 或 generic fallback。
+- 当前原生适配会先读 `Cache/Cache_Data`，再把 `IndexedDB / Local Storage` 当作痕迹诊断层。
+- 如果 health 提示“desktop traces detected but no exact token payloads”，意思是桌面端痕迹已识别，但当前快照里没有 token-bearing API 响应。
+
 ### Generic API exact logs
 
 ```bash
@@ -97,9 +109,27 @@ export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax
 - exact 是否可得，取决于当前客户端缓存里是否落下了带 usage 的 chat/completion JSON。
 - 如果 health 里提示“cache detected but no exact token payloads”，意思不是 parser 没做，而是当前缓存快照里确实没有 token 真源。
 
+### Kimi / GLM / Qwen / Doubao / Perplexity 桌面端
+
+```bash
+export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
+export TOKEN_USAGE_GLM_DESKTOP_ROOT="$HOME/Library/Application Support/GLM"
+export TOKEN_USAGE_QWEN_DESKTOP_ROOT="$HOME/Library/Application Support/Qwen"
+export TOKEN_USAGE_DOUBAO_DESKTOP_ROOT="$HOME/Library/Application Support/Doubao"
+export TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT="$HOME/Library/Application Support/Perplexity"
+```
+
+说明：
+
+- 这批来源现在已经拆成独立 `source_id`，分别是 `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`。
+- 它们统一走原生 `Chromium / Electron` 桌面适配框架，不再只依赖 `generic-openai-compatible`。
+- 如果默认目录没命中，直接设对应 env override；如果命中但没有 exact，health 会明确告诉您“有桌面痕迹但当前没有 token 真源”。
+
 ## 5. 验证主命令
 
 ```bash
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py diagnose --source codex --today
+python3 scripts/token_usage.py diagnose --source claude-desktop --today
+python3 scripts/token_usage.py diagnose --source minimax-agent --today
 ```

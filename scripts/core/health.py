@@ -20,6 +20,13 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
             "Windows 默认在 %APPDATA%\\Claude\\local-agent-mode-sessions，路径不同就设 TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT。"
         )
 
+    claude_desktop = by_source.get("claude-desktop")
+    if claude_desktop and not claude_desktop.available:
+        steps.append(
+            "Claude Desktop 目前走桌面端 Chromium Cache_Data / IndexedDB 原生诊断；"
+            "mac 默认在 ~/Library/Application Support/Claude，路径不同就设 TOKEN_USAGE_CLAUDE_DESKTOP_ROOT。"
+        )
+
     opencode = by_source.get("opencode")
     if opencode and not opencode.available:
         steps.append(
@@ -33,6 +40,26 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
             "MiniMax Agent 目前走桌面端 Chromium Cache_Data exact 解析；"
             "mac 默认在 ~/Library/Application Support/MiniMax Agent，Windows 常见在 %APPDATA%\\MiniMax Agent，"
             "路径不同就设 TOKEN_USAGE_MINIMAX_AGENT_ROOT。"
+        )
+
+    desktop_family_sources = {
+        "kimi-desktop": "TOKEN_USAGE_KIMI_DESKTOP_ROOT",
+        "glm-desktop": "TOKEN_USAGE_GLM_DESKTOP_ROOT",
+        "qwen-desktop": "TOKEN_USAGE_QWEN_DESKTOP_ROOT",
+        "doubao-desktop": "TOKEN_USAGE_DOUBAO_DESKTOP_ROOT",
+        "perplexity-desktop": "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT",
+    }
+    missing_desktop_sources = [
+        f"{source_id} -> {env_name}"
+        for source_id, env_name in desktop_family_sources.items()
+        if source_id in by_source and not by_source[source_id].available
+    ]
+    if missing_desktop_sources:
+        steps.append(
+            "Kimi / GLM / Qwen / Doubao / Perplexity 这批桌面端已接入原生 Chromium/Electron 适配框架；"
+            "如果默认 app-data 目录没命中，请按来源分别设置 "
+            + ", ".join(env_name for env_name in desktop_family_sources.values())
+            + "。"
         )
 
     generic = by_source.get("generic-openai-compatible")
