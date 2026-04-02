@@ -340,7 +340,7 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 31)
+        self.assertEqual(len(source_ids), 35)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
         self.assertIn("claude-desktop", source_ids)
@@ -356,6 +356,10 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("moonshot-kimi-api", source_ids)
         self.assertIn("zhipu-glm-api", source_ids)
         self.assertIn("qwen-api", source_ids)
+        self.assertIn("sensenova-api", source_ids)
+        self.assertIn("baichuan-api", source_ids)
+        self.assertIn("siliconflow-api", source_ids)
+        self.assertIn("spark-api", source_ids)
         self.assertIn("generic-openai-compatible", source_ids)
         self.assertIn("overall_status", payload)
 
@@ -369,6 +373,20 @@ class CliIntegrationTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("interactive TTY", result.stderr or result.stdout)
+
+    def test_targets_json_exposes_frozen_registry(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "targets", "--format", "json"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["total_ecosystems"], 20)
+        self.assertEqual(payload["summary"]["china_priority_ecosystems"], 13)
+        self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
 
 
 if __name__ == "__main__":

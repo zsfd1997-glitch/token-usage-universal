@@ -9,6 +9,7 @@ SKILL.md
   -> scripts/token_usage.py
       -> adapters/*
       -> core/*
+      -> core/ecosystem_registry.py
       -> core/pricing.py
       -> ascii_hifi.py
 ```
@@ -43,6 +44,7 @@ SKILL.md
 - 聚合 usage 数据
 - 估算 cost（严格标记为 estimated）
 - 做最基本的结果校验
+- 维护 Top20 生态 registry 与 surface matrix 真源
 
 当前已输出：
 
@@ -50,6 +52,7 @@ SKILL.md
 - `current_session`
 - `session_detail`
 - `charts.trend_7d / charts.trend_30d / charts.calendar_month`
+- `targets`（冻结的 Top20 ecosystem/client-family registry）
 
 ### 3. Rendering Layer
 

@@ -478,3 +478,52 @@ def render_health(health: dict[str, object]) -> str:
 
     lines.append("+" + "-" * (WIDTH - 2) + "+")
     return "\n".join(lines)
+
+
+def render_targets(payload: dict[str, object]) -> str:
+    summary = payload["summary"]
+    scope = payload["scope"]
+    ecosystems = payload["ecosystems"]
+
+    lines = [
+        _rule("Top20 Ecosystem Registry"),
+        _rule("范围"),
+    ]
+    _append_field(lines, "冻结口径", str(scope["frozen_by"]))
+    _append_field(lines, "Surface", ", ".join(scope["surfaces"]))
+    _append_field(lines, "采集层", ", ".join(scope["capture_lanes"]))
+
+    lines.append(_rule("摘要"))
+    _append_field(lines, "生态数", str(summary["total_ecosystems"]))
+    _append_field(
+        lines,
+        "优先级",
+        f"中国优先 {summary['china_priority_ecosystems']}   全球补齐 {summary['global_ecosystems']}",
+    )
+    _append_field(lines, "Surface 数", str(summary["total_surfaces"]))
+    provider_text = "   ".join(f"{key} {value}" for key, value in summary["provider_lane_maturity"].items())
+    _append_field(lines, "Provider", provider_text)
+    surface_text = "   ".join(f"{key} {value}" for key, value in summary["surface_maturity"].items())
+    _append_field(lines, "Surface", surface_text)
+
+    lines.append(_rule("生态"))
+    for ecosystem in ecosystems:
+        _append_field(
+            lines,
+            ecosystem["ecosystem_id"],
+            f"{ecosystem['display_name']}   {ecosystem['priority_group']}   provider {ecosystem['provider_lane_maturity']}",
+        )
+        provider_ids = ecosystem.get("provider_source_ids") or []
+        if provider_ids:
+            _append_field(lines, "provider", ", ".join(str(item) for item in provider_ids))
+        for surface in ecosystem["surfaces"]:
+            source_bits = list(surface.get("implemented_source_ids") or [])
+            source_bits.extend(surface.get("planned_source_ids") or [])
+            suffix = f"   sources {', '.join(source_bits)}" if source_bits else ""
+            _append_field(
+                lines,
+                surface["surface_type"],
+                f"{surface['display_name']}   {surface['primary_lane']}   {surface['maturity']}{suffix}",
+            )
+    lines.append("+" + "-" * (WIDTH - 2) + "+")
+    return "\n".join(lines)

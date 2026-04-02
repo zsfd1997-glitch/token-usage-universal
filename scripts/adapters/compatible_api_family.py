@@ -61,6 +61,19 @@ _DISCOVERY_FILE_PATTERNS = (
     "trace*/**/*.jsonl",
 )
 _MAX_DISCOVERED_FILES = 200
+URL_KEYS = (
+    "url",
+    "request_url",
+    "requestUrl",
+    "endpoint",
+    "api_base",
+    "apiBase",
+    "base_url",
+    "baseUrl",
+    "origin",
+    "host",
+    "domain",
+)
 
 
 @dataclass(frozen=True)
@@ -70,6 +83,7 @@ class ProviderSourceDefinition:
     provider: str
     provider_aliases: tuple[str, ...]
     model_aliases: tuple[str, ...] = ()
+    endpoint_aliases: tuple[str, ...] = ()
     discovery_keywords: tuple[str, ...] = ()
 
 
@@ -94,6 +108,47 @@ TOP_PROVIDER_SOURCE_DEFINITIONS: tuple[ProviderSourceDefinition, ...] = (
     ProviderSourceDefinition("tencent-hunyuan-api", "Tencent Hunyuan API", "tencent", ("tencent", "hunyuan"), ("hunyuan",)),
     ProviderSourceDefinition("stepfun-api", "StepFun API", "stepfun", ("stepfun", "step"), ("step-", "stepfun")),
     ProviderSourceDefinition("doubao-api", "Doubao API", "bytedance", ("bytedance", "doubao", "volcengine"), ("doubao",)),
+    ProviderSourceDefinition(
+        "sensenova-api",
+        "SenseNova API",
+        "sensenova",
+        ("sensenova", "sensechat", "sensetime", "日日新"),
+        ("sensechat", "sensenova"),
+        ("api.sensenova.cn", "sensenova.cn"),
+        ("sensenova", "sensechat", "sensetime"),
+    ),
+    ProviderSourceDefinition(
+        "baichuan-api",
+        "Baichuan API",
+        "baichuan",
+        ("baichuan", "baichuan-ai", "baichuanai"),
+        ("baichuan",),
+        ("baichuan-ai.com",),
+        ("baichuan",),
+    ),
+    ProviderSourceDefinition(
+        "siliconflow-api",
+        "SiliconFlow API",
+        "siliconflow",
+        ("siliconflow", "siliconcloud"),
+        (),
+        ("api.siliconflow.cn", "siliconflow.cn"),
+        ("siliconflow", "siliconcloud"),
+    ),
+    ProviderSourceDefinition(
+        "spark-api",
+        "Spark API",
+        "spark",
+        ("spark", "xinghuo", "xfyun", "sparkdesk"),
+        ("spark", "xinghuo"),
+        (
+            "spark-api-open.xf-yun.com",
+            "spark-api.xf-yun.com",
+            "sparkcube-api.xf-yun.com",
+            "xf-yun.com",
+        ),
+        ("spark", "xinghuo", "xfyun"),
+    ),
 )
 
 
@@ -133,14 +188,19 @@ def _definition_matches_record(definition: ProviderSourceDefinition, record) -> 
             return True
         return False
 
+    endpoint_hint = _normalize_hint(find_first_value(record, URL_KEYS))
+    if endpoint_hint and _matches_alias(endpoint_hint, definition.endpoint_aliases):
+        return True
+
     raw_model = _normalize_hint(find_first_value(record, MODEL_KEYS))
     return _matches_alias(raw_model, definition.model_aliases or definition.provider_aliases)
 
 
-def _all_known_definition_aliases() -> tuple[tuple[str, ...], tuple[str, ...]]:
+def _all_known_definition_aliases() -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
     provider_aliases = tuple(alias for definition in TOP_PROVIDER_SOURCE_DEFINITIONS for alias in definition.provider_aliases)
     model_aliases = tuple(alias for definition in TOP_PROVIDER_SOURCE_DEFINITIONS for alias in definition.model_aliases)
-    return provider_aliases, model_aliases
+    endpoint_aliases = tuple(alias for definition in TOP_PROVIDER_SOURCE_DEFINITIONS for alias in definition.endpoint_aliases)
+    return provider_aliases, model_aliases, endpoint_aliases
 
 
 class CompatibleApiAdapter(BaseAdapter):
@@ -167,7 +227,11 @@ class CompatibleApiAdapter(BaseAdapter):
         self.discovery_root_env = TOKEN_USAGE_DISCOVERY_ROOTS_ENV
         self.cache = FileEventCache()
         self.parser_version = f"compatible-api-v3:{self.source_id}"
-        self._known_provider_aliases, self._known_model_aliases = _all_known_definition_aliases()
+        (
+            self._known_provider_aliases,
+            self._known_model_aliases,
+            self._known_endpoint_aliases,
+        ) = _all_known_definition_aliases()
 
     def _resolve_explicit_paths(self) -> list[Path]:
         patterns = _flatten_candidates(os.environ.get(self.glob_env, ""))
@@ -235,6 +299,10 @@ class CompatibleApiAdapter(BaseAdapter):
 
         provider_hint = _normalize_hint(find_first_value(record, PROVIDER_KEYS))
         if provider_hint and _matches_alias(provider_hint, self._known_provider_aliases):
+            return False
+
+        endpoint_hint = _normalize_hint(find_first_value(record, URL_KEYS))
+        if endpoint_hint and _matches_alias(endpoint_hint, self._known_endpoint_aliases):
             return False
 
         raw_model = _normalize_hint(find_first_value(record, MODEL_KEYS))

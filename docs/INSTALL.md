@@ -17,6 +17,7 @@ cd token-usage-universal
 ```bash
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py targets
 ```
 
 推荐判断方法：
@@ -81,7 +82,7 @@ export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.loc
 说明：
 
 - 这组配置不只给 `generic-openai-compatible` 用，也会驱动 Top20 provider family source 自动拆分。
-- 也就是说，只要 exact log 里带有 `provider / model / usage`，CLI 就会自动分流到 `openai-api / anthropic-api / kimi-api / glm-api / qwen-api ...` 这类独立来源。
+- 也就是说，只要 exact log 里带有 `provider / model / usage`，CLI 就会自动分流到 `openai-api / anthropic-api / moonshot-kimi-api / zhipu-glm-api / qwen-api / sensenova-api / baichuan-api / siliconflow-api / spark-api ...` 这类独立来源。
 - `generic-openai-compatible` 现在主要用于您手动指定 `--source generic-openai-compatible` 做补漏或诊断。
 
 ### OpenCode CLI / 本地 roots

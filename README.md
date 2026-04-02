@@ -46,6 +46,7 @@ cd token-usage-universal
 ```bash
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py targets
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py report --trend 7d
 python3 scripts/token_usage.py report --calendar month
@@ -66,6 +67,11 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 - 哪些来源缺的是真源，而不是命令本身有问题
 
 ## 当前支持来源
+
+Top20 执行主线文档：
+
+- [Top20 Execution Plan](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_EXECUTION_PLAN.md)
+- [Top20 Surface Matrix](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_SURFACE_MATRIX.md)
 
 - `native clients`
   - `codex`
@@ -100,6 +106,10 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
   - `tencent-hunyuan-api`
   - `stepfun-api`
   - `doubao-api`
+  - `sensenova-api`
+  - `baichuan-api`
+  - `siliconflow-api`
+  - `spark-api`
 - `generic fallback`
   - `generic-openai-compatible`
   - 保留给手动 diagnose / 补漏，不再默认参与总览，避免和已拆分的 provider family 重复计数
@@ -216,6 +226,7 @@ python .\scripts\token_usage.py health
 ```bash
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py targets
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py report --today --by day
 python3 scripts/token_usage.py report --last 7d --by model

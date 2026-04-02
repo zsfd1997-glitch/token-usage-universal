@@ -19,9 +19,10 @@ from adapters.codex import CodexAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
 from adapters.opencode import OpenCodeAdapter
-from ascii_hifi import render_diagnose, render_health, render_report, render_sources
+from ascii_hifi import render_diagnose, render_health, render_report, render_sources, render_targets
 from core.health import build_health_report
 from core.aggregator import build_report
+from core.ecosystem_registry import build_top20_registry_payload
 from core.models import SourceCollectResult
 from core.time_window import build_month_window, build_time_window, within_window
 from core.verifier import verify_result
@@ -263,6 +264,15 @@ def command_explore(args) -> int:
     return selected_args.func(selected_args)
 
 
+def command_targets(args) -> int:
+    payload = build_top20_registry_payload()
+    if args.format == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default))
+    else:
+        print(render_targets(payload))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Standalone CLI runtime for token-usage-universal"
@@ -306,6 +316,10 @@ def build_parser() -> argparse.ArgumentParser:
     diagnose.add_argument("--source", required=True, help="source id to diagnose")
     diagnose.add_argument("--format", choices=("ascii", "json"), default="ascii")
     diagnose.set_defaults(func=command_diagnose)
+
+    targets = subparsers.add_parser("targets", help="show the frozen Top20 ecosystem registry")
+    targets.add_argument("--format", choices=("ascii", "json"), default="ascii")
+    targets.set_defaults(func=command_targets)
 
     explore = subparsers.add_parser("explore", help="interactive dashboard launcher")
     explore.set_defaults(func=command_explore)
