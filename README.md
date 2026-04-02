@@ -79,6 +79,9 @@ Top20 执行主线文档：
   - `claude-desktop`
   - `opencode`
   - `minimax-agent`
+- `official coding CLI`
+  - `qwen-code-cli`
+  - `kimi-cli`
 - `desktop-native closed clients`
   - `kimi-desktop`
   - `glm-desktop`
@@ -132,6 +135,14 @@ Top20 执行主线文档：
   - 优先走官方 `opencode session list` + `opencode export [sessionID]`
   - 本地会同时扫描 `~/.config/opencode`、`~/.local/share/opencode`、`~/.local/state/opencode`、桌面端 app data，用于判断“有没有会话/有没有真源/CLI 是否缺失”
   - 支持 env override：`TOKEN_USAGE_OPENCODE_BIN`、`TOKEN_USAGE_OPENCODE_ROOTS`
+- `qwen-code-cli`
+  - 原生读取官方 project-scoped session JSONL
+  - 当前布局优先扫 `~/.qwen/projects/*/chats/*.jsonl`，兼容旧布局 `~/.qwen/tmp/*/chats/*.jsonl`
+  - 如果上游设了 `QWEN_RUNTIME_DIR`，默认也会跟随该目录；我们自己的 override 是 `TOKEN_USAGE_QWEN_CODE_ROOT`
+- `kimi-cli`
+  - 原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`
+  - exact token 来自 `StatusUpdate.token_usage`
+  - 如果上游设了 `KIMI_SHARE_DIR`，默认也会跟随该目录；我们自己的 override 是 `TOKEN_USAGE_KIMI_CLI_ROOT`
 - `minimax-agent`
   - 原生解析桌面端 `Chromium Cache_Data` 里的 MiniMax Agent HTTP JSON 响应
   - 当前 exact 依赖客户端是否把 token-bearing chat/completion 响应缓存到本地
@@ -186,6 +197,8 @@ Top20 provider family 的适配规则是统一的：
 | `TOKEN_USAGE_QWEN_DESKTOP_ROOT` | 覆写 Qwen / DashScope app-data 目录 |
 | `TOKEN_USAGE_DOUBAO_DESKTOP_ROOT` | 覆写 Doubao Desktop app-data 目录 |
 | `TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT` | 覆写 Perplexity Desktop app-data 目录 |
+| `TOKEN_USAGE_QWEN_CODE_ROOT` | 覆写 Qwen Code CLI runtime root |
+| `TOKEN_USAGE_KIMI_CLI_ROOT` | 覆写 Kimi CLI share root |
 | `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |
 | `TOKEN_USAGE_OPENCODE_ROOTS` | 覆写 OpenCode 本地 roots 列表 |
 | `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置兼容 API exact log 的逗号分隔 glob |
@@ -201,6 +214,8 @@ export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/ope
 export TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="$HOME/Library/Application Support/Claude"
 export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax Agent"
 export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
+export TOKEN_USAGE_QWEN_CODE_ROOT="$HOME/.qwen"
+export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
 export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/openai/*.jsonl,$HOME/logs/openai/*.json"
 export TOKEN_USAGE_DISCOVERY_ROOTS="$HOME/Library/Application Support,$HOME/.local/share"
 python3 scripts/token_usage.py health
@@ -214,6 +229,8 @@ $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sess
 $env:TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="%APPDATA%\Claude"
 $env:TOKEN_USAGE_MINIMAX_AGENT_ROOT="%APPDATA%\MiniMax Agent"
 $env:TOKEN_USAGE_KIMI_DESKTOP_ROOT="%APPDATA%\Kimi"
+$env:TOKEN_USAGE_QWEN_CODE_ROOT="%USERPROFILE%\.qwen"
+$env:TOKEN_USAGE_KIMI_CLI_ROOT="%USERPROFILE%\.kimi"
 $env:TOKEN_USAGE_OPENCODE_BIN="%USERPROFILE%\.local\bin\opencode.exe"
 $env:TOKEN_USAGE_OPENCODE_ROOTS="%USERPROFILE%\.config\opencode,%USERPROFILE%\.local\share\opencode"
 $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"

@@ -62,6 +62,20 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
             + "。"
         )
 
+    qwen_cli = by_source.get("qwen-code-cli")
+    if qwen_cli and not qwen_cli.available:
+        steps.append(
+            "Qwen Code CLI 现在会直接读官方 session JSONL；默认根目录跟随 ~/.qwen 或上游 QWEN_RUNTIME_DIR，"
+            "如果位置不同可设置 TOKEN_USAGE_QWEN_CODE_ROOT。"
+        )
+
+    kimi_cli = by_source.get("kimi-cli")
+    if kimi_cli and not kimi_cli.available:
+        steps.append(
+            "Kimi CLI 现在会直接读官方 ~/.kimi/sessions/*/*/wire.jsonl；默认根目录跟随 ~/.kimi 或上游 KIMI_SHARE_DIR，"
+            "如果位置不同可设置 TOKEN_USAGE_KIMI_CLI_ROOT。"
+        )
+
     generic = by_source.get("generic-openai-compatible")
     if generic and not generic.available:
         steps.append(

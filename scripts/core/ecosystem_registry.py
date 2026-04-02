@@ -77,7 +77,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_source_ids=("qwen-api",),
         surfaces=(
             _surface("desktop", "Qwen Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("qwen-desktop",), notes="Electron/Chromium desk app path discovery is in place."),
-            _surface("cli", "Qwen Code CLI", primary_lane="native-client", maturity="planned", planned=("qwen-code-cli",), notes="Official CLI should be captured via export/logs first, then proxy as fallback."),
+            _surface("cli", "Qwen Code CLI", primary_lane="native-client", maturity="exact-ready", implemented=("qwen-code-cli",), notes="Official project-scoped session JSONL files now provide exact usageMetadata."),
             _surface("ide", "Qwen IDE", primary_lane="ingress-capture", maturity="planned", planned=("qwen-ide-proxy",), notes="IDE lane should prefer custom base_url / proxy companion."),
         ),
         notes="China-first priority because it spans provider API, desktop shells, and coding CLI surfaces.",
@@ -90,7 +90,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_source_ids=("moonshot-kimi-api",),
         surfaces=(
             _surface("desktop", "Kimi Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("kimi-desktop",)),
-            _surface("cli", "Kimi CLI", primary_lane="native-client", maturity="planned", planned=("kimi-cli",)),
+            _surface("cli", "Kimi CLI", primary_lane="native-client", maturity="exact-ready", implemented=("kimi-cli",), notes="Official ~/.kimi/sessions wire.jsonl now provides exact StatusUpdate token_usage."),
             _surface("ide", "Kimi IDE", primary_lane="ingress-capture", maturity="planned", planned=("kimi-ide-proxy",)),
         ),
     ),

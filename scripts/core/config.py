@@ -16,6 +16,8 @@ TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GLM_DESKTOP_ROOT"
 TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_QWEN_DESKTOP_ROOT"
 TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV = "TOKEN_USAGE_DOUBAO_DESKTOP_ROOT"
 TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV = "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT"
+TOKEN_USAGE_QWEN_CODE_ROOT_ENV = "TOKEN_USAGE_QWEN_CODE_ROOT"
+TOKEN_USAGE_KIMI_CLI_ROOT_ENV = "TOKEN_USAGE_KIMI_CLI_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
 TOKEN_USAGE_OPENCODE_ROOTS_ENV = "TOKEN_USAGE_OPENCODE_ROOTS"
 TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV = "TOKEN_USAGE_GENERIC_LOG_GLOBS"
@@ -177,6 +179,22 @@ def default_cache_root(
     return home_path / ".cache" / "token-usage-universal"
 
 
+def default_qwen_runtime_root(*, home: Path | None = None) -> Path:
+    home_path = home or Path.home()
+    configured = os.environ.get("QWEN_RUNTIME_DIR", "").strip()
+    if configured:
+        return Path(expand_path_text(configured))
+    return home_path / ".qwen"
+
+
+def default_kimi_share_root(*, home: Path | None = None) -> Path:
+    home_path = home or Path.home()
+    configured = os.environ.get("KIMI_SHARE_DIR", "").strip()
+    if configured:
+        return Path(expand_path_text(configured))
+    return home_path / ".kimi"
+
+
 def default_discovery_roots(
     *,
     os_name: str | None = None,
@@ -270,6 +288,16 @@ ENVIRONMENT_VARIABLES = (
         "default": lambda: ",".join(
             _path_text(path) for path in default_desktop_app_roots(("Perplexity", "Perplexity Desktop"))
         ),
+    },
+    {
+        "name": TOKEN_USAGE_QWEN_CODE_ROOT_ENV,
+        "description": "Override the Qwen Code CLI runtime root (~/.qwen or QWEN_RUNTIME_DIR).",
+        "default": lambda: _path_text(default_qwen_runtime_root()),
+    },
+    {
+        "name": TOKEN_USAGE_KIMI_CLI_ROOT_ENV,
+        "description": "Override the Kimi CLI share root (~/.kimi or KIMI_SHARE_DIR).",
+        "default": lambda: _path_text(default_kimi_share_root()),
     },
     {
         "name": TOKEN_USAGE_OPENCODE_BIN_ENV,

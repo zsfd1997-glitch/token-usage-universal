@@ -120,6 +120,8 @@
 
 - China Priority batch A 已落地：`sensenova-api`、`baichuan-api`、`siliconflow-api`、`spark-api`
 - provider family 现在不仅看 `provider / model`，也会看 `request url / base_url / endpoint`，用于兼容 IDE 代理日志和 provider passthrough 日志
+- `Qwen Code CLI` 已进入 `exact-ready`：直接读取官方 project-scoped session JSONL
+- `Kimi CLI` 已进入 `exact-ready`：直接读取官方 `~/.kimi/sessions/*/*/wire.jsonl` 与 `StatusUpdate.token_usage`
 
 验收：
 

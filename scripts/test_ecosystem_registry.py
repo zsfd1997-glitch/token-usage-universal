@@ -40,9 +40,14 @@ class EcosystemRegistryTests(unittest.TestCase):
         self.assertEqual(payload["scope"]["frozen_by"], "ecosystem/client-family")
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
         qwen = next(item for item in payload["ecosystems"] if item["ecosystem_id"] == "qwen")
+        kimi = next(item for item in payload["ecosystems"] if item["ecosystem_id"] == "kimi")
         self.assertEqual(qwen["provider_source_ids"], ["qwen-api"])
         self.assertEqual(len(qwen["surfaces"]), 3)
         self.assertEqual(qwen["surfaces"][0]["surface_type"], "desktop")
+        self.assertEqual(qwen["surfaces"][1]["implemented_source_ids"], ["qwen-code-cli"])
+        self.assertEqual(qwen["surfaces"][1]["maturity"], "exact-ready")
+        self.assertEqual(kimi["surfaces"][1]["implemented_source_ids"], ["kimi-cli"])
+        self.assertEqual(kimi["surfaces"][1]["maturity"], "exact-ready")
 
 
 if __name__ == "__main__":

@@ -340,12 +340,14 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 35)
+        self.assertEqual(len(source_ids), 37)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
         self.assertIn("claude-desktop", source_ids)
         self.assertIn("opencode", source_ids)
         self.assertIn("minimax-agent", source_ids)
+        self.assertIn("qwen-code-cli", source_ids)
+        self.assertIn("kimi-cli", source_ids)
         self.assertIn("kimi-desktop", source_ids)
         self.assertIn("glm-desktop", source_ids)
         self.assertIn("qwen-desktop", source_ids)

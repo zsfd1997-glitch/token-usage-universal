@@ -110,6 +110,20 @@ export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax
 - exact 是否可得，取决于当前客户端缓存里是否落下了带 usage 的 chat/completion JSON。
 - 如果 health 里提示“cache detected but no exact token payloads”，意思不是 parser 没做，而是当前缓存快照里确实没有 token 真源。
 
+### Qwen Code CLI / Kimi CLI
+
+```bash
+export TOKEN_USAGE_QWEN_CODE_ROOT="$HOME/.qwen"
+export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
+```
+
+说明：
+
+- `qwen-code-cli` 现在会原生读取官方 session JSONL。
+- 默认根目录会跟随 `~/.qwen` 或上游 `QWEN_RUNTIME_DIR`；当前优先扫描 `projects/*/chats/*.jsonl`，并兼容旧的 `tmp/*/chats/*.jsonl`。
+- `kimi-cli` 现在会原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`。
+- 默认根目录会跟随 `~/.kimi` 或上游 `KIMI_SHARE_DIR`；exact token 来自 `StatusUpdate.token_usage`。
+
 ### Kimi / GLM / Qwen / Doubao / Perplexity 桌面端
 
 ```bash
@@ -131,6 +145,8 @@ export TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT="$HOME/Library/Application Support/Pe
 ```bash
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py diagnose --source codex --today
+python3 scripts/token_usage.py diagnose --source qwen-code-cli --today
+python3 scripts/token_usage.py diagnose --source kimi-cli --today
 python3 scripts/token_usage.py diagnose --source claude-desktop --today
 python3 scripts/token_usage.py diagnose --source minimax-agent --today
 ```

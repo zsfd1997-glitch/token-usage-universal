@@ -17,8 +17,10 @@ from adapters.chromium_desktop_family import build_chromium_desktop_family_adapt
 from adapters.compatible_api_family import build_provider_api_adapters
 from adapters.codex import CodexAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
+from adapters.kimi_cli import KimiCliAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
 from adapters.opencode import OpenCodeAdapter
+from adapters.qwen_code_cli import QwenCodeCliAdapter
 from ascii_hifi import render_diagnose, render_health, render_report, render_sources, render_targets
 from core.health import build_health_report
 from core.aggregator import build_report
@@ -35,6 +37,8 @@ def _build_adapters():
         ClaudeDesktopAdapter(),
         OpenCodeAdapter(),
         MiniMaxAgentAdapter(),
+        QwenCodeCliAdapter(),
+        KimiCliAdapter(),
         *build_chromium_desktop_family_adapters(),
         *build_provider_api_adapters(),
         GenericOpenAICompatibleAdapter(),

@@ -8,8 +8,8 @@
 
 | Ecosystem | Priority | Provider Lane | Desktop | CLI | IDE |
 |---|---|---|---|---|---|
-| Qwen / DashScope / Qwen Code | China | `qwen-api` `exact-ready` | `qwen-desktop` `detect-ready` `native-client` | `qwen-code-cli` `planned` `native-client` | `qwen-ide-proxy` `planned` `ingress-capture` |
-| Kimi / Moonshot / Kimi CLI | China | `moonshot-kimi-api` `exact-ready` | `kimi-desktop` `detect-ready` `native-client` | `kimi-cli` `planned` `native-client` | `kimi-ide-proxy` `planned` `ingress-capture` |
+| Qwen / DashScope / Qwen Code | China | `qwen-api` `exact-ready` | `qwen-desktop` `detect-ready` `native-client` | `qwen-code-cli` `exact-ready` `native-client` | `qwen-ide-proxy` `planned` `ingress-capture` |
+| Kimi / Moonshot / Kimi CLI | China | `moonshot-kimi-api` `exact-ready` | `kimi-desktop` `detect-ready` `native-client` | `kimi-cli` `exact-ready` `native-client` | `kimi-ide-proxy` `planned` `ingress-capture` |
 | GLM / BigModel / Z.ai | China | `zhipu-glm-api` `exact-ready` | `glm-desktop` `detect-ready` `native-client` | `glm-cli` `planned` `native-client` | `glm-ide-proxy` `planned` `ingress-capture` |
 | MiniMax / MiniMax Agent | China | `minimax-api` `exact-ready` | `minimax-agent` `exact-ready` `native-client` | `minimax-cli-proxy` `planned` `ingress-capture` | `minimax-ide-proxy` `planned` `ingress-capture` |
 | DeepSeek | China | `deepseek-api` `exact-ready` | `deepseek-desktop` `planned` `native-client` | `deepseek-cli-proxy` `planned` `ingress-capture` | `deepseek-ide-proxy` `planned` `ingress-capture` |
