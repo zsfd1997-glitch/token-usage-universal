@@ -267,7 +267,7 @@ ENVIRONMENT_VARIABLES = (
         "name": TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
         "description": "Override the GLM Desktop app-data directory.",
         "default": lambda: ",".join(
-            _path_text(path) for path in default_desktop_app_roots(("GLM", "Z.ai", "Zhipu AI", "BigModel"))
+            _path_text(path) for path in default_desktop_app_roots(("GLM", "Z.ai", "Zhipu AI", "BigModel", "Z Code", "ZCODE"))
         ),
     },
     {
@@ -280,13 +280,13 @@ ENVIRONMENT_VARIABLES = (
     {
         "name": TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
         "description": "Override the Doubao desktop app-data directory.",
-        "default": lambda: ",".join(_path_text(path) for path in default_desktop_app_roots(("Doubao",))),
+        "default": lambda: ",".join(_path_text(path) for path in default_desktop_app_roots(("Doubao", "豆包"))),
     },
     {
         "name": TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
         "description": "Override the Perplexity desktop app-data directory.",
         "default": lambda: ",".join(
-            _path_text(path) for path in default_desktop_app_roots(("Perplexity", "Perplexity Desktop"))
+            _path_text(path) for path in default_desktop_app_roots(("Perplexity", "Perplexity Desktop", "Comet"))
         ),
     },
     {

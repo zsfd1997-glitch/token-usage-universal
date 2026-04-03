@@ -137,7 +137,7 @@ export TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT="$HOME/Library/Application Support/Pe
 说明：
 
 - 这批来源现在已经拆成独立 `source_id`，分别是 `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`。
-- 它们统一走原生 `Chromium / Electron` 桌面适配框架，不再只依赖 `generic-openai-compatible`。
+- 它们统一走原生 `Chromium / Electron` 桌面适配框架，现在会同时读取 `Cache_Data / IndexedDB / Local Storage`，不再只依赖 `generic-openai-compatible`。
 - 如果默认目录没命中，直接设对应 env override；如果命中但没有 exact，health 会明确告诉您“有桌面痕迹但当前没有 token 真源”。
 
 ## 5. 验证主命令

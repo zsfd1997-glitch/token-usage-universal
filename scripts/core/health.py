@@ -57,6 +57,7 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     if missing_desktop_sources:
         steps.append(
             "Kimi / GLM / Qwen / Doubao / Perplexity 这批桌面端已接入原生 Chromium/Electron 适配框架；"
+            "现在会同时读取 Cache_Data、IndexedDB 和 Local Storage；"
             "如果默认 app-data 目录没命中，请按来源分别设置 "
             + ", ".join(env_name for env_name in desktop_family_sources.values())
             + "。"

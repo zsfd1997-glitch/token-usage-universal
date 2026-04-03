@@ -100,6 +100,112 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
             {"kimi-desktop", "glm-desktop", "qwen-desktop", "doubao-desktop", "perplexity-desktop"},
         )
 
+    def test_glm_desktop_collects_exact_usage_from_indexeddb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_chat.z.ai_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000010.log").write_bytes(
+                (
+                    b"\x00https://chat.z.ai/api/v1/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T15:00:00-07:00",
+                            "conversation_id": "glm-desktop-1",
+                            "model": "glm-4.5",
+                            "usage": {
+                                "prompt_tokens": 400,
+                                "completion_tokens": 100,
+                                "total_tokens": 500,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "glm-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "glm-desktop-1")
+        self.assertEqual(result.events[0].total_tokens, 500)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
+
+    def test_doubao_desktop_collects_exact_usage_from_local_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_storage_dir = root / "Local Storage" / "leveldb"
+            local_storage_dir.mkdir(parents=True)
+            local_storage_dir.joinpath("000003.log").write_bytes(
+                (
+                    b"\x00https://www.doubao.com/api/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T16:00:00-07:00",
+                            "conversation_id": "doubao-1",
+                            "model": "doubao-seed-1-6",
+                            "usage": {
+                                "prompt_tokens": 200,
+                                "completion_tokens": 50,
+                                "total_tokens": 250,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "doubao-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "doubao-1")
+        self.assertEqual(result.events[0].total_tokens, 250)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:local_storage_usage")
+
+    def test_perplexity_desktop_detects_comet_root_and_indexeddb_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_www.perplexity.ai_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000020.ldb").write_bytes(
+                (
+                    b"\x00https://api.perplexity.ai/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:00:00-07:00",
+                            "conversation_id": "pplx-1",
+                            "model": "sonar",
+                            "usage": {
+                                "prompt_tokens": 180,
+                                "completion_tokens": 70,
+                                "reasoning_tokens": 20,
+                                "total_tokens": 270,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "perplexity-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "pplx-1")
+        self.assertEqual(result.events[0].reasoning_tokens, 20)
+        self.assertEqual(result.events[0].total_tokens, 270)
+
 
 if __name__ == "__main__":
     unittest.main()

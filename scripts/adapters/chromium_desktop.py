@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from adapters.base import BaseAdapter
-from core.chromium_cache import ChromiumCacheJsonEntry, iter_json_entries
+from core.chromium_cache import ChromiumCacheJsonEntry, iter_json_entries, iter_leveldb_json_entries
 from core.config import default_desktop_app_roots, expand_path_text
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.pricing import PricingDatabase
@@ -70,6 +70,23 @@ def _redact_url(url: str) -> str:
 def _matches_url_keywords(url: str, keywords: tuple[str, ...]) -> bool:
     lowered_url = url.lower()
     return any(keyword.lower() in lowered_url for keyword in keywords)
+
+
+def _dedupe_entries(entries: list[ChromiumCacheJsonEntry]) -> list[ChromiumCacheJsonEntry]:
+    deduped: list[ChromiumCacheJsonEntry] = []
+    seen: set[tuple[str, str, str, int]] = set()
+    for entry in entries:
+        key = (
+            str(entry.path),
+            entry.url,
+            entry.body_encoding,
+            int(entry.captured_at.timestamp()),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(entry)
+    return deduped
 
 
 @dataclass(frozen=True)
@@ -158,6 +175,39 @@ class ChromiumDesktopAdapter(BaseAdapter):
             return self._is_known_response_url(url)
         return _matches_url_keywords(url, self.definition.usage_url_keywords)
 
+    def _leveldb_text_keywords(self) -> tuple[str, ...]:
+        keywords: list[str] = []
+        keywords.extend(self.definition.response_url_keywords)
+        keywords.extend(self.definition.usage_url_keywords)
+        keywords.append(self.definition.provider)
+        keywords.append(self.definition.provider.replace("-", "."))
+        keywords.append(self.definition.provider.replace("-", ""))
+        keywords.extend(self.definition.app_names)
+        return tuple(dict.fromkeys(keyword for keyword in keywords if keyword))
+
+    def _is_relevant_store_entry(self, entry: ChromiumCacheJsonEntry) -> bool:
+        if self._is_known_response_url(entry.url):
+            return True
+
+        for _, usage in iter_usage_carriers(entry.payload):
+            if normalize_usage(usage)["total_tokens"] > 0:
+                return True
+
+        payload_text = str(entry.payload).lower()
+        return any(keyword.lower() in payload_text for keyword in self._leveldb_text_keywords())
+
+    def _entry_kind(self, entry: ChromiumCacheJsonEntry) -> str:
+        path_parts = {part.lower() for part in entry.path.parts}
+        if "indexeddb" in path_parts:
+            return "indexeddb"
+        if "local storage" in path_parts or "leveldb" in path_parts and "local" in str(entry.path).lower():
+            return "local_storage"
+        if entry.url.startswith("indexeddb://"):
+            return "indexeddb"
+        if entry.url.startswith("local-storage://"):
+            return "local_storage"
+        return "cache"
+
     def _fallback_model_from_entry(self, entry: ChromiumCacheJsonEntry, carrier) -> str | None:  # pragma: no cover - hook
         return None
 
@@ -167,6 +217,9 @@ class ChromiumDesktopAdapter(BaseAdapter):
 
         roots = self._existing_roots()
         cache_files: list[Path] = []
+        cache_decoded_entries: list[ChromiumCacheJsonEntry] = []
+        indexeddb_decoded_entries: list[ChromiumCacheJsonEntry] = []
+        local_storage_decoded_entries: list[ChromiumCacheJsonEntry] = []
         decoded_entries: list[ChromiumCacheJsonEntry] = []
         usage_entries: list[ChromiumCacheJsonEntry] = []
         sample_urls: list[str] = []
@@ -178,37 +231,72 @@ class ChromiumDesktopAdapter(BaseAdapter):
             indexeddb_files.extend(self._indexeddb_files(root))
             local_storage_files.extend(self._local_storage_files(root))
             cache_dir = self._cache_dir(root)
-            if not cache_dir.exists():
-                continue
+            if cache_dir.exists():
+                for entry in iter_json_entries(
+                    cache_dir,
+                    url_keywords=self.definition.response_url_keywords,
+                    max_files=_MAX_DETECTION_ENTRIES,
+                ):
+                    if not self._is_known_response_url(entry.url):
+                        continue
+                    cache_decoded_entries.append(entry)
+                    redacted_url = _redact_url(entry.url)
+                    if len(sample_urls) < 3 and redacted_url not in sample_urls:
+                        sample_urls.append(redacted_url)
 
-            for entry in iter_json_entries(
-                cache_dir,
-                url_keywords=self.definition.response_url_keywords,
+                    if not self._is_usage_url(entry.url):
+                        continue
+
+                    found_usage = False
+                    for _, usage in iter_usage_carriers(entry.payload):
+                        if normalize_usage(usage)["total_tokens"] > 0:
+                            found_usage = True
+                            break
+                    if found_usage:
+                        usage_entries.append(entry)
+
+            for entry in iter_leveldb_json_entries(
+                self._indexeddb_dir(root),
+                text_keywords=self._leveldb_text_keywords(),
                 max_files=_MAX_DETECTION_ENTRIES,
+                synthetic_scheme="indexeddb",
             ):
-                if not self._is_known_response_url(entry.url):
+                if not self._is_relevant_store_entry(entry):
                     continue
-                decoded_entries.append(entry)
+                indexeddb_decoded_entries.append(entry)
                 redacted_url = _redact_url(entry.url)
                 if len(sample_urls) < 3 and redacted_url not in sample_urls:
                     sample_urls.append(redacted_url)
-
-                if not self._is_usage_url(entry.url):
-                    continue
-
-                found_usage = False
-                for _, usage in iter_usage_carriers(entry.payload):
-                    if normalize_usage(usage)["total_tokens"] > 0:
-                        found_usage = True
-                        break
-                if found_usage:
+                if any(normalize_usage(usage)["total_tokens"] > 0 for _, usage in iter_usage_carriers(entry.payload)):
                     usage_entries.append(entry)
+
+            for entry in iter_leveldb_json_entries(
+                self._local_storage_dir(root),
+                text_keywords=self._leveldb_text_keywords(),
+                max_files=_MAX_DETECTION_ENTRIES,
+                synthetic_scheme="local-storage",
+            ):
+                if not self._is_relevant_store_entry(entry):
+                    continue
+                local_storage_decoded_entries.append(entry)
+                redacted_url = _redact_url(entry.url)
+                if len(sample_urls) < 3 and redacted_url not in sample_urls:
+                    sample_urls.append(redacted_url)
+                if any(normalize_usage(usage)["total_tokens"] > 0 for _, usage in iter_usage_carriers(entry.payload)):
+                    usage_entries.append(entry)
+
+        decoded_entries.extend(cache_decoded_entries)
+        decoded_entries.extend(indexeddb_decoded_entries)
+        decoded_entries.extend(local_storage_decoded_entries)
 
         self._inventory = {
             "roots": roots,
             "cache_files": sorted({path for path in cache_files}),
+            "cache_decoded_entries": cache_decoded_entries,
+            "indexeddb_decoded_entries": indexeddb_decoded_entries,
+            "local_storage_decoded_entries": local_storage_decoded_entries,
             "decoded_entries": decoded_entries,
-            "usage_entries": usage_entries,
+            "usage_entries": _dedupe_entries(usage_entries),
             "sample_urls": sample_urls,
             "indexeddb_files": sorted({path for path in indexeddb_files}),
             "local_storage_files": sorted({path for path in local_storage_files}),
@@ -235,6 +323,9 @@ class ChromiumDesktopAdapter(BaseAdapter):
 
         inventory = self._build_inventory()
         cache_files = list(inventory["cache_files"])
+        cache_decoded_entries = list(inventory["cache_decoded_entries"])
+        indexeddb_decoded_entries = list(inventory["indexeddb_decoded_entries"])
+        local_storage_decoded_entries = list(inventory["local_storage_decoded_entries"])
         decoded_entries = list(inventory["decoded_entries"])
         usage_entries = list(inventory["usage_entries"])
         sample_urls = list(inventory["sample_urls"])
@@ -258,17 +349,21 @@ class ChromiumDesktopAdapter(BaseAdapter):
 
         details = [
             f"inspected {len(cache_files)} cache file(s) across {len(existing_roots)} desktop root(s)",
-            f"decoded {len(decoded_entries)} API JSON response(s) from Chromium Cache_Data",
+            f"decoded {len(cache_decoded_entries)} API JSON response(s) from Chromium Cache_Data",
         ]
         if indexeddb_files:
             details.append(f"found {len(indexeddb_files)} IndexedDB LevelDB file(s)")
+        if indexeddb_decoded_entries:
+            details.append(f"decoded {len(indexeddb_decoded_entries)} JSON record(s) from IndexedDB LevelDB")
         if local_storage_files:
             details.append(f"found {len(local_storage_files)} Local Storage LevelDB file(s)")
+        if local_storage_decoded_entries:
+            details.append(f"decoded {len(local_storage_decoded_entries)} JSON record(s) from Local Storage LevelDB")
         if sample_urls:
             details.append("sample endpoints: " + "; ".join(sample_urls))
 
         if usage_entries:
-            details.append(f"exact token payloads were recovered from cached {self.display_name} API responses")
+            details.append(f"exact token payloads were recovered from {self.display_name} desktop stores")
             return SourceDetection(
                 source_id=self.source_id,
                 display_name=self.display_name,
@@ -276,7 +371,7 @@ class ChromiumDesktopAdapter(BaseAdapter):
                 accuracy_level=self.accuracy_level,
                 supported=True,
                 available=True,
-                summary=f"decoded {self.display_name} desktop API cache entries with exact usage payloads",
+                summary=f"decoded {self.display_name} desktop store entries with exact usage payloads",
                 candidate_paths=[str(entry.path) for entry in usage_entries[:2]],
                 details=details,
             )
@@ -409,11 +504,11 @@ class ChromiumDesktopAdapter(BaseAdapter):
                         reasoning_tokens=usage_values["reasoning_tokens"],
                         total_tokens=usage_values["total_tokens"],
                         accuracy_level=self.accuracy_level,
-                        raw_event_kind="chromium_desktop:cache_usage",
+                        raw_event_kind=f"chromium_desktop:{self._entry_kind(entry)}_usage",
                         source_path=str(entry.path),
                         raw_model=str(raw_model) if raw_model not in (None, "") else None,
                         model_resolution=model_resolution,
-                        model_source="desktop_cache_record" if raw_model not in (None, "") else None,
+                        model_source=f"desktop_{self._entry_kind(entry)}_record" if raw_model not in (None, "") else None,
                     )
                 )
 

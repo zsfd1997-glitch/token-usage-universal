@@ -10,6 +10,19 @@ from typing import Iterator
 
 _URL_PREFIXES = (b"https://", b"http://")
 _GZIP_MAGIC = b"\x1f\x8b"
+_JSON_MARKERS = (
+    '"usage"',
+    '"usageMetadata"',
+    '"token_usage"',
+    '"prompt_tokens"',
+    '"input_tokens"',
+    '"output_tokens"',
+    '"completion_tokens"',
+    '"total_tokens"',
+)
+_MAX_JSON_BACKTRACK_CHARS = 8192
+_MAX_MARKERS_PER_FILE = 32
+_MAX_OBJECTS_PER_FILE = 8
 
 
 @dataclass(frozen=True)
@@ -25,6 +38,15 @@ def _cache_files(cache_dir: Path) -> list[Path]:
     if not cache_dir.exists() or not cache_dir.is_dir():
         return []
     return sorted(path for path in cache_dir.iterdir() if path.is_file())
+
+
+def _leveldb_files(store_dir: Path) -> list[Path]:
+    if not store_dir.exists() or not store_dir.is_dir():
+        return []
+    matches: list[Path] = []
+    for pattern in ("*.log", "*.ldb"):
+        matches.extend(path for path in store_dir.rglob(pattern) if path.is_file())
+    return sorted({path for path in matches})
 
 
 def _extract_url(data: bytes) -> str | None:
@@ -57,6 +79,62 @@ def _decode_json_text(text: str) -> object | None:
     except json.JSONDecodeError:
         return None
     return payload
+
+
+def _decode_json_span(text: str, start_index: int) -> tuple[object | None, int | None]:
+    candidate = text[start_index:]
+    stripped = candidate.lstrip("\ufeff\r\n\t ")
+    if not stripped or stripped[0] not in "[{":
+        return None, None
+    trim_offset = len(candidate) - len(stripped)
+    try:
+        payload, end_index = json.JSONDecoder().raw_decode(stripped)
+    except json.JSONDecodeError:
+        return None, None
+    return payload, start_index + trim_offset + end_index
+
+
+def _iter_json_payloads_from_text(text: str) -> Iterator[tuple[int, object]]:
+    marker_positions: list[int] = []
+    for marker in _JSON_MARKERS:
+        start = 0
+        while len(marker_positions) < _MAX_MARKERS_PER_FILE:
+            index = text.find(marker, start)
+            if index < 0:
+                break
+            marker_positions.append(index)
+            start = index + len(marker)
+    if not marker_positions:
+        return
+
+    seen_starts: set[int] = set()
+    yielded_spans: list[tuple[int, int]] = []
+    yielded = 0
+    for marker_index in sorted(set(marker_positions)):
+        if yielded >= _MAX_OBJECTS_PER_FILE:
+            break
+        if any(start <= marker_index < end for start, end in yielded_spans):
+            continue
+        window_start = max(0, marker_index - _MAX_JSON_BACKTRACK_CHARS)
+        candidate_window = text[window_start : marker_index + 1]
+        brace_positions = [
+            window_start + index
+            for index, char in enumerate(candidate_window)
+            if char in "{["
+        ]
+        for start_index in brace_positions:
+            if start_index in seen_starts:
+                continue
+            payload, end_index = _decode_json_span(text, start_index)
+            if payload is None or end_index is None:
+                continue
+            if marker_index >= end_index:
+                continue
+            seen_starts.add(start_index)
+            yielded_spans.append((start_index, end_index))
+            yielded += 1
+            yield start_index, payload
+            break
 
 
 def _decode_gzip_payload(data: bytes, start: int) -> tuple[object | None, str | None]:
@@ -148,3 +226,41 @@ def iter_json_entries(
             body_encoding=encoding,
             captured_at=datetime.fromtimestamp(path.stat().st_mtime).astimezone(),
         )
+
+
+def iter_leveldb_json_entries(
+    store_dir: Path,
+    *,
+    text_keywords: tuple[str, ...] = (),
+    max_files: int | None = None,
+    synthetic_scheme: str = "indexeddb",
+) -> Iterator[ChromiumCacheJsonEntry]:
+    matched = 0
+    lowered_keywords = tuple(keyword.lower() for keyword in text_keywords if keyword)
+    for path in _leveldb_files(store_dir):
+        if max_files is not None and matched >= max_files:
+            break
+        try:
+            data = path.read_bytes()
+        except OSError:
+            continue
+
+        text = data.decode("utf-8", errors="ignore").replace("\x00", " ")
+        lowered_text = text.lower()
+        if lowered_keywords and not any(keyword in lowered_text for keyword in lowered_keywords):
+            continue
+
+        url = _extract_url(data) or f"{synthetic_scheme}://{path.name}"
+        file_yielded = 0
+        for _, payload in _iter_json_payloads_from_text(text):
+            yield ChromiumCacheJsonEntry(
+                path=path,
+                url=url,
+                payload=payload,
+                body_encoding="leveldb-json",
+                captured_at=datetime.fromtimestamp(path.stat().st_mtime).astimezone(),
+            )
+            matched += 1
+            file_yielded += 1
+            if (max_files is not None and matched >= max_files) or file_yielded >= _MAX_OBJECTS_PER_FILE:
+                break

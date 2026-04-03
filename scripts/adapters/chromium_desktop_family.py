@@ -33,7 +33,7 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
         display_name="GLM Desktop",
         provider="z-ai",
         env_name=TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
-        app_names=("GLM", "Z.ai", "Zhipu AI", "BigModel"),
+        app_names=("GLM", "Z.ai", "Zhipu AI", "BigModel", "Z Code", "ZCODE"),
         response_url_keywords=(
             "chatglm.cn/api/",
             "open.bigmodel.cn/api/",
@@ -69,7 +69,7 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
         display_name="Doubao Desktop",
         provider="bytedance",
         env_name=TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
-        app_names=("Doubao",),
+        app_names=("Doubao", "豆包"),
         response_url_keywords=(
             "www.doubao.com/api/",
             "doubao.com/api/",
@@ -86,7 +86,7 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
         display_name="Perplexity Desktop",
         provider="perplexity",
         env_name=TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
-        app_names=("Perplexity", "Perplexity Desktop"),
+        app_names=("Perplexity", "Perplexity Desktop", "Comet"),
         response_url_keywords=(
             "www.perplexity.ai/api/",
             "www.perplexity.ai/rest/",

@@ -12,7 +12,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from core.chromium_cache import iter_json_entries
+from core.chromium_cache import iter_json_entries, iter_leveldb_json_entries
 
 
 def _cache_blob(url: str, payload: object, *, gzip_body: bool) -> bytes:
@@ -59,6 +59,33 @@ class ChromiumCacheTests(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0].body_encoding, "identity")
         self.assertEqual(entries[0].payload["userID"], "user-1")
+
+    def test_iter_leveldb_json_entries_decodes_json_from_leveldb_like_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store_dir = Path(tmp)
+            store_dir.joinpath("000004.log").write_bytes(
+                (
+                    b"\x00leveldb-prefix https://chat.z.ai/api/v1/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T12:00:00-07:00",
+                            "conversation_id": "glm-1",
+                            "usage": {
+                                "prompt_tokens": 240,
+                                "completion_tokens": 60,
+                                "total_tokens": 300,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            entries = list(iter_leveldb_json_entries(store_dir, text_keywords=("chat.z.ai/api/",)))
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].body_encoding, "leveldb-json")
+        self.assertEqual(entries[0].payload["conversation_id"], "glm-1")
+        self.assertEqual(entries[0].payload["usage"]["total_tokens"], 300)
 
 
 if __name__ == "__main__":

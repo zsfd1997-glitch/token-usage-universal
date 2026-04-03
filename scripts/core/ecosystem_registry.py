@@ -76,7 +76,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("qwen-api",),
         surfaces=(
-            _surface("desktop", "Qwen Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("qwen-desktop",), notes="Electron/Chromium desk app path discovery is in place."),
+            _surface("desktop", "Qwen Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("qwen-desktop",), notes="Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Qwen Code CLI", primary_lane="native-client", maturity="exact-ready", implemented=("qwen-code-cli",), notes="Official project-scoped session JSONL files now provide exact usageMetadata."),
             _surface("ide", "Qwen IDE", primary_lane="ingress-capture", maturity="planned", planned=("qwen-ide-proxy",), notes="IDE lane should prefer custom base_url / proxy companion."),
         ),
@@ -89,7 +89,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("moonshot-kimi-api",),
         surfaces=(
-            _surface("desktop", "Kimi Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("kimi-desktop",)),
+            _surface("desktop", "Kimi Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("kimi-desktop",), notes="Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Kimi CLI", primary_lane="native-client", maturity="exact-ready", implemented=("kimi-cli",), notes="Official ~/.kimi/sessions wire.jsonl now provides exact StatusUpdate token_usage."),
             _surface("ide", "Kimi IDE", primary_lane="ingress-capture", maturity="planned", planned=("kimi-ide-proxy",)),
         ),
@@ -101,7 +101,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("zhipu-glm-api",),
         surfaces=(
-            _surface("desktop", "GLM Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("glm-desktop",)),
+            _surface("desktop", "GLM Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("glm-desktop",), notes="Desktop root discovery now includes Z Code / ZCODE and exact parsing supports Cache_Data, IndexedDB, and Local Storage."),
             _surface("cli", "GLM CLI", primary_lane="native-client", maturity="planned", planned=("glm-cli",)),
             _surface("ide", "GLM IDE", primary_lane="ingress-capture", maturity="planned", planned=("glm-ide-proxy",)),
         ),
@@ -137,7 +137,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("doubao-api",),
         surfaces=(
-            _surface("desktop", "Doubao Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("doubao-desktop",)),
+            _surface("desktop", "Doubao Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("doubao-desktop",), notes="Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Doubao CLI", primary_lane="ingress-capture", maturity="planned", planned=("doubao-cli-proxy",)),
             _surface("ide", "Doubao IDE", primary_lane="ingress-capture", maturity="planned", planned=("doubao-ide-proxy",)),
         ),
@@ -285,7 +285,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("perplexity-api",),
         surfaces=(
-            _surface("desktop", "Perplexity Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("perplexity-desktop",)),
+            _surface("desktop", "Perplexity Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("perplexity-desktop",), notes="Desktop root discovery now includes Comet and exact parsing supports Cache_Data, IndexedDB, and Local Storage."),
             _surface("cli", "Perplexity CLI", primary_lane="ingress-capture", maturity="planned", planned=("perplexity-cli-proxy",)),
             _surface("ide", "Perplexity IDE", primary_lane="ingress-capture", maturity="planned", planned=("perplexity-ide-proxy",)),
         ),

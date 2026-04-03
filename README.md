@@ -151,7 +151,7 @@ Top20 执行主线文档：
   - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
 - `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`
   - 现在已经是独立 `source_id`，不再混进 generic fallback
-  - 统一走原生 `Chromium / Electron` 桌面适配框架：优先扫本地 `Cache_Data`，同时保留 `IndexedDB / Local Storage` 痕迹诊断
+  - 统一走原生 `Chromium / Electron` 桌面适配框架：现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
   - exact 是否可得，取决于当前客户端是否把 token-bearing API 响应缓存到本地
   - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
 - `generic-openai-compatible`
