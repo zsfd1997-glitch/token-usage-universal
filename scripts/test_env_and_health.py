@@ -20,6 +20,7 @@ from core.config import (
     TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
     TOKEN_USAGE_CODEX_ROOT_ENV,
+    TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV,
@@ -27,7 +28,9 @@ from core.config import (
     TOKEN_USAGE_OPENCODE_BIN_ENV,
     TOKEN_USAGE_OPENCODE_ROOTS_ENV,
     TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV,
     default_claude_local_agent_root,
     default_cache_root,
     default_desktop_app_roots,
@@ -179,7 +182,10 @@ class HealthReportTests(unittest.TestCase):
                 _result("kimi-desktop", available=False, summary="missing desktop payload"),
                 _result("glm-desktop", available=False, summary="missing desktop payload"),
                 _result("qwen-desktop", available=False, summary="missing desktop payload"),
+                _result("deepseek-desktop", available=False, summary="missing desktop payload"),
                 _result("doubao-desktop", available=False, summary="missing desktop payload"),
+                _result("qianfan-desktop", available=False, summary="missing desktop payload"),
+                _result("yuanbao-desktop", available=False, summary="missing desktop payload"),
                 _result("perplexity-desktop", available=False, summary="missing desktop payload"),
                 _result("generic-openai-compatible", available=False, summary="set env"),
             ]
@@ -197,10 +203,15 @@ class HealthReportTests(unittest.TestCase):
         self.assertIn(TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn(TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn(TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn(TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
+        self.assertIn(TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn(TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_GENERIC_LOG_GLOBS", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_DISCOVERY_ROOTS", " ".join(report["next_steps"]))
+        self.assertIn("token_usage.py ingress config", " ".join(report["next_steps"]))
+        self.assertIn("token_usage.py ingress serve", " ".join(report["next_steps"]))
         self.assertEqual(
             report["recommended_commands"][0],
             "python3 scripts/token_usage.py health",

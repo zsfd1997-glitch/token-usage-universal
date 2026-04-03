@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from adapters.chromium_desktop import ChromiumDesktopAdapter, ChromiumDesktopSourceDefinition
 from core.config import (
+    TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV,
 )
 
 
@@ -65,6 +68,21 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
         ),
     ),
     ChromiumDesktopSourceDefinition(
+        source_id="deepseek-desktop",
+        display_name="DeepSeek Desktop",
+        provider="deepseek",
+        env_name=TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV,
+        app_names=("DeepSeek", "DeepSeek App"),
+        response_url_keywords=(
+            "chat.deepseek.com/api/",
+            "api.deepseek.com/",
+        ),
+        usage_url_keywords=(
+            "chat.deepseek.com/api/",
+            "api.deepseek.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
         source_id="doubao-desktop",
         display_name="Doubao Desktop",
         provider="bytedance",
@@ -79,6 +97,40 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
             "www.doubao.com/api/",
             "doubao.com/api/",
             "ark.cn-beijing.volces.com/api/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="qianfan-desktop",
+        display_name="Qianfan Desktop",
+        provider="baidu",
+        env_name=TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV,
+        app_names=("Qianfan", "Wenxin", "Wenxiaoyan", "文小言", "文心"),
+        response_url_keywords=(
+            "qianfan.baidubce.com/v2/",
+            "aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/",
+            "wenxiaoyan.baidu.com/",
+        ),
+        usage_url_keywords=(
+            "qianfan.baidubce.com/v2/chat/completions",
+            "aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/",
+            "wenxiaoyan.baidu.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="yuanbao-desktop",
+        display_name="Yuanbao Desktop",
+        provider="tencent",
+        env_name=TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV,
+        app_names=("Yuanbao", "Tencent Yuanbao", "元宝", "腾讯元宝"),
+        response_url_keywords=(
+            "yuanbao.tencent.com/api/",
+            "hunyuan.tencentcloudapi.com/",
+            "open.hunyuan.tencent.com/",
+        ),
+        usage_url_keywords=(
+            "yuanbao.tencent.com/api/",
+            "hunyuan.tencentcloudapi.com/",
+            "open.hunyuan.tencent.com/",
         ),
     ),
     ChromiumDesktopSourceDefinition(

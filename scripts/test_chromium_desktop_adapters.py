@@ -97,7 +97,16 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
 
         self.assertEqual(
             source_ids,
-            {"kimi-desktop", "glm-desktop", "qwen-desktop", "doubao-desktop", "perplexity-desktop"},
+            {
+                "kimi-desktop",
+                "glm-desktop",
+                "qwen-desktop",
+                "deepseek-desktop",
+                "doubao-desktop",
+                "qianfan-desktop",
+                "yuanbao-desktop",
+                "perplexity-desktop",
+            },
         )
 
     def test_glm_desktop_collects_exact_usage_from_indexeddb(self) -> None:
@@ -168,6 +177,109 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertEqual(len(result.events), 1)
         self.assertEqual(result.events[0].session_id, "doubao-1")
         self.assertEqual(result.events[0].total_tokens, 250)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:local_storage_usage")
+
+    def test_deepseek_desktop_collects_exact_usage_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            cache_dir.joinpath("deadbeef_0").write_bytes(
+                _cache_blob(
+                    "https://api.deepseek.com/chat/completions",
+                    {
+                        "created_at": "2026-03-25T16:30:00-07:00",
+                        "conversation_id": "deepseek-1",
+                        "model": "deepseek-chat",
+                        "usage": {
+                            "prompt_tokens": 320,
+                            "completion_tokens": 80,
+                            "total_tokens": 400,
+                        },
+                    },
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "deepseek-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "deepseek-1")
+        self.assertEqual(result.events[0].total_tokens, 400)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
+
+    def test_qianfan_desktop_collects_exact_usage_from_indexeddb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_wenxiaoyan.baidu.com_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000011.log").write_bytes(
+                (
+                    b"\x00https://qianfan.baidubce.com/v2/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T16:40:00-07:00",
+                            "conversation_id": "qianfan-1",
+                            "model": "ernie-4.5-turbo-32k",
+                            "usage": {
+                                "prompt_tokens": 260,
+                                "completion_tokens": 90,
+                                "total_tokens": 350,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "qianfan-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "qianfan-1")
+        self.assertEqual(result.events[0].total_tokens, 350)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
+
+    def test_yuanbao_desktop_collects_exact_usage_from_local_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_storage_dir = root / "Local Storage" / "leveldb"
+            local_storage_dir.mkdir(parents=True)
+            local_storage_dir.joinpath("000021.log").write_bytes(
+                (
+                    b"\x00https://yuanbao.tencent.com/api/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T16:50:00-07:00",
+                            "conversation_id": "yuanbao-1",
+                            "model": "hunyuan-turbos",
+                            "usage": {
+                                "prompt_tokens": 150,
+                                "completion_tokens": 50,
+                                "total_tokens": 200,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "yuanbao-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "yuanbao-1")
+        self.assertEqual(result.events[0].total_tokens, 200)
         self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:local_storage_usage")
 
     def test_perplexity_desktop_detects_comet_root_and_indexeddb_usage(self) -> None:

@@ -728,6 +728,27 @@
       "output_per_million": 1.2,
       "reasoning_per_million": 1.2
     },
+    "ernie-4.5-turbo-32k": {
+      "provider": "baidu",
+      "input_per_million": 0.8,
+      "cached_input_per_million": 0.08,
+      "output_per_million": 3.2,
+      "reasoning_per_million": 3.2
+    },
+    "ernie-4.5-turbo-128k": {
+      "provider": "baidu",
+      "input_per_million": 1.2,
+      "cached_input_per_million": 0.12,
+      "output_per_million": 4.8,
+      "reasoning_per_million": 4.8
+    },
+    "ernie-x1-turbo-32k": {
+      "provider": "baidu",
+      "input_per_million": 1.0,
+      "cached_input_per_million": 0.1,
+      "output_per_million": 4.0,
+      "reasoning_per_million": 4.0
+    },
     "gemini-2.0-flash-001": {
       "provider": "google",
       "input_per_million": 0.1,
@@ -1260,6 +1281,83 @@
       "output_per_million": 0.57,
       "reasoning_per_million": 0.57
     },
+    "hunyuan-t1": {
+      "provider": "tencent",
+      "input_per_million": 1.0,
+      "cached_input_per_million": 0.1,
+      "output_per_million": 4.0,
+      "reasoning_per_million": 4.0
+    },
+    "hunyuan-turbos": {
+      "provider": "tencent",
+      "input_per_million": 0.8,
+      "cached_input_per_million": 0.08,
+      "output_per_million": 2.0,
+      "reasoning_per_million": 2.0
+    },
+    "tencent-hy-2.0-think": {
+      "provider": "tencent",
+      "input_per_million": 3.975,
+      "cached_input_per_million": 0.3975,
+      "output_per_million": 15.9,
+      "reasoning_per_million": 15.9
+    },
+    "tencent-hy-2.0-instruct": {
+      "provider": "tencent",
+      "input_per_million": 3.18,
+      "cached_input_per_million": 0.318,
+      "output_per_million": 7.95,
+      "reasoning_per_million": 7.95
+    },
+    "sensenova-v6-turbo": {
+      "provider": "sensenova",
+      "input_per_million": 1.5,
+      "cached_input_per_million": 0.15,
+      "output_per_million": 4.5,
+      "reasoning_per_million": 4.5
+    },
+    "sensenova-v6-pro": {
+      "provider": "sensenova",
+      "input_per_million": 3.0,
+      "cached_input_per_million": 0.3,
+      "output_per_million": 9.0,
+      "reasoning_per_million": 9.0
+    },
+    "sensenova-v6-reasoner": {
+      "provider": "sensenova",
+      "input_per_million": 8.0,
+      "cached_input_per_million": 0.8,
+      "output_per_million": 32.0,
+      "reasoning_per_million": 32.0
+    },
+    "baichuan4-air": {
+      "provider": "baichuan",
+      "input_per_million": 0.98,
+      "cached_input_per_million": 0.098,
+      "output_per_million": 0.98,
+      "reasoning_per_million": 0.98
+    },
+    "baichuan4-turbo": {
+      "provider": "baichuan",
+      "input_per_million": 15.0,
+      "cached_input_per_million": 1.5,
+      "output_per_million": 15.0,
+      "reasoning_per_million": 15.0
+    },
+    "baichuan4": {
+      "provider": "baichuan",
+      "input_per_million": 100.0,
+      "cached_input_per_million": 10.0,
+      "output_per_million": 100.0,
+      "reasoning_per_million": 100.0
+    },
+    "spark-x": {
+      "provider": "spark",
+      "input_per_million": 3.7,
+      "cached_input_per_million": 0.37,
+      "output_per_million": 9.0,
+      "reasoning_per_million": 9.0
+    },
     "antigravity-claude-opus-4-5-thinking": {
       "provider": "google",
       "input_per_million": 5.0,
@@ -1368,6 +1466,26 @@
     "kimi-coding/k2p5": "kimi-k2.5",
     "kimi-ai/kimi-2.5": "kimi-k2.5",
     "moonshot-ai/kimi-k2.5": "kimi-k2.5",
+    "doubao-seed-1.6": "seed-1.6",
+    "doubao-seed-1-6": "seed-1.6",
+    "doubao-seed-1.6-flash": "seed-1.6-flash",
+    "doubao-seed-1-6-flash": "seed-1.6-flash",
+    "doubao-seed-2.0-lite": "seed-2.0-lite",
+    "doubao-seed-2-0-lite": "seed-2.0-lite",
+    "doubao-seed-2.0-mini": "seed-2.0-mini",
+    "doubao-seed-2-0-mini": "seed-2.0-mini",
+    "ernie-4.5-turbo": "ernie-4.5-turbo-32k",
+    "ernie-4.5-turbo-20260402": "ernie-4.5-turbo-32k",
+    "ernie-x1-turbo": "ernie-x1-turbo-32k",
+    "hunyuan-turbo-s": "hunyuan-turbos",
+    "hunyuan-turbo-s-20250416": "hunyuan-turbos",
+    "sensechat-5": "sensenova-v6-turbo",
+    "sensechat5": "sensenova-v6-turbo",
+    "baichuan4-air-32k": "baichuan4-air",
+    "baichuan4-turbo-128k": "baichuan4-turbo",
+    "spark-x1": "spark-x",
+    "spark-x1.5": "spark-x",
+    "spark-x2": "spark-x",
     "gpt-5": "gpt-5.4",
     "gpt-5-4": "gpt-5.4",
     "openai/gpt-5.4": "gpt-5.4",

@@ -23,6 +23,12 @@ from adapters.opencode import OpenCodeAdapter
 from adapters.qwen_code_cli import QwenCodeCliAdapter
 from ascii_hifi import render_diagnose, render_health, render_report, render_sources, render_targets
 from core.health import build_health_report
+from core.ingress_companion import (
+    build_ingress_companion_config,
+    build_ingress_companion_payload,
+    render_ingress_companion_payload,
+    serve_ingress_companion,
+)
 from core.aggregator import build_report
 from core.ecosystem_registry import build_top20_registry_payload
 from core.models import SourceCollectResult
@@ -277,6 +283,40 @@ def command_targets(args) -> int:
     return 0
 
 
+def command_ingress_config(args) -> int:
+    config = build_ingress_companion_config(
+        provider=args.provider,
+        upstream_base_url=args.upstream_base_url,
+        protocol=args.protocol,
+        listen_host=args.listen_host,
+        listen_port=args.listen_port,
+        local_base_path=args.local_base_path,
+        log_root=args.log_root,
+        project_path=args.project_path,
+    )
+    payload = build_ingress_companion_payload(config)
+    if args.format == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(render_ingress_companion_payload(payload))
+    return 0
+
+
+def command_ingress_serve(args) -> int:
+    config = build_ingress_companion_config(
+        provider=args.provider,
+        upstream_base_url=args.upstream_base_url,
+        protocol=args.protocol,
+        listen_host=args.listen_host,
+        listen_port=args.listen_port,
+        local_base_path=args.local_base_path,
+        log_root=args.log_root,
+        project_path=args.project_path,
+    )
+    serve_ingress_companion(config)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Standalone CLI runtime for token-usage-universal"
@@ -324,6 +364,32 @@ def build_parser() -> argparse.ArgumentParser:
     targets = subparsers.add_parser("targets", help="show the frozen Top20 ecosystem registry")
     targets.add_argument("--format", choices=("ascii", "json"), default="ascii")
     targets.set_defaults(func=command_targets)
+
+    ingress = subparsers.add_parser("ingress", help="run or inspect the local ingress companion for IDE/CLI capture")
+    ingress_subparsers = ingress.add_subparsers(dest="ingress_command", required=True)
+
+    ingress_config = ingress_subparsers.add_parser("config", help="print local proxy configuration for one provider")
+    ingress_config.add_argument("--provider", required=True, help="provider family id, such as deepseek, qwen, anthropic")
+    ingress_config.add_argument("--upstream-base-url", required=True, help="upstream API base URL")
+    ingress_config.add_argument("--protocol", choices=("openai", "anthropic", "generic"), default="openai")
+    ingress_config.add_argument("--listen-host", default="127.0.0.1")
+    ingress_config.add_argument("--listen-port", type=int, default=8787)
+    ingress_config.add_argument("--local-base-path", help="optional local base path override, for example /v1")
+    ingress_config.add_argument("--log-root", help="optional log root override")
+    ingress_config.add_argument("--project-path", help="optional project path to stamp onto ingress records")
+    ingress_config.add_argument("--format", choices=("text", "json"), default="text")
+    ingress_config.set_defaults(func=command_ingress_config)
+
+    ingress_serve = ingress_subparsers.add_parser("serve", help="start the local ingress companion")
+    ingress_serve.add_argument("--provider", required=True, help="provider family id, such as deepseek, qwen, anthropic")
+    ingress_serve.add_argument("--upstream-base-url", required=True, help="upstream API base URL")
+    ingress_serve.add_argument("--protocol", choices=("openai", "anthropic", "generic"), default="openai")
+    ingress_serve.add_argument("--listen-host", default="127.0.0.1")
+    ingress_serve.add_argument("--listen-port", type=int, default=8787)
+    ingress_serve.add_argument("--local-base-path", help="optional local base path override, for example /v1")
+    ingress_serve.add_argument("--log-root", help="optional log root override")
+    ingress_serve.add_argument("--project-path", help="optional project path to stamp onto ingress records")
+    ingress_serve.set_defaults(func=command_ingress_serve)
 
     explore = subparsers.add_parser("explore", help="interactive dashboard launcher")
     explore.set_defaults(func=command_explore)

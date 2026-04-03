@@ -16,6 +16,9 @@ TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GLM_DESKTOP_ROOT"
 TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_QWEN_DESKTOP_ROOT"
 TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV = "TOKEN_USAGE_DOUBAO_DESKTOP_ROOT"
 TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV = "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT"
+TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV = "TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT"
+TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_QIANFAN_DESKTOP_ROOT"
+TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV = "TOKEN_USAGE_YUANBAO_DESKTOP_ROOT"
 TOKEN_USAGE_QWEN_CODE_ROOT_ENV = "TOKEN_USAGE_QWEN_CODE_ROOT"
 TOKEN_USAGE_KIMI_CLI_ROOT_ENV = "TOKEN_USAGE_KIMI_CLI_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
@@ -287,6 +290,27 @@ ENVIRONMENT_VARIABLES = (
         "description": "Override the Perplexity desktop app-data directory.",
         "default": lambda: ",".join(
             _path_text(path) for path in default_desktop_app_roots(("Perplexity", "Perplexity Desktop", "Comet"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV,
+        "description": "Override the DeepSeek desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("DeepSeek", "DeepSeek App"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV,
+        "description": "Override the Baidu Qianfan / Wenxin desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Qianfan", "Wenxin", "Wenxiaoyan", "文小言", "文心"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV,
+        "description": "Override the Tencent Yuanbao desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Yuanbao", "Tencent Yuanbao", "元宝", "腾讯元宝"))
         ),
     },
     {

@@ -86,7 +86,10 @@ Top20 执行主线文档：
   - `kimi-desktop`
   - `glm-desktop`
   - `qwen-desktop`
+  - `deepseek-desktop`
   - `doubao-desktop`
+  - `qianfan-desktop`
+  - `yuanbao-desktop`
   - `perplexity-desktop`
 - `top provider families`
   - `openai-api`
@@ -149,16 +152,20 @@ Top20 执行主线文档：
   - mac 默认根目录：`~/Library/Application Support/MiniMax Agent`
   - Windows 常见根目录：`%APPDATA%\MiniMax Agent`
   - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
-- `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`
+- `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop`
   - 现在已经是独立 `source_id`，不再混进 generic fallback
   - 统一走原生 `Chromium / Electron` 桌面适配框架：现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
   - exact 是否可得，取决于当前客户端是否把 token-bearing API 响应缓存到本地
-  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
+  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_QIANFAN_DESKTOP_ROOT`、`TOKEN_USAGE_YUANBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
 - `generic-openai-compatible`
   - 当前显示名是 `Generic API Compatible`
   - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
   - 可自动扫描常见目录，也可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
   - 当日志不在标准位置时，可设置 `TOKEN_USAGE_DISCOVERY_ROOTS`
+- `ingress companion`
+  - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
+  - 当前已经支持 `openai / anthropic / generic` 三种协议模式
+  - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
 
 Top20 provider family 的适配规则是统一的：
 
@@ -195,7 +202,10 @@ Top20 provider family 的适配规则是统一的：
 | `TOKEN_USAGE_KIMI_DESKTOP_ROOT` | 覆写 Kimi Desktop app-data 目录 |
 | `TOKEN_USAGE_GLM_DESKTOP_ROOT` | 覆写 GLM Desktop app-data 目录 |
 | `TOKEN_USAGE_QWEN_DESKTOP_ROOT` | 覆写 Qwen / DashScope app-data 目录 |
+| `TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT` | 覆写 DeepSeek Desktop app-data 目录 |
 | `TOKEN_USAGE_DOUBAO_DESKTOP_ROOT` | 覆写 Doubao Desktop app-data 目录 |
+| `TOKEN_USAGE_QIANFAN_DESKTOP_ROOT` | 覆写 Qianfan / 文心 / 文小言 app-data 目录 |
+| `TOKEN_USAGE_YUANBAO_DESKTOP_ROOT` | 覆写 Yuanbao / Hunyuan app-data 目录 |
 | `TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT` | 覆写 Perplexity Desktop app-data 目录 |
 | `TOKEN_USAGE_QWEN_CODE_ROOT` | 覆写 Qwen Code CLI runtime root |
 | `TOKEN_USAGE_KIMI_CLI_ROOT` | 覆写 Kimi CLI share root |
@@ -214,6 +224,9 @@ export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/ope
 export TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="$HOME/Library/Application Support/Claude"
 export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax Agent"
 export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
+export TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT="$HOME/Library/Application Support/DeepSeek"
+export TOKEN_USAGE_QIANFAN_DESKTOP_ROOT="$HOME/Library/Application Support/Wenxiaoyan"
+export TOKEN_USAGE_YUANBAO_DESKTOP_ROOT="$HOME/Library/Application Support/Yuanbao"
 export TOKEN_USAGE_QWEN_CODE_ROOT="$HOME/.qwen"
 export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
 export TOKEN_USAGE_GENERIC_LOG_GLOBS="$HOME/logs/openai/*.jsonl,$HOME/logs/openai/*.json"
@@ -229,6 +242,9 @@ $env:TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="%APPDATA%\Claude\local-agent-mode-sess
 $env:TOKEN_USAGE_CLAUDE_DESKTOP_ROOT="%APPDATA%\Claude"
 $env:TOKEN_USAGE_MINIMAX_AGENT_ROOT="%APPDATA%\MiniMax Agent"
 $env:TOKEN_USAGE_KIMI_DESKTOP_ROOT="%APPDATA%\Kimi"
+$env:TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT="%APPDATA%\DeepSeek"
+$env:TOKEN_USAGE_QIANFAN_DESKTOP_ROOT="%APPDATA%\Wenxiaoyan"
+$env:TOKEN_USAGE_YUANBAO_DESKTOP_ROOT="%APPDATA%\Yuanbao"
 $env:TOKEN_USAGE_QWEN_CODE_ROOT="%USERPROFILE%\.qwen"
 $env:TOKEN_USAGE_KIMI_CLI_ROOT="%USERPROFILE%\.kimi"
 $env:TOKEN_USAGE_OPENCODE_BIN="%USERPROFILE%\.local\bin\opencode.exe"
@@ -237,6 +253,42 @@ $env:TOKEN_USAGE_GENERIC_LOG_GLOBS="%USERPROFILE%\logs\*.jsonl"
 $env:TOKEN_USAGE_DISCOVERY_ROOTS="%APPDATA%,%LOCALAPPDATA%"
 python .\scripts\token_usage.py health
 ```
+
+## IDE / 内网 Launcher 接入
+
+如果某个客户端支持自定义 `base_url`，优先不要硬逆向它的私有日志，而是先接本地 `ingress companion`：
+
+```bash
+python3 scripts/token_usage.py ingress config \
+  --provider deepseek \
+  --upstream-base-url https://api.deepseek.com \
+  --protocol openai
+```
+
+上面的命令会打印：
+
+- 本地代理地址，例如 `http://127.0.0.1:8787/v1`
+- 原始上游地址
+- 建议写给客户端的 env/config
+- companion 的 JSONL log 根目录
+
+确认地址后，再启动本地 companion：
+
+```bash
+python3 scripts/token_usage.py ingress serve \
+  --provider deepseek \
+  --upstream-base-url https://api.deepseek.com \
+  --protocol openai \
+  --project-path "$PWD"
+```
+
+这条链路适合：
+
+- IDE 插件
+- 企业内网 launcher
+- 任何支持 OpenAI-compatible / Anthropic-compatible `base_url` 的 CLI
+
+对这类客户端，我们优先保证“exact usage 能进来”，再按 provider family 自动分流归因，不强依赖它们是否有公开的 skills 库。
 
 ## 关键命令
 

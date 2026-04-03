@@ -123,6 +123,8 @@
 - `Qwen Code CLI` 已进入 `exact-ready`：直接读取官方 project-scoped session JSONL
 - `Kimi CLI` 已进入 `exact-ready`：直接读取官方 `~/.kimi/sessions/*/*/wire.jsonl` 与 `StatusUpdate.token_usage`
 - `GLM Desktop / Doubao Desktop / Perplexity Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
+- `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
+- `pricing_db.json` 已补齐 `ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao alias` 这一批国产生态的费用估算基线
 
 验收：
 
@@ -158,6 +160,12 @@
 目标：
 
 - 上线 ingress companion
+
+当前进度：
+
+- `token_usage.py ingress config` 已可为单个 provider 打印本地代理地址、上游地址、推荐 env/config 与 log 根目录
+- `token_usage.py ingress serve` 已可启动本地 companion，并把 exact usage 响应落成 JSONL
+- 当前 companion 已支持 `openai / anthropic / generic` 三种协议模式，优先服务 `IDE / 内网 launcher / 自定义 base_url` 场景
 
 能力：
 

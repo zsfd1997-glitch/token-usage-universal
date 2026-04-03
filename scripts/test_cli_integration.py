@@ -340,7 +340,7 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 37)
+        self.assertEqual(len(source_ids), 40)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
         self.assertIn("claude-desktop", source_ids)
@@ -351,7 +351,10 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("kimi-desktop", source_ids)
         self.assertIn("glm-desktop", source_ids)
         self.assertIn("qwen-desktop", source_ids)
+        self.assertIn("deepseek-desktop", source_ids)
         self.assertIn("doubao-desktop", source_ids)
+        self.assertIn("qianfan-desktop", source_ids)
+        self.assertIn("yuanbao-desktop", source_ids)
         self.assertIn("perplexity-desktop", source_ids)
         self.assertIn("openai-api", source_ids)
         self.assertIn("anthropic-api", source_ids)
@@ -388,7 +391,35 @@ class CliIntegrationTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["total_ecosystems"], 20)
         self.assertEqual(payload["summary"]["china_priority_ecosystems"], 13)
+        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 14)
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
+
+    def test_ingress_config_json_exposes_local_base_url(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI_PATH),
+                "ingress",
+                "config",
+                "--provider",
+                "deepseek",
+                "--upstream-base-url",
+                "https://api.deepseek.com",
+                "--protocol",
+                "openai",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["provider"], "deepseek")
+        self.assertEqual(payload["local_base_url"], "http://127.0.0.1:8787/v1")
+        self.assertEqual(payload["upstream_base_url"], "https://api.deepseek.com/v1")
 
 
 if __name__ == "__main__":

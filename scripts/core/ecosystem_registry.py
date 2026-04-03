@@ -125,7 +125,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("deepseek-api",),
         surfaces=(
-            _surface("desktop", "DeepSeek Desktop", primary_lane="native-client", maturity="planned", planned=("deepseek-desktop",), notes="Desktop path and cache contract still need fixture reconnaissance."),
+            _surface("desktop", "DeepSeek Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("deepseek-desktop",), notes="Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "DeepSeek CLI", primary_lane="ingress-capture", maturity="planned", planned=("deepseek-cli-proxy",)),
             _surface("ide", "DeepSeek IDE", primary_lane="ingress-capture", maturity="planned", planned=("deepseek-ide-proxy",)),
         ),
@@ -149,7 +149,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("baidu-qianfan-api",),
         surfaces=(
-            _surface("desktop", "Qianfan Desktop Shell", primary_lane="native-client", maturity="planned", planned=("qianfan-desktop",), notes="Desktop family needs real app-data fixtures."),
+            _surface("desktop", "Qianfan Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("qianfan-desktop",), notes="Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Qianfan CLI", primary_lane="ingress-capture", maturity="planned", planned=("qianfan-cli-proxy",)),
             _surface("ide", "Qianfan IDE", primary_lane="ingress-capture", maturity="planned", planned=("qianfan-ide-proxy",)),
         ),
@@ -161,7 +161,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("tencent-hunyuan-api",),
         surfaces=(
-            _surface("desktop", "Yuanbao Desktop", primary_lane="native-client", maturity="planned", planned=("yuanbao-desktop",)),
+            _surface("desktop", "Yuanbao Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("yuanbao-desktop",), notes="Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Hunyuan CLI", primary_lane="ingress-capture", maturity="planned", planned=("hunyuan-cli-proxy",)),
             _surface("ide", "Hunyuan IDE", primary_lane="ingress-capture", maturity="planned", planned=("hunyuan-ide-proxy",)),
         ),

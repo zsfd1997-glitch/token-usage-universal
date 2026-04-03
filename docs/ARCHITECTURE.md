@@ -2,7 +2,7 @@
 
 ## 产品结构
 
-`token-usage-universal` 对外是一个 `skill`，内部由一个 Python CLI core 驱动。
+`token-usage-universal` 对外主成品是 `独立 Python CLI`，`skill` 只是可选包装层；内部由一个 Python CLI core 驱动。
 
 ```text
 SKILL.md
@@ -30,7 +30,14 @@ SKILL.md
 
 - `codex`
 - `claude-code`
-- `generic-openai-compatible`
+- `claude-desktop`
+- `opencode`
+- `minimax-agent`
+- `qwen-code-cli`
+- `kimi-cli`
+- `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop`
+- `openai-api / anthropic-api / google-gemini-api / moonshot-kimi-api / zhipu-glm-api / qwen-api / deepseek-api / minimax-api / xai-grok-api / cohere-api / mistral-api / perplexity-api / openrouter-api / togetherai-api / fireworks-api / azure-openai-api / baidu-qianfan-api / tencent-hunyuan-api / stepfun-api / doubao-api / sensenova-api / baichuan-api / siliconflow-api / spark-api`
+- `generic-openai-compatible`（手动补漏 / diagnose fallback）
 
 ### 2. Core Layer
 
@@ -73,6 +80,17 @@ SKILL.md
 - 在 TTY 中提供“弹出可选”的视图选择
 - 只做交互收集与路由，不单独实现聚合逻辑
 - 非 TTY 下优雅降级，提示改用纯 flags/subcommands
+
+### 5. Ingress Companion Layer
+
+位于 `scripts/core/ingress_companion.py` 和 `token_usage.py ingress *`。
+
+职责：
+
+- 为 `IDE / 内网 launcher / 自定义 base_url` 客户端提供本地 companion
+- 支持 `openai / anthropic / generic` 三种协议模式
+- 把 exact usage 响应落成 JSONL，供 provider family 自动发现
+- 尽量不绑定某个固定 `skills` 库或单一宿主环境
 
 ## 非目标
 

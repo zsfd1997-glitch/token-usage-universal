@@ -46,7 +46,10 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
         "kimi-desktop": "TOKEN_USAGE_KIMI_DESKTOP_ROOT",
         "glm-desktop": "TOKEN_USAGE_GLM_DESKTOP_ROOT",
         "qwen-desktop": "TOKEN_USAGE_QWEN_DESKTOP_ROOT",
+        "deepseek-desktop": "TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT",
         "doubao-desktop": "TOKEN_USAGE_DOUBAO_DESKTOP_ROOT",
+        "qianfan-desktop": "TOKEN_USAGE_QIANFAN_DESKTOP_ROOT",
+        "yuanbao-desktop": "TOKEN_USAGE_YUANBAO_DESKTOP_ROOT",
         "perplexity-desktop": "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT",
     }
     missing_desktop_sources = [
@@ -56,7 +59,7 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     ]
     if missing_desktop_sources:
         steps.append(
-            "Kimi / GLM / Qwen / Doubao / Perplexity 这批桌面端已接入原生 Chromium/Electron 适配框架；"
+            "Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity 这批桌面端已接入原生 Chromium/Electron 适配框架；"
             "现在会同时读取 Cache_Data、IndexedDB 和 Local Storage；"
             "如果默认 app-data 目录没命中，请按来源分别设置 "
             + ", ".join(env_name for env_name in desktop_family_sources.values())
@@ -82,6 +85,13 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
         steps.append(
             "如要接入通用 API exact 日志，优先确认常见目录是否已自动发现；"
             "若日志不在标准位置，请设置 TOKEN_USAGE_GENERIC_LOG_GLOBS 或 TOKEN_USAGE_DISCOVERY_ROOTS。"
+        )
+
+    if any(not item.available for item in detections if item.supported):
+        steps.append(
+            "如果您统计的是 IDE、内网 launcher 或任何支持自定义 base_url 的客户端，"
+            "先运行 `python3 scripts/token_usage.py ingress config --provider deepseek --upstream-base-url https://api.deepseek.com --protocol openai` "
+            "拿本地代理地址，再用 `python3 scripts/token_usage.py ingress serve ...` 启动 companion。"
         )
 
     steps.append("先运行 sources 看来源状态，再运行 report --today 拿今日主结论。")

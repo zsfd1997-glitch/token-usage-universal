@@ -12,10 +12,10 @@
 | Kimi / Moonshot / Kimi CLI | China | `moonshot-kimi-api` `exact-ready` | `kimi-desktop` `exact-ready` `native-client` | `kimi-cli` `exact-ready` `native-client` | `kimi-ide-proxy` `planned` `ingress-capture` |
 | GLM / BigModel / Z.ai | China | `zhipu-glm-api` `exact-ready` | `glm-desktop` `exact-ready` `native-client` | `glm-cli` `planned` `native-client` | `glm-ide-proxy` `planned` `ingress-capture` |
 | MiniMax / MiniMax Agent | China | `minimax-api` `exact-ready` | `minimax-agent` `exact-ready` `native-client` | `minimax-cli-proxy` `planned` `ingress-capture` | `minimax-ide-proxy` `planned` `ingress-capture` |
-| DeepSeek | China | `deepseek-api` `exact-ready` | `deepseek-desktop` `planned` `native-client` | `deepseek-cli-proxy` `planned` `ingress-capture` | `deepseek-ide-proxy` `planned` `ingress-capture` |
+| DeepSeek | China | `deepseek-api` `exact-ready` | `deepseek-desktop` `exact-ready` `native-client` | `deepseek-cli-proxy` `planned` `ingress-capture` | `deepseek-ide-proxy` `planned` `ingress-capture` |
 | Doubao / Volcengine Ark | China | `doubao-api` `exact-ready` | `doubao-desktop` `exact-ready` `native-client` | `doubao-cli-proxy` `planned` `ingress-capture` | `doubao-ide-proxy` `planned` `ingress-capture` |
-| Baidu Qianfan / Wenxin | China | `baidu-qianfan-api` `exact-ready` | `qianfan-desktop` `planned` `native-client` | `qianfan-cli-proxy` `planned` `ingress-capture` | `qianfan-ide-proxy` `planned` `ingress-capture` |
-| Tencent Hunyuan / Yuanbao | China | `tencent-hunyuan-api` `exact-ready` | `yuanbao-desktop` `planned` `native-client` | `hunyuan-cli-proxy` `planned` `ingress-capture` | `hunyuan-ide-proxy` `planned` `ingress-capture` |
+| Baidu Qianfan / Wenxin | China | `baidu-qianfan-api` `exact-ready` | `qianfan-desktop` `exact-ready` `native-client` | `qianfan-cli-proxy` `planned` `ingress-capture` | `qianfan-ide-proxy` `planned` `ingress-capture` |
+| Tencent Hunyuan / Yuanbao | China | `tencent-hunyuan-api` `exact-ready` | `yuanbao-desktop` `exact-ready` `native-client` | `hunyuan-cli-proxy` `planned` `ingress-capture` | `hunyuan-ide-proxy` `planned` `ingress-capture` |
 | StepFun | China | `stepfun-api` `exact-ready` | `stepfun-desktop` `planned` `native-client` | `stepfun-cli-proxy` `planned` `ingress-capture` | `stepfun-ide-proxy` `planned` `ingress-capture` |
 | SenseNova | China | `sensenova-api` `exact-ready` | `sensenova-desktop` `planned` `native-client` | `sensenova-cli-proxy` `planned` `ingress-capture` | `sensenova-ide-proxy` `planned` `ingress-capture` |
 | Baichuan | China | `baichuan-api` `exact-ready` | `baichuan-desktop` `planned` `native-client` | `baichuan-cli-proxy` `planned` `ingress-capture` | `baichuan-ide-proxy` `planned` `ingress-capture` |
@@ -34,3 +34,9 @@
 - `Desktop`: 优先 `native-client`
 - `CLI`: 优先 `official export/logs`，拿不到再走 `ingress-capture`
 - `IDE`: 默认 `ingress-capture`
+
+## Shared Ingress Bootstrap
+
+- `IDE / 内网 launcher / 自定义 base_url` 现在统一走共享 `ingress companion`
+- 当前 companion 已支持 `openai / anthropic / generic` 三种协议，不要求为每个 IDE 单独写一套本地 parser
+- 生态级 `*-ide-proxy / *-cli-proxy` 仍保留在 matrix 里，表示“归因归到哪个生态”，不是说每家都要复制一套 companion 实现

@@ -130,15 +130,43 @@ export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
 export TOKEN_USAGE_KIMI_DESKTOP_ROOT="$HOME/Library/Application Support/Kimi"
 export TOKEN_USAGE_GLM_DESKTOP_ROOT="$HOME/Library/Application Support/GLM"
 export TOKEN_USAGE_QWEN_DESKTOP_ROOT="$HOME/Library/Application Support/Qwen"
+export TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT="$HOME/Library/Application Support/DeepSeek"
 export TOKEN_USAGE_DOUBAO_DESKTOP_ROOT="$HOME/Library/Application Support/Doubao"
+export TOKEN_USAGE_QIANFAN_DESKTOP_ROOT="$HOME/Library/Application Support/Wenxiaoyan"
+export TOKEN_USAGE_YUANBAO_DESKTOP_ROOT="$HOME/Library/Application Support/Yuanbao"
 export TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT="$HOME/Library/Application Support/Perplexity"
 ```
 
 说明：
 
-- 这批来源现在已经拆成独立 `source_id`，分别是 `kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop`。
+- 这批来源现在已经拆成独立 `source_id`，分别是 `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop`。
 - 它们统一走原生 `Chromium / Electron` 桌面适配框架，现在会同时读取 `Cache_Data / IndexedDB / Local Storage`，不再只依赖 `generic-openai-compatible`。
 - 如果默认目录没命中，直接设对应 env override；如果命中但没有 exact，health 会明确告诉您“有桌面痕迹但当前没有 token 真源”。
+
+### IDE / 内网 launcher / 自定义 base_url
+
+```bash
+python3 scripts/token_usage.py ingress config \
+  --provider deepseek \
+  --upstream-base-url https://api.deepseek.com \
+  --protocol openai
+```
+
+说明：
+
+- `ingress config` 会打印本地代理地址、上游地址、推荐 env/config 和 JSONL log 根目录。
+- `ingress serve` 会启动本地 companion，把 exact usage 响应落成 JSONL，供 provider family 自动发现。
+- 这条链路优先面向 `IDE / 私有 launcher / 企业内网封装 CLI`，不要求对方一定有 `skills` 目录。
+
+实际启动：
+
+```bash
+python3 scripts/token_usage.py ingress serve \
+  --provider deepseek \
+  --upstream-base-url https://api.deepseek.com \
+  --protocol openai \
+  --project-path "$PWD"
+```
 
 ## 5. 验证主命令
 
@@ -149,4 +177,5 @@ python3 scripts/token_usage.py diagnose --source qwen-code-cli --today
 python3 scripts/token_usage.py diagnose --source kimi-cli --today
 python3 scripts/token_usage.py diagnose --source claude-desktop --today
 python3 scripts/token_usage.py diagnose --source minimax-agent --today
+python3 scripts/token_usage.py ingress config --provider deepseek --upstream-base-url https://api.deepseek.com --protocol openai
 ```
