@@ -30,8 +30,9 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     opencode = by_source.get("opencode")
     if opencode and not opencode.available:
         steps.append(
-            "OpenCode 优先走官方 CLI export；如 CLI 不在 PATH，请设置 TOKEN_USAGE_OPENCODE_BIN；"
-            "如果本地数据目录不在默认位置，请设置 TOKEN_USAGE_OPENCODE_ROOTS。"
+            "OpenCode 现在会优先读本地 storage/session + storage/message 里的 assistant token JSON，"
+            "CLI export 仍保留为 fallback；如本地 roots 不在默认位置，请设置 TOKEN_USAGE_OPENCODE_ROOTS；"
+            "如 CLI 不在 PATH，再补 TOKEN_USAGE_OPENCODE_BIN。"
         )
 
     minimax = by_source.get("minimax-agent")

@@ -94,7 +94,8 @@ export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/ope
 
 说明：
 
-- `OpenCode` exact 优先依赖官方 CLI `session list + export`。
+- `OpenCode` exact 现在优先直读本地 `storage/session + storage/message`。
+- 官方 CLI `session list + export` 仍保留为 fallback。
 - 本地 roots 会被用来判断“客户端痕迹是否存在”“是不是只有 prompts / logs 没有真源”。
 - 如果 CLI 不在 PATH，直接设 `TOKEN_USAGE_OPENCODE_BIN`。
 

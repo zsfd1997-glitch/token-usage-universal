@@ -136,7 +136,8 @@ Top20 执行主线文档：
   - Windows 常见根目录：`%APPDATA%\Claude`
   - 支持 env override：`TOKEN_USAGE_CLAUDE_DESKTOP_ROOT`
 - `opencode`
-  - 优先走官方 `opencode session list` + `opencode export [sessionID]`
+  - 现在优先直读本地 `storage/session` + `storage/message` 的 assistant token JSON
+  - 官方 `opencode session list` + `opencode export [sessionID]` 仍保留为 fallback
   - 本地会同时扫描 `~/.config/opencode`、`~/.local/share/opencode`、`~/.local/state/opencode`、桌面端 app data，用于判断“有没有会话/有没有真源/CLI 是否缺失”
   - 支持 env override：`TOKEN_USAGE_OPENCODE_BIN`、`TOKEN_USAGE_OPENCODE_ROOTS`
 - `qwen-code-cli`

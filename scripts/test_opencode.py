@@ -30,6 +30,73 @@ def _window() -> TimeWindow:
 
 
 class OpenCodeAdapterTests(unittest.TestCase):
+    def test_detect_and_collect_exact_usage_via_local_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            session_dir = root / "storage" / "session" / "global"
+            message_dir = root / "storage" / "message" / "ses_local"
+            completed_at = int(datetime(2026, 3, 25, 12, 0, tzinfo=ZoneInfo("US/Pacific")).timestamp() * 1000)
+            created_at = int(datetime(2026, 3, 25, 11, 59, tzinfo=ZoneInfo("US/Pacific")).timestamp() * 1000)
+            session_dir.mkdir(parents=True)
+            message_dir.mkdir(parents=True)
+
+            (session_dir / "ses_local.json").write_text(
+                json.dumps(
+                    {
+                        "id": "ses_local",
+                        "projectID": "global",
+                        "directory": "/tmp/local-demo",
+                        "time": {"created": created_at, "updated": completed_at},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "storage" / "project").mkdir(parents=True)
+            (root / "storage" / "project" / "global.json").write_text(
+                json.dumps({"id": "global", "worktree": "/tmp/local-demo"}),
+                encoding="utf-8",
+            )
+            (message_dir / "msg_local.json").write_text(
+                json.dumps(
+                    {
+                        "id": "msg_local",
+                        "sessionID": "ses_local",
+                        "role": "assistant",
+                        "time": {"created": created_at, "completed": completed_at},
+                        "modelID": "minimax-m2.1-free",
+                        "providerID": "opencode",
+                        "path": {"cwd": "/tmp/local-demo", "root": "/tmp/local-demo"},
+                        "tokens": {
+                            "input": 200,
+                            "output": 50,
+                            "reasoning": 3,
+                            "cache": {"read": 40, "write": 10},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            with patch.object(adapter, "_resolve_cli", return_value=None):
+                detection = adapter.detect()
+                result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.summary, "OpenCode local storage produced exact token usage records")
+        self.assertEqual(result.scanned_files, 1)
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].provider, "opencode")
+        self.assertEqual(result.events[0].project_path, "/tmp/local-demo")
+        self.assertEqual(result.events[0].input_tokens, 210)
+        self.assertEqual(result.events[0].cached_input_tokens, 40)
+        self.assertEqual(result.events[0].output_tokens, 50)
+        self.assertEqual(result.events[0].reasoning_tokens, 3)
+        self.assertEqual(result.events[0].total_tokens, 303)
+        self.assertEqual(result.events[0].raw_event_kind, "opencode_local:message_json")
+
     def test_detect_and_collect_exact_usage_via_cli_export(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -98,7 +165,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
 
         self.assertFalse(detection.available)
         self.assertEqual(detection.status, "not-found")
-        self.assertIn("exact token collection currently needs CLI export", detection.summary)
+        self.assertIn("no exact token-bearing assistant message JSON or CLI export", detection.summary)
 
 
 if __name__ == "__main__":
