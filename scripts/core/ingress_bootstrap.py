@@ -52,6 +52,26 @@ EDITOR_CONFIG = {
 
 BOOTSTRAP_PROFILES: tuple[IngressBootstrapProfile, ...] = (
     IngressBootstrapProfile(
+        profile_id="openai",
+        display_name="OpenAI",
+        provider="openai",
+        protocol="openai",
+        upstream_base_url="https://api.openai.com/v1",
+        default_model="gpt-4.1",
+        api_key_env="OPENAI_API_KEY",
+        notes="Official OpenAI API profile for IDE or CLI clients that only need the local ingress base_url swapped.",
+    ),
+    IngressBootstrapProfile(
+        profile_id="anthropic",
+        display_name="Anthropic",
+        provider="anthropic",
+        protocol="anthropic",
+        upstream_base_url="https://api.anthropic.com",
+        default_model="claude-sonnet-4-20250514",
+        api_key_env="ANTHROPIC_API_KEY",
+        notes="Official Anthropic Messages API profile for IDE or CLI clients that only need the local ingress base_url swapped.",
+    ),
+    IngressBootstrapProfile(
         profile_id="openai-compatible",
         display_name="OpenAI-Compatible Generic",
         provider="openai-compatible",

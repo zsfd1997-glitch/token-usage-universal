@@ -166,7 +166,7 @@ Top20 执行主线文档：
   - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
   - 当前已经支持 `openai / anthropic / generic` 三种协议模式
   - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
-  - 当前已经内置 bootstrap profiles：`openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
+  - 当前已经内置 bootstrap profiles：`openai / anthropic / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
 
 Top20 provider family 的适配规则是统一的：
 

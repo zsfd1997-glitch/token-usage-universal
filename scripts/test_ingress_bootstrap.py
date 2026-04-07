@@ -18,6 +18,8 @@ class IngressBootstrapTests(unittest.TestCase):
         payload = build_ingress_profiles_payload()
 
         profile_ids = {item["profile_id"] for item in payload["profiles"]}
+        self.assertIn("openai", profile_ids)
+        self.assertIn("anthropic", profile_ids)
         self.assertIn("openai-compatible", profile_ids)
         self.assertIn("anthropic-compatible", profile_ids)
         self.assertIn("deepseek", profile_ids)
@@ -27,6 +29,9 @@ class IngressBootstrapTests(unittest.TestCase):
         self.assertIn("baichuan", profile_ids)
         self.assertIn("siliconflow", profile_ids)
         self.assertIn("spark", profile_ids)
+        self.assertEqual(payload["summary"]["profiles"], 11)
+        self.assertEqual(payload["summary"]["protocols"]["openai"], 9)
+        self.assertEqual(payload["summary"]["protocols"]["anthropic"], 2)
 
     def test_deepseek_bootstrap_builds_continue_and_cli_samples(self) -> None:
         payload = build_ingress_bootstrap_payload(
@@ -66,6 +71,28 @@ class IngressBootstrapTests(unittest.TestCase):
         self.assertEqual(payload["editor"]["id"], "jetbrains")
         self.assertEqual(payload["companion"]["upstream_base_url"], "https://api.baichuan-ai.example/v1")
         self.assertIn("Baichuan4-Turbo", payload["continue"]["snippet"])
+
+    def test_official_openai_profile_uses_embedded_upstream(self) -> None:
+        payload = build_ingress_bootstrap_payload(
+            profile_id="openai",
+            editor="vscode",
+        )
+
+        self.assertEqual(payload["profile"]["profile_id"], "openai")
+        self.assertEqual(payload["companion"]["upstream_base_url"], "https://api.openai.com/v1")
+        self.assertIn("model: gpt-4.1", payload["continue"]["snippet"])
+        self.assertEqual(payload["cli"]["shell_exports"]["OPENAI_BASE_URL"], "http://127.0.0.1:8787/v1")
+
+    def test_official_anthropic_profile_uses_embedded_upstream(self) -> None:
+        payload = build_ingress_bootstrap_payload(
+            profile_id="anthropic",
+            editor="jetbrains",
+        )
+
+        self.assertEqual(payload["profile"]["profile_id"], "anthropic")
+        self.assertEqual(payload["companion"]["upstream_base_url"], "https://api.anthropic.com")
+        self.assertIn("model: claude-sonnet-4-20250514", payload["continue"]["snippet"])
+        self.assertEqual(payload["cli"]["shell_exports"]["ANTHROPIC_BASE_URL"], "http://127.0.0.1:8787")
 
 
 if __name__ == "__main__":

@@ -160,7 +160,7 @@ python3 scripts/token_usage.py ingress bootstrap \
 说明：
 
 - `ingress bootstrap` 会直接打印 Continue 的 `VS Code / JetBrains` 配置片段、CLI shell env 示例，以及 companion 的本地代理地址。
-- `ingress profiles` 会列出内置 profile，目前包括 `openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`。
+- `ingress profiles` 会列出内置 profile，目前包括 `openai / anthropic / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`。
 - `ingress config` 仍然保留，适合您要手动指定 provider/base URL 时单独查看本地代理地址。
 - `ingress serve` 会启动本地 companion，把 exact usage 响应落成 JSONL，供 provider family 自动发现。
 - 这条链路优先面向 `IDE / 私有 launcher / 企业内网封装 CLI`，不要求对方一定有 `skills` 目录。

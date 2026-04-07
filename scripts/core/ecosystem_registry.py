@@ -239,7 +239,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         surfaces=(
             _surface("desktop", "ChatGPT Desktop", primary_lane="native-client", maturity="planned", planned=("chatgpt-desktop",)),
             _surface("cli", "Codex CLI", primary_lane="native-client", maturity="exact-ready", implemented=("codex",)),
-            _surface("ide", "OpenAI IDE", primary_lane="ingress-capture", maturity="planned", planned=("openai-ide-proxy",)),
+            _surface("ide", "OpenAI IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("openai-ide-proxy",), notes="Shared ingress bootstrap now provides an official OpenAI profile with embedded api.openai.com/v1 upstream and Continue snippets for VS Code and JetBrains."),
         ),
     ),
     EcosystemTarget(
@@ -251,7 +251,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         surfaces=(
             _surface("desktop", "Claude Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("claude-desktop",)),
             _surface("cli", "Claude Code", primary_lane="native-client", maturity="exact-ready", implemented=("claude-code",)),
-            _surface("ide", "Claude IDE", primary_lane="ingress-capture", maturity="planned", planned=("anthropic-ide-proxy",)),
+            _surface("ide", "Claude IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("anthropic-ide-proxy",), notes="Shared ingress bootstrap now provides an official Anthropic profile with embedded api.anthropic.com upstream and Continue snippets for VS Code and JetBrains."),
         ),
     ),
     EcosystemTarget(

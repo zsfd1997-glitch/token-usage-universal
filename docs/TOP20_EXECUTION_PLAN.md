@@ -168,6 +168,9 @@
 - 当前 companion 已支持 `openai / anthropic / generic` 三种协议模式，优先服务 `IDE / 内网 launcher / 自定义 base_url` 场景
 - `token_usage.py ingress profiles` 已可列出内置 bootstrap catalog
 - `token_usage.py ingress bootstrap` 已可直接生成 `VS Code / JetBrains` 的 Continue 配置片段和 CLI shell env 示例
+- 已补齐全球生态官方 runtime bootstrap：
+  - `OpenAI IDE / CLI`
+  - `Anthropic IDE / CLI`
 - 已补齐中国优先 runtime bootstrap：
   - `DeepSeek CLI / IDE`
   - `Qianfan CLI / IDE`
