@@ -2,13 +2,22 @@ from __future__ import annotations
 
 from adapters.chromium_desktop import ChromiumDesktopAdapter, ChromiumDesktopSourceDefinition
 from core.config import (
+    TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_CHATGPT_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_DOUBAO_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_GEMINI_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_GLM_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_GROK_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_KIMI_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_MISTRAL_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_QWEN_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_SPARK_DESKTOP_ROOT_ENV,
+    TOKEN_USAGE_STEPFUN_DESKTOP_ROOT_ENV,
     TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV,
 )
 
@@ -148,6 +157,143 @@ _DESKTOP_SOURCE_DEFINITIONS: tuple[ChromiumDesktopSourceDefinition, ...] = (
             "www.perplexity.ai/api/",
             "www.perplexity.ai/rest/",
             "api.perplexity.ai/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="stepfun-desktop",
+        display_name="StepFun Desktop",
+        provider="stepfun",
+        env_name=TOKEN_USAGE_STEPFUN_DESKTOP_ROOT_ENV,
+        app_names=("StepFun", "Step", "StepChat", "跃问"),
+        response_url_keywords=(
+            "api.stepfun.ai/",
+            "api.stepfun.com/",
+        ),
+        usage_url_keywords=(
+            "api.stepfun.ai/",
+            "api.stepfun.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="sensenova-desktop",
+        display_name="SenseNova Desktop",
+        provider="sensenova",
+        env_name=TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT_ENV,
+        app_names=("SenseNova", "SenseChat", "日日新"),
+        response_url_keywords=(
+            "api.sensenova.cn/",
+            "sensenova.cn/",
+        ),
+        usage_url_keywords=(
+            "api.sensenova.cn/",
+            "sensenova.cn/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="baichuan-desktop",
+        display_name="Baichuan Desktop",
+        provider="baichuan",
+        env_name=TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT_ENV,
+        app_names=("Baichuan", "Baichuan AI", "百川"),
+        response_url_keywords=(
+            "api.baichuan-ai.com/",
+        ),
+        usage_url_keywords=(
+            "api.baichuan-ai.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="siliconflow-desktop",
+        display_name="SiliconFlow Desktop",
+        provider="siliconflow",
+        env_name=TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT_ENV,
+        app_names=("SiliconFlow", "SiliconCloud"),
+        response_url_keywords=(
+            "api.siliconflow.cn/",
+            "siliconflow.cn/",
+        ),
+        usage_url_keywords=(
+            "api.siliconflow.cn/",
+            "siliconflow.cn/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="spark-desktop",
+        display_name="Spark Desktop",
+        provider="spark",
+        env_name=TOKEN_USAGE_SPARK_DESKTOP_ROOT_ENV,
+        app_names=("Spark", "Xinghuo", "星火"),
+        response_url_keywords=(
+            "spark-api-open.xf-yun.com/",
+            "spark-api.xf-yun.com/",
+            "sparkcube-api.xf-yun.com/",
+            "xf-yun.com/",
+        ),
+        usage_url_keywords=(
+            "spark-api-open.xf-yun.com/",
+            "spark-api.xf-yun.com/",
+            "sparkcube-api.xf-yun.com/",
+            "xf-yun.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="chatgpt-desktop",
+        display_name="ChatGPT Desktop",
+        provider="openai",
+        env_name=TOKEN_USAGE_CHATGPT_DESKTOP_ROOT_ENV,
+        app_names=("ChatGPT", "OpenAI"),
+        response_url_keywords=(
+            "api.openai.com/v1/",
+            "chatgpt.com/backend-api/",
+            "chat.openai.com/backend-api/",
+        ),
+        usage_url_keywords=(
+            "api.openai.com/v1/",
+            "chatgpt.com/backend-api/",
+            "chat.openai.com/backend-api/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="gemini-desktop",
+        display_name="Gemini Desktop",
+        provider="google",
+        env_name=TOKEN_USAGE_GEMINI_DESKTOP_ROOT_ENV,
+        app_names=("Gemini", "Google Gemini"),
+        response_url_keywords=(
+            "generativelanguage.googleapis.com/",
+            "aiplatform.googleapis.com/",
+        ),
+        usage_url_keywords=(
+            "generativelanguage.googleapis.com/",
+            "aiplatform.googleapis.com/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="grok-desktop",
+        display_name="Grok Desktop",
+        provider="xai",
+        env_name=TOKEN_USAGE_GROK_DESKTOP_ROOT_ENV,
+        app_names=("Grok", "xAI Grok"),
+        response_url_keywords=(
+            "api.x.ai/",
+            "grok.x.ai/api/",
+        ),
+        usage_url_keywords=(
+            "api.x.ai/",
+            "grok.x.ai/api/",
+        ),
+    ),
+    ChromiumDesktopSourceDefinition(
+        source_id="mistral-desktop",
+        display_name="Mistral Desktop",
+        provider="mistral",
+        env_name=TOKEN_USAGE_MISTRAL_DESKTOP_ROOT_ENV,
+        app_names=("Mistral", "Le Chat", "Mistral Le Chat"),
+        response_url_keywords=(
+            "api.mistral.ai/",
+        ),
+        usage_url_keywords=(
+            "api.mistral.ai/",
         ),
     ),
 )

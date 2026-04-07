@@ -51,6 +51,15 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
         "qianfan-desktop": "TOKEN_USAGE_QIANFAN_DESKTOP_ROOT",
         "yuanbao-desktop": "TOKEN_USAGE_YUANBAO_DESKTOP_ROOT",
         "perplexity-desktop": "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT",
+        "stepfun-desktop": "TOKEN_USAGE_STEPFUN_DESKTOP_ROOT",
+        "sensenova-desktop": "TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT",
+        "baichuan-desktop": "TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT",
+        "siliconflow-desktop": "TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT",
+        "spark-desktop": "TOKEN_USAGE_SPARK_DESKTOP_ROOT",
+        "chatgpt-desktop": "TOKEN_USAGE_CHATGPT_DESKTOP_ROOT",
+        "gemini-desktop": "TOKEN_USAGE_GEMINI_DESKTOP_ROOT",
+        "grok-desktop": "TOKEN_USAGE_GROK_DESKTOP_ROOT",
+        "mistral-desktop": "TOKEN_USAGE_MISTRAL_DESKTOP_ROOT",
     }
     missing_desktop_sources = [
         f"{source_id} -> {env_name}"
@@ -59,7 +68,7 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     ]
     if missing_desktop_sources:
         steps.append(
-            "Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity 这批桌面端已接入原生 Chromium/Electron 适配框架；"
+            "Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这批桌面端已接入原生 Chromium/Electron 适配框架；"
             "现在会同时读取 Cache_Data、IndexedDB 和 Local Storage；"
             "如果默认 app-data 目录没命中，请按来源分别设置 "
             + ", ".join(env_name for env_name in desktop_family_sources.values())

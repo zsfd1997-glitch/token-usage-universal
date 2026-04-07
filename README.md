@@ -152,11 +152,11 @@ Top20 执行主线文档：
   - mac 默认根目录：`~/Library/Application Support/MiniMax Agent`
   - Windows 常见根目录：`%APPDATA%\MiniMax Agent`
   - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
-- `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop`
+- `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop / stepfun-desktop / sensenova-desktop / baichuan-desktop / siliconflow-desktop / spark-desktop / chatgpt-desktop / gemini-desktop / grok-desktop / mistral-desktop`
   - 现在已经是独立 `source_id`，不再混进 generic fallback
   - 统一走原生 `Chromium / Electron` 桌面适配框架：现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
-  - exact 是否可得，取决于当前客户端是否把 token-bearing API 响应缓存到本地
-  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_QIANFAN_DESKTOP_ROOT`、`TOKEN_USAGE_YUANBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`
+  - 其中 `Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity` 这一批已拿到更强的 exact-native 覆盖；其余新补桌面 source 先标 `detect-ready`，等真实 fixture 到位后再升级 `exact-ready`
+  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_QIANFAN_DESKTOP_ROOT`、`TOKEN_USAGE_YUANBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`、`TOKEN_USAGE_STEPFUN_DESKTOP_ROOT`、`TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT`、`TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT`、`TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT`、`TOKEN_USAGE_SPARK_DESKTOP_ROOT`、`TOKEN_USAGE_CHATGPT_DESKTOP_ROOT`、`TOKEN_USAGE_GEMINI_DESKTOP_ROOT`、`TOKEN_USAGE_GROK_DESKTOP_ROOT`、`TOKEN_USAGE_MISTRAL_DESKTOP_ROOT`
 - `generic-openai-compatible`
   - 当前显示名是 `Generic API Compatible`
   - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
@@ -166,7 +166,7 @@ Top20 执行主线文档：
   - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
   - 当前已经支持 `openai / anthropic / generic` 三种协议模式
   - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
-  - 当前已经内置 bootstrap profiles：`openai / anthropic / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
+  - 当前已经内置 bootstrap profiles：`openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
 
 Top20 provider family 的适配规则是统一的：
 
@@ -180,7 +180,7 @@ Top20 provider family 的适配规则是统一的：
 - 先识别客户端本地真实数据目录
 - 再走客户端对应的原生真源路径
 - Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
-- Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
+- Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
 - 拿不到 exact 时明确告诉您是“没 parser”还是“当前缓存里确实没有 token 真源”
 
 ## Claude Code 真源矩阵
@@ -208,6 +208,15 @@ Top20 provider family 的适配规则是统一的：
 | `TOKEN_USAGE_QIANFAN_DESKTOP_ROOT` | 覆写 Qianfan / 文心 / 文小言 app-data 目录 |
 | `TOKEN_USAGE_YUANBAO_DESKTOP_ROOT` | 覆写 Yuanbao / Hunyuan app-data 目录 |
 | `TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT` | 覆写 Perplexity Desktop app-data 目录 |
+| `TOKEN_USAGE_STEPFUN_DESKTOP_ROOT` | 覆写 StepFun Desktop app-data 目录 |
+| `TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT` | 覆写 SenseNova Desktop app-data 目录 |
+| `TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT` | 覆写 Baichuan Desktop app-data 目录 |
+| `TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT` | 覆写 SiliconFlow Desktop app-data 目录 |
+| `TOKEN_USAGE_SPARK_DESKTOP_ROOT` | 覆写 Spark / Xinghuo Desktop app-data 目录 |
+| `TOKEN_USAGE_CHATGPT_DESKTOP_ROOT` | 覆写 ChatGPT Desktop app-data 目录 |
+| `TOKEN_USAGE_GEMINI_DESKTOP_ROOT` | 覆写 Gemini Desktop app-data 目录 |
+| `TOKEN_USAGE_GROK_DESKTOP_ROOT` | 覆写 Grok Desktop app-data 目录 |
+| `TOKEN_USAGE_MISTRAL_DESKTOP_ROOT` | 覆写 Mistral / Le Chat Desktop app-data 目录 |
 | `TOKEN_USAGE_QWEN_CODE_ROOT` | 覆写 Qwen Code CLI runtime root |
 | `TOKEN_USAGE_KIMI_CLI_ROOT` | 覆写 Kimi CLI share root |
 | `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |

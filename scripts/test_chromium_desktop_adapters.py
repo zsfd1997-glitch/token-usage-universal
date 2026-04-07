@@ -98,14 +98,23 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertEqual(
             source_ids,
             {
+                "baichuan-desktop",
+                "chatgpt-desktop",
                 "kimi-desktop",
                 "glm-desktop",
                 "qwen-desktop",
                 "deepseek-desktop",
                 "doubao-desktop",
+                "gemini-desktop",
+                "grok-desktop",
+                "mistral-desktop",
                 "qianfan-desktop",
                 "yuanbao-desktop",
                 "perplexity-desktop",
+                "sensenova-desktop",
+                "siliconflow-desktop",
+                "spark-desktop",
+                "stepfun-desktop",
             },
         )
 
@@ -210,6 +219,39 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertEqual(len(result.events), 1)
         self.assertEqual(result.events[0].session_id, "deepseek-1")
         self.assertEqual(result.events[0].total_tokens, 400)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
+
+    def test_stepfun_desktop_collects_exact_usage_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            cache_dir.joinpath("stepf00d_0").write_bytes(
+                _cache_blob(
+                    "https://api.stepfun.ai/v1/chat/completions",
+                    {
+                        "created_at": "2026-03-25T16:35:00-07:00",
+                        "conversation_id": "stepfun-1",
+                        "model": "step-1v-8k",
+                        "usage": {
+                            "prompt_tokens": 180,
+                            "completion_tokens": 45,
+                            "total_tokens": 225,
+                        },
+                    },
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "stepfun-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "stepfun-1")
+        self.assertEqual(result.events[0].total_tokens, 225)
         self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
 
     def test_qianfan_desktop_collects_exact_usage_from_indexeddb(self) -> None:
@@ -317,6 +359,41 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertEqual(result.events[0].session_id, "pplx-1")
         self.assertEqual(result.events[0].reasoning_tokens, 20)
         self.assertEqual(result.events[0].total_tokens, 270)
+
+    def test_chatgpt_desktop_collects_exact_usage_from_indexeddb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_chatgpt.com_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000030.log").write_bytes(
+                (
+                    b"\x00https://api.openai.com/v1/responses\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:05:00-07:00",
+                            "conversation_id": "chatgpt-1",
+                            "model": "gpt-4.1",
+                            "usage": {
+                                "input_tokens": 320,
+                                "output_tokens": 90,
+                                "total_tokens": 410,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "chatgpt-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "chatgpt-1")
+        self.assertEqual(result.events[0].total_tokens, 410)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
 
 
 if __name__ == "__main__":

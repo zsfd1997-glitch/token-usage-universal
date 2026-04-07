@@ -124,6 +124,7 @@
 - `Kimi CLI` 已进入 `exact-ready`：直接读取官方 `~/.kimi/sessions/*/*/wire.jsonl` 与 `StatusUpdate.token_usage`
 - `GLM Desktop / Doubao Desktop / Perplexity Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
 - `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
+- `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 已补齐桌面端 Chromium/Electron source skeleton，先推进到 `detect-ready`
 - `pricing_db.json` 已补齐 `ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao alias` 这一批国产生态的费用估算基线
 
 验收：
@@ -136,6 +137,19 @@
 目标：
 
 - 完成第一梯队 native client pack
+
+当前进度：
+
+- `StepFun Desktop`
+- `SenseNova Desktop`
+- `Baichuan Desktop`
+- `SiliconFlow Desktop`
+- `Spark Desktop`
+- `ChatGPT Desktop`
+- `Gemini Desktop`
+- `Grok Desktop`
+- `Mistral Desktop`
+  以上桌面端都已接入统一 `Chromium / Electron` 真源骨架，但当前仍按 `detect-ready` 管理，等待真实 fixture 再升 `exact-ready`
 
 第一梯队：
 
@@ -171,7 +185,13 @@
 - 已补齐全球生态官方 runtime bootstrap：
   - `OpenAI IDE / CLI`
   - `Anthropic IDE / CLI`
+  - `Gemini IDE`
+  - `OpenRouter Desktop / CLI / IDE`
+  - `Perplexity CLI / IDE`
+  - `xAI CLI / IDE`
+  - `Mistral CLI / IDE`
 - 已补齐中国优先 runtime bootstrap：
+  - `StepFun CLI / IDE`
   - `DeepSeek CLI / IDE`
   - `Qianfan CLI / IDE`
   - `Hunyuan CLI / IDE`

@@ -19,6 +19,15 @@ TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV = "TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT"
 TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT_ENV = "TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT"
 TOKEN_USAGE_QIANFAN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_QIANFAN_DESKTOP_ROOT"
 TOKEN_USAGE_YUANBAO_DESKTOP_ROOT_ENV = "TOKEN_USAGE_YUANBAO_DESKTOP_ROOT"
+TOKEN_USAGE_STEPFUN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_STEPFUN_DESKTOP_ROOT"
+TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT_ENV = "TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT"
+TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT_ENV = "TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT"
+TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT_ENV = "TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT"
+TOKEN_USAGE_SPARK_DESKTOP_ROOT_ENV = "TOKEN_USAGE_SPARK_DESKTOP_ROOT"
+TOKEN_USAGE_CHATGPT_DESKTOP_ROOT_ENV = "TOKEN_USAGE_CHATGPT_DESKTOP_ROOT"
+TOKEN_USAGE_GEMINI_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GEMINI_DESKTOP_ROOT"
+TOKEN_USAGE_GROK_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GROK_DESKTOP_ROOT"
+TOKEN_USAGE_MISTRAL_DESKTOP_ROOT_ENV = "TOKEN_USAGE_MISTRAL_DESKTOP_ROOT"
 TOKEN_USAGE_QWEN_CODE_ROOT_ENV = "TOKEN_USAGE_QWEN_CODE_ROOT"
 TOKEN_USAGE_KIMI_CLI_ROOT_ENV = "TOKEN_USAGE_KIMI_CLI_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
@@ -311,6 +320,69 @@ ENVIRONMENT_VARIABLES = (
         "description": "Override the Tencent Yuanbao desktop app-data directory.",
         "default": lambda: ",".join(
             _path_text(path) for path in default_desktop_app_roots(("Yuanbao", "Tencent Yuanbao", "元宝", "腾讯元宝"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_STEPFUN_DESKTOP_ROOT_ENV,
+        "description": "Override the StepFun desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("StepFun", "Step", "StepChat", "跃问"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT_ENV,
+        "description": "Override the SenseNova desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("SenseNova", "SenseChat", "日日新"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT_ENV,
+        "description": "Override the Baichuan desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Baichuan", "Baichuan AI", "百川"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT_ENV,
+        "description": "Override the SiliconFlow desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("SiliconFlow", "SiliconCloud"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_SPARK_DESKTOP_ROOT_ENV,
+        "description": "Override the Spark / Xinghuo desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Spark", "Xinghuo", "星火"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_CHATGPT_DESKTOP_ROOT_ENV,
+        "description": "Override the ChatGPT desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("ChatGPT", "OpenAI"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_GEMINI_DESKTOP_ROOT_ENV,
+        "description": "Override the Gemini desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Gemini", "Google Gemini"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_GROK_DESKTOP_ROOT_ENV,
+        "description": "Override the Grok desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Grok", "xAI Grok"))
+        ),
+    },
+    {
+        "name": TOKEN_USAGE_MISTRAL_DESKTOP_ROOT_ENV,
+        "description": "Override the Mistral / Le Chat desktop app-data directory.",
+        "default": lambda: ",".join(
+            _path_text(path) for path in default_desktop_app_roots(("Mistral", "Le Chat", "Mistral Le Chat"))
         ),
     },
     {
