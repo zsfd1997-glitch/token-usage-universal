@@ -166,6 +166,16 @@
 - `token_usage.py ingress config` 已可为单个 provider 打印本地代理地址、上游地址、推荐 env/config 与 log 根目录
 - `token_usage.py ingress serve` 已可启动本地 companion，并把 exact usage 响应落成 JSONL
 - 当前 companion 已支持 `openai / anthropic / generic` 三种协议模式，优先服务 `IDE / 内网 launcher / 自定义 base_url` 场景
+- `token_usage.py ingress profiles` 已可列出内置 bootstrap catalog
+- `token_usage.py ingress bootstrap` 已可直接生成 `VS Code / JetBrains` 的 Continue 配置片段和 CLI shell env 示例
+- 已补齐中国优先 runtime bootstrap：
+  - `DeepSeek CLI / IDE`
+  - `Qianfan CLI / IDE`
+  - `Hunyuan CLI / IDE`
+  - `SenseNova CLI / IDE`
+  - `Baichuan CLI / IDE`
+  - `SiliconFlow CLI / IDE`
+  - `Spark CLI / IDE`
 
 能力：
 

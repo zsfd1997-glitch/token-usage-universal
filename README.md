@@ -166,6 +166,7 @@ Top20 执行主线文档：
   - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
   - 当前已经支持 `openai / anthropic / generic` 三种协议模式
   - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
+  - 当前已经内置 bootstrap profiles：`openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
 
 Top20 provider family 的适配规则是统一的：
 
@@ -256,7 +257,30 @@ python .\scripts\token_usage.py health
 
 ## IDE / 内网 Launcher 接入
 
-如果某个客户端支持自定义 `base_url`，优先不要硬逆向它的私有日志，而是先接本地 `ingress companion`：
+如果某个客户端支持自定义 `base_url`，优先不要硬逆向它的私有日志，而是先接本地 `ingress companion`。
+
+先看内置 profile：
+
+```bash
+python3 scripts/token_usage.py ingress profiles
+```
+
+然后直接生成 IDE / CLI bootstrap：
+
+```bash
+python3 scripts/token_usage.py ingress bootstrap \
+  --profile deepseek \
+  --editor vscode
+```
+
+上面的命令会打印：
+
+- 本地代理地址，例如 `http://127.0.0.1:8787/v1`
+- Continue 的 `VS Code / JetBrains` 配置片段
+- CLI shell env 示例
+- companion 的 JSONL log 根目录
+
+如果您要手动控制 provider / base URL，也可以继续直接用 `ingress config`：
 
 ```bash
 python3 scripts/token_usage.py ingress config \
@@ -264,13 +288,6 @@ python3 scripts/token_usage.py ingress config \
   --upstream-base-url https://api.deepseek.com \
   --protocol openai
 ```
-
-上面的命令会打印：
-
-- 本地代理地址，例如 `http://127.0.0.1:8787/v1`
-- 原始上游地址
-- 建议写给客户端的 env/config
-- companion 的 JSONL log 根目录
 
 确认地址后，再启动本地 companion：
 
@@ -289,6 +306,16 @@ python3 scripts/token_usage.py ingress serve \
 - 任何支持 OpenAI-compatible / Anthropic-compatible `base_url` 的 CLI
 
 对这类客户端，我们优先保证“exact usage 能进来”，再按 provider family 自动分流归因，不强依赖它们是否有公开的 skills 库。
+
+目前已经补齐 bootstrap 的中国优先 runtime surface：
+
+- `DeepSeek CLI / IDE`
+- `Qianfan CLI / IDE`
+- `Hunyuan CLI / IDE`
+- `SenseNova CLI / IDE`
+- `Baichuan CLI / IDE`
+- `SiliconFlow CLI / IDE`
+- `Spark CLI / IDE`
 
 ## 关键命令
 
@@ -309,6 +336,8 @@ python3 scripts/token_usage.py report --today --by project
 python3 scripts/token_usage.py diagnose --source claude-code --today
 python3 scripts/token_usage.py diagnose --source claude-desktop --today
 python3 scripts/token_usage.py diagnose --source kimi-desktop --today
+python3 scripts/token_usage.py ingress profiles
+python3 scripts/token_usage.py ingress bootstrap --profile deepseek --editor vscode
 ```
 
 ## 终端控制面能力

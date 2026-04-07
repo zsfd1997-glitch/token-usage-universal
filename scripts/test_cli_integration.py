@@ -391,7 +391,7 @@ class CliIntegrationTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["total_ecosystems"], 20)
         self.assertEqual(payload["summary"]["china_priority_ecosystems"], 13)
-        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 14)
+        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 28)
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
 
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
@@ -420,6 +420,55 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["provider"], "deepseek")
         self.assertEqual(payload["local_base_url"], "http://127.0.0.1:8787/v1")
         self.assertEqual(payload["upstream_base_url"], "https://api.deepseek.com/v1")
+
+    def test_ingress_profiles_json_lists_bootstrap_catalog(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI_PATH),
+                "ingress",
+                "profiles",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        profile_ids = {item["profile_id"] for item in payload["profiles"]}
+        self.assertIn("deepseek", profile_ids)
+        self.assertIn("anthropic-compatible", profile_ids)
+        self.assertIn("spark", profile_ids)
+
+    def test_ingress_bootstrap_json_outputs_continue_snippet(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI_PATH),
+                "ingress",
+                "bootstrap",
+                "--profile",
+                "qianfan",
+                "--editor",
+                "jetbrains",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["profile"]["profile_id"], "qianfan")
+        self.assertEqual(payload["editor"]["id"], "jetbrains")
+        self.assertIn("provider: openai", payload["continue"]["snippet"])
+        self.assertIn("ernie-4.5-turbo-32k", payload["continue"]["snippet"])
+        self.assertIn("OPENAI_BASE_URL", payload["cli"]["shell_exports"])
 
 
 if __name__ == "__main__":

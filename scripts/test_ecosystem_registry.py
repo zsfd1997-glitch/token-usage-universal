@@ -48,6 +48,12 @@ class EcosystemRegistryTests(unittest.TestCase):
         self.assertEqual(qwen["surfaces"][1]["maturity"], "exact-ready")
         self.assertEqual(kimi["surfaces"][1]["implemented_source_ids"], ["kimi-cli"])
         self.assertEqual(kimi["surfaces"][1]["maturity"], "exact-ready")
+        deepseek = next(item for item in payload["ecosystems"] if item["ecosystem_id"] == "deepseek")
+        baichuan = next(item for item in payload["ecosystems"] if item["ecosystem_id"] == "baichuan")
+        self.assertEqual(deepseek["surfaces"][1]["maturity"], "exact-ready")
+        self.assertEqual(deepseek["surfaces"][2]["implemented_source_ids"], ["deepseek-ide-proxy"])
+        self.assertEqual(baichuan["surfaces"][1]["implemented_source_ids"], ["baichuan-cli-proxy"])
+        self.assertEqual(baichuan["surfaces"][2]["maturity"], "exact-ready")
 
 
 if __name__ == "__main__":

@@ -91,6 +91,7 @@ SKILL.md
 - 支持 `openai / anthropic / generic` 三种协议模式
 - 把 exact usage 响应落成 JSONL，供 provider family 自动发现
 - 尽量不绑定某个固定 `skills` 库或单一宿主环境
+- `scripts/core/ingress_bootstrap.py` 进一步把 companion 包成生态级 bootstrap profiles，直接生成 `VS Code / JetBrains` 的 Continue 配置片段和 CLI shell env 示例
 
 ## 非目标
 

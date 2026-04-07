@@ -90,8 +90,9 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     if any(not item.available for item in detections if item.supported):
         steps.append(
             "如果您统计的是 IDE、内网 launcher 或任何支持自定义 base_url 的客户端，"
-            "先运行 `python3 scripts/token_usage.py ingress config --provider deepseek --upstream-base-url https://api.deepseek.com --protocol openai` "
-            "拿本地代理地址，再用 `python3 scripts/token_usage.py ingress serve ...` 启动 companion。"
+            "先运行 `python3 scripts/token_usage.py ingress profiles` 看可用生态，再运行 "
+            "`python3 scripts/token_usage.py ingress bootstrap --profile deepseek --editor vscode` "
+            "拿 IDE/CLI 样板配置，最后用 `python3 scripts/token_usage.py ingress serve ...` 启动 companion。"
         )
 
     steps.append("先运行 sources 看来源状态，再运行 report --today 拿今日主结论。")

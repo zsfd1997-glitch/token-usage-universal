@@ -29,6 +29,13 @@ from core.ingress_companion import (
     render_ingress_companion_payload,
     serve_ingress_companion,
 )
+from core.ingress_bootstrap import (
+    build_ingress_bootstrap_payload,
+    build_ingress_profiles_payload,
+    payload_to_json,
+    render_ingress_bootstrap_payload,
+    render_ingress_profiles_payload,
+)
 from core.aggregator import build_report
 from core.ecosystem_registry import build_top20_registry_payload
 from core.models import SourceCollectResult
@@ -317,6 +324,34 @@ def command_ingress_serve(args) -> int:
     return 0
 
 
+def command_ingress_profiles(args) -> int:
+    payload = build_ingress_profiles_payload()
+    if args.format == "json":
+        print(payload_to_json(payload))
+    else:
+        print(render_ingress_profiles_payload(payload))
+    return 0
+
+
+def command_ingress_bootstrap(args) -> int:
+    payload = build_ingress_bootstrap_payload(
+        profile_id=args.profile,
+        editor=args.editor,
+        upstream_base_url=args.upstream_base_url,
+        model=args.model,
+        listen_host=args.listen_host,
+        listen_port=args.listen_port,
+        local_base_path=args.local_base_path,
+        log_root=args.log_root,
+        project_path=args.project_path,
+    )
+    if args.format == "json":
+        print(payload_to_json(payload))
+    else:
+        print(render_ingress_bootstrap_payload(payload))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Standalone CLI runtime for token-usage-universal"
@@ -390,6 +425,23 @@ def build_parser() -> argparse.ArgumentParser:
     ingress_serve.add_argument("--log-root", help="optional log root override")
     ingress_serve.add_argument("--project-path", help="optional project path to stamp onto ingress records")
     ingress_serve.set_defaults(func=command_ingress_serve)
+
+    ingress_profiles = ingress_subparsers.add_parser("profiles", help="list built-in ingress bootstrap profiles")
+    ingress_profiles.add_argument("--format", choices=("text", "json"), default="text")
+    ingress_profiles.set_defaults(func=command_ingress_profiles)
+
+    ingress_bootstrap = ingress_subparsers.add_parser("bootstrap", help="print IDE/CLI bootstrap snippets for one ingress profile")
+    ingress_bootstrap.add_argument("--profile", required=True, help="bootstrap profile id, such as deepseek, qianfan, hunyuan, sensenova")
+    ingress_bootstrap.add_argument("--editor", choices=("vscode", "jetbrains"), default="vscode")
+    ingress_bootstrap.add_argument("--upstream-base-url", help="optional upstream base URL override")
+    ingress_bootstrap.add_argument("--model", help="optional model override for the IDE snippet")
+    ingress_bootstrap.add_argument("--listen-host", default="127.0.0.1")
+    ingress_bootstrap.add_argument("--listen-port", type=int, default=8787)
+    ingress_bootstrap.add_argument("--local-base-path", help="optional local base path override")
+    ingress_bootstrap.add_argument("--log-root", help="optional log root override")
+    ingress_bootstrap.add_argument("--project-path", help="optional project path to stamp onto ingress records")
+    ingress_bootstrap.add_argument("--format", choices=("text", "json"), default="text")
+    ingress_bootstrap.set_defaults(func=command_ingress_bootstrap)
 
     explore = subparsers.add_parser("explore", help="interactive dashboard launcher")
     explore.set_defaults(func=command_explore)

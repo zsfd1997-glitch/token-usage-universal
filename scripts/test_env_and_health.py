@@ -210,7 +210,8 @@ class HealthReportTests(unittest.TestCase):
         self.assertIn(TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT_ENV, " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_GENERIC_LOG_GLOBS", " ".join(report["next_steps"]))
         self.assertIn("TOKEN_USAGE_DISCOVERY_ROOTS", " ".join(report["next_steps"]))
-        self.assertIn("token_usage.py ingress config", " ".join(report["next_steps"]))
+        self.assertIn("token_usage.py ingress profiles", " ".join(report["next_steps"]))
+        self.assertIn("token_usage.py ingress bootstrap", " ".join(report["next_steps"]))
         self.assertIn("token_usage.py ingress serve", " ".join(report["next_steps"]))
         self.assertEqual(
             report["recommended_commands"][0],
