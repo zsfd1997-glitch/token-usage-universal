@@ -14,7 +14,7 @@ from core.ingress_bootstrap import build_ingress_bootstrap_payload, build_ingres
 
 
 class IngressBootstrapTests(unittest.TestCase):
-    def test_profiles_payload_lists_generic_and_china_priority_profiles(self) -> None:
+    def test_profiles_payload_lists_global_and_china_priority_profiles(self) -> None:
         payload = build_ingress_profiles_payload()
 
         profile_ids = {item["profile_id"] for item in payload["profiles"]}
@@ -26,6 +26,11 @@ class IngressBootstrapTests(unittest.TestCase):
         self.assertIn("xai", profile_ids)
         self.assertIn("mistral", profile_ids)
         self.assertIn("stepfun", profile_ids)
+        self.assertIn("qwen", profile_ids)
+        self.assertIn("kimi", profile_ids)
+        self.assertIn("glm", profile_ids)
+        self.assertIn("doubao", profile_ids)
+        self.assertIn("minimax", profile_ids)
         self.assertIn("openai-compatible", profile_ids)
         self.assertIn("anthropic-compatible", profile_ids)
         self.assertIn("deepseek", profile_ids)
@@ -35,8 +40,8 @@ class IngressBootstrapTests(unittest.TestCase):
         self.assertIn("baichuan", profile_ids)
         self.assertIn("siliconflow", profile_ids)
         self.assertIn("spark", profile_ids)
-        self.assertEqual(payload["summary"]["profiles"], 17)
-        self.assertEqual(payload["summary"]["protocols"]["openai"], 15)
+        self.assertEqual(payload["summary"]["profiles"], 22)
+        self.assertEqual(payload["summary"]["protocols"]["openai"], 20)
         self.assertEqual(payload["summary"]["protocols"]["anthropic"], 2)
 
     def test_deepseek_bootstrap_builds_continue_and_cli_samples(self) -> None:
@@ -125,6 +130,34 @@ class IngressBootstrapTests(unittest.TestCase):
             "https://generativelanguage.googleapis.com/v1beta/openai",
         )
         self.assertIn("model: gemini-2.5-flash", payload["continue"]["snippet"])
+
+    def test_qwen_profile_uses_dashscope_compat_path(self) -> None:
+        payload = build_ingress_bootstrap_payload(
+            profile_id="qwen",
+            editor="jetbrains",
+        )
+
+        self.assertEqual(payload["profile"]["profile_id"], "qwen")
+        self.assertEqual(payload["companion"]["local_base_url"], "http://127.0.0.1:8787/compatible-mode/v1")
+        self.assertEqual(
+            payload["companion"]["upstream_base_url"],
+            "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        )
+        self.assertIn("model: qwen3-coder-plus", payload["continue"]["snippet"])
+
+    def test_glm_profile_uses_coding_endpoint_path(self) -> None:
+        payload = build_ingress_bootstrap_payload(
+            profile_id="glm",
+            editor="vscode",
+        )
+
+        self.assertEqual(payload["profile"]["profile_id"], "glm")
+        self.assertEqual(payload["companion"]["local_base_url"], "http://127.0.0.1:8787/api/coding/paas/v4")
+        self.assertEqual(
+            payload["companion"]["upstream_base_url"],
+            "https://open.bigmodel.cn/api/coding/paas/v4",
+        )
+        self.assertIn("model: glm-4.7", payload["continue"]["snippet"])
 
 
 if __name__ == "__main__":

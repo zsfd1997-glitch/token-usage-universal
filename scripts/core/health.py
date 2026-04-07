@@ -68,7 +68,7 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
     ]
     if missing_desktop_sources:
         steps.append(
-            "Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这批桌面端已接入原生 Chromium/Electron 适配框架；"
+            "Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这批桌面端已接入原生 Chromium/Electron exact 解析器；"
             "现在会同时读取 Cache_Data、IndexedDB 和 Local Storage；"
             "如果默认 app-data 目录没命中，请按来源分别设置 "
             + ", ".join(env_name for env_name in desktop_family_sources.values())
@@ -87,6 +87,14 @@ def _next_steps(detections: list[SourceDetection]) -> list[str]:
         steps.append(
             "Kimi CLI 现在会直接读官方 ~/.kimi/sessions/*/*/wire.jsonl；默认根目录跟随 ~/.kimi 或上游 KIMI_SHARE_DIR，"
             "如果位置不同可设置 TOKEN_USAGE_KIMI_CLI_ROOT。"
+        )
+
+    gemini_cli = by_source.get("gemini-cli")
+    if gemini_cli and not gemini_cli.available:
+        steps.append(
+            "Gemini CLI 现在会直接读官方 ~/.gemini/tmp/*/chats/session-*.json；"
+            "exact token 来自每条 Gemini assistant message 的 tokens 字段，"
+            "如果位置不同可设置 TOKEN_USAGE_GEMINI_CLI_ROOT。"
         )
 
     generic = by_source.get("generic-openai-compatible")

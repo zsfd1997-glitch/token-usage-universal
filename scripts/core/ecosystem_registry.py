@@ -78,7 +78,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         surfaces=(
             _surface("desktop", "Qwen Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("qwen-desktop",), notes="Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Qwen Code CLI", primary_lane="native-client", maturity="exact-ready", implemented=("qwen-code-cli",), notes="Official project-scoped session JSONL files now provide exact usageMetadata."),
-            _surface("ide", "Qwen IDE", primary_lane="ingress-capture", maturity="planned", planned=("qwen-ide-proxy",), notes="IDE lane should prefer custom base_url / proxy companion."),
+            _surface("ide", "Qwen IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("qwen-ide-proxy",), notes="Shared ingress bootstrap now provides an official DashScope OpenAI-compatible profile; Coding Plan users can override the upstream base URL if they use the dedicated coding endpoint."),
         ),
         notes="China-first priority because it spans provider API, desktop shells, and coding CLI surfaces.",
     ),
@@ -91,7 +91,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         surfaces=(
             _surface("desktop", "Kimi Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("kimi-desktop",), notes="Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
             _surface("cli", "Kimi CLI", primary_lane="native-client", maturity="exact-ready", implemented=("kimi-cli",), notes="Official ~/.kimi/sessions wire.jsonl now provides exact StatusUpdate token_usage."),
-            _surface("ide", "Kimi IDE", primary_lane="ingress-capture", maturity="planned", planned=("kimi-ide-proxy",)),
+            _surface("ide", "Kimi IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("kimi-ide-proxy",), notes="Shared ingress bootstrap now provides an official Moonshot OpenAI-compatible profile for Continue and CLI-style tooling."),
         ),
     ),
     EcosystemTarget(
@@ -102,8 +102,8 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_source_ids=("zhipu-glm-api",),
         surfaces=(
             _surface("desktop", "GLM Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("glm-desktop",), notes="Desktop root discovery now includes Z Code / ZCODE and exact parsing supports Cache_Data, IndexedDB, and Local Storage."),
-            _surface("cli", "GLM CLI", primary_lane="native-client", maturity="planned", planned=("glm-cli",)),
-            _surface("ide", "GLM IDE", primary_lane="ingress-capture", maturity="planned", planned=("glm-ide-proxy",)),
+            _surface("cli", "GLM CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("glm-cli-proxy",), notes="Shared ingress bootstrap now provides the official BigModel coding endpoint profile for GLM-compatible coding tools."),
+            _surface("ide", "GLM IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("glm-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for the official BigModel coding endpoint."),
         ),
     ),
     EcosystemTarget(
@@ -114,8 +114,8 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_source_ids=("minimax-api",),
         surfaces=(
             _surface("desktop", "MiniMax Agent", primary_lane="native-client", maturity="exact-ready", implemented=("minimax-agent",)),
-            _surface("cli", "MiniMax CLI", primary_lane="ingress-capture", maturity="planned", planned=("minimax-cli-proxy",), notes="Use proxy/base_url first unless an official exportable CLI ships."),
-            _surface("ide", "MiniMax IDE", primary_lane="ingress-capture", maturity="planned", planned=("minimax-ide-proxy",)),
+            _surface("cli", "MiniMax CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("minimax-cli-proxy",), notes="Shared ingress bootstrap now provides an official MiniMax OpenAI-compatible CLI capture path."),
+            _surface("ide", "MiniMax IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("minimax-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
     ),
     EcosystemTarget(
@@ -138,8 +138,8 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_source_ids=("doubao-api",),
         surfaces=(
             _surface("desktop", "Doubao Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("doubao-desktop",), notes="Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."),
-            _surface("cli", "Doubao CLI", primary_lane="ingress-capture", maturity="planned", planned=("doubao-cli-proxy",)),
-            _surface("ide", "Doubao IDE", primary_lane="ingress-capture", maturity="planned", planned=("doubao-ide-proxy",)),
+            _surface("cli", "Doubao CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("doubao-cli-proxy",), notes="Shared ingress bootstrap now provides the official Volcengine Ark OpenAI-compatible CLI capture path."),
+            _surface("ide", "Doubao IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("doubao-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for the official Volcengine Ark endpoint."),
         ),
     ),
     EcosystemTarget(
@@ -173,7 +173,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("stepfun-api",),
         surfaces=(
-            _surface("desktop", "StepFun Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("stepfun-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "StepFun Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("stepfun-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."),
             _surface("cli", "StepFun CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("stepfun-cli-proxy",), notes="Shared ingress bootstrap now provides an official StepFun OpenAI-compatible CLI capture path."),
             _surface("ide", "StepFun IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("stepfun-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
@@ -185,11 +185,11 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("sensenova-api",),
         surfaces=(
-            _surface("desktop", "SenseNova Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("sensenova-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "SenseNova Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("sensenova-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."),
             _surface("cli", "SenseNova CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("sensenova-cli-proxy",), notes="Shared ingress bootstrap now provides an OpenAI-compatible SenseNova CLI capture path."),
             _surface("ide", "SenseNova IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("sensenova-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
-        notes="Provider exact pack is live; CLI and IDE now share ingress bootstrap, while desktop remains pending.",
+        notes="Provider exact pack is live; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready.",
     ),
     EcosystemTarget(
         ecosystem_id="baichuan",
@@ -198,11 +198,11 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("baichuan-api",),
         surfaces=(
-            _surface("desktop", "Baichuan Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("baichuan-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "Baichuan Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("baichuan-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."),
             _surface("cli", "Baichuan CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("baichuan-cli-proxy",), notes="Shared ingress bootstrap now provides a manual-upstream OpenAI-compatible CLI capture path."),
             _surface("ide", "Baichuan IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("baichuan-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets; public docs still require manual upstream base_url input."),
         ),
-        notes="Provider exact pack is live; CLI and IDE now share ingress bootstrap, while desktop still needs native follow-up.",
+        notes="Provider exact pack is live; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready.",
     ),
     EcosystemTarget(
         ecosystem_id="siliconflow",
@@ -211,11 +211,11 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("siliconflow-api",),
         surfaces=(
-            _surface("desktop", "SiliconFlow Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("siliconflow-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "SiliconFlow Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("siliconflow-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Local Storage."),
             _surface("cli", "SiliconFlow CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("siliconflow-cli-proxy",), notes="Shared ingress bootstrap now provides an OpenAI-compatible SiliconFlow CLI capture path."),
             _surface("ide", "SiliconFlow IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("siliconflow-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
-        notes="Provider exact pack can match provider fields or request endpoint hints; CLI and IDE now share ingress bootstrap while desktop remains planned.",
+        notes="Provider exact pack can match provider fields or request endpoint hints; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready.",
     ),
     EcosystemTarget(
         ecosystem_id="spark",
@@ -224,11 +224,11 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("spark-api",),
         surfaces=(
-            _surface("desktop", "Spark Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("spark-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "Spark Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("spark-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."),
             _surface("cli", "Spark CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("spark-cli-proxy",), notes="Shared ingress bootstrap now provides an OpenAI-compatible Spark CLI capture path."),
             _surface("ide", "Spark IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("spark-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
-        notes="Provider exact pack is live and recognizes Spark API endpoints; CLI and IDE now share ingress bootstrap while desktop remains planned.",
+        notes="Provider exact pack is live and recognizes Spark API endpoints; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready.",
     ),
     EcosystemTarget(
         ecosystem_id="openai",
@@ -237,7 +237,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("openai-api",),
         surfaces=(
-            _surface("desktop", "ChatGPT Desktop", primary_lane="native-client", maturity="detect-ready", implemented=("chatgpt-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "ChatGPT Desktop", primary_lane="native-client", maturity="exact-ready", implemented=("chatgpt-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."),
             _surface("cli", "Codex CLI", primary_lane="native-client", maturity="exact-ready", implemented=("codex",)),
             _surface("ide", "OpenAI IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("openai-ide-proxy",), notes="Shared ingress bootstrap now provides an official OpenAI profile with embedded api.openai.com/v1 upstream and Continue snippets for VS Code and JetBrains."),
         ),
@@ -261,8 +261,8 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("google-gemini-api",),
         surfaces=(
-            _surface("desktop", "Gemini Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("gemini-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
-            _surface("cli", "Gemini CLI", primary_lane="native-client", maturity="planned", planned=("gemini-cli",)),
+            _surface("desktop", "Gemini Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("gemini-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Local Storage."),
+            _surface("cli", "Gemini CLI", primary_lane="native-client", maturity="exact-ready", implemented=("gemini-cli",), notes="Official ~/.gemini/tmp/*/chats/session-*.json files now provide exact Gemini message token records."),
             _surface("ide", "Gemini IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("gemini-ide-proxy",), notes="Shared ingress bootstrap now provides an official Gemini OpenAI-compatibility profile and Continue snippets for VS Code and JetBrains."),
         ),
     ),
@@ -297,7 +297,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("xai-grok-api",),
         surfaces=(
-            _surface("desktop", "Grok Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("grok-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "Grok Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("grok-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."),
             _surface("cli", "Grok CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("grok-cli-proxy",), notes="Shared ingress bootstrap now provides an official xAI CLI capture path."),
             _surface("ide", "Grok IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("grok-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),
@@ -309,7 +309,7 @@ TOP20_ECOSYSTEM_TARGETS: tuple[EcosystemTarget, ...] = (
         provider_lane_maturity="exact-ready",
         provider_source_ids=("mistral-api",),
         surfaces=(
-            _surface("desktop", "Mistral Desktop Shell", primary_lane="native-client", maturity="detect-ready", implemented=("mistral-desktop",), notes="Chromium/Electron desktop source skeleton is now wired for Cache_Data, IndexedDB, and Local Storage, but still needs real client fixtures before exact-ready can be claimed."),
+            _surface("desktop", "Mistral Desktop Shell", primary_lane="native-client", maturity="exact-ready", implemented=("mistral-desktop",), notes="Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."),
             _surface("cli", "Mistral CLI", primary_lane="ingress-capture", maturity="exact-ready", implemented=("mistral-cli-proxy",), notes="Shared ingress bootstrap now provides an official Mistral CLI capture path."),
             _surface("ide", "Mistral IDE", primary_lane="ingress-capture", maturity="exact-ready", implemented=("mistral-ide-proxy",), notes="Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."),
         ),

@@ -82,6 +82,7 @@ Top20 执行主线文档：
 - `official coding CLI`
   - `qwen-code-cli`
   - `kimi-cli`
+  - `gemini-cli`
 - `desktop-native closed clients`
   - `kimi-desktop`
   - `glm-desktop`
@@ -146,6 +147,10 @@ Top20 执行主线文档：
   - 原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`
   - exact token 来自 `StatusUpdate.token_usage`
   - 如果上游设了 `KIMI_SHARE_DIR`，默认也会跟随该目录；我们自己的 override 是 `TOKEN_USAGE_KIMI_CLI_ROOT`
+- `gemini-cli`
+  - 原生读取官方 `~/.gemini/tmp/*/chats/session-*.json`
+  - exact token 来自每条 Gemini assistant message 的 `tokens`
+  - 默认根目录是 `~/.gemini`；我们自己的 override 是 `TOKEN_USAGE_GEMINI_CLI_ROOT`
 - `minimax-agent`
   - 原生解析桌面端 `Chromium Cache_Data` 里的 MiniMax Agent HTTP JSON 响应
   - 当前 exact 依赖客户端是否把 token-bearing chat/completion 响应缓存到本地
@@ -155,7 +160,7 @@ Top20 执行主线文档：
 - `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop / stepfun-desktop / sensenova-desktop / baichuan-desktop / siliconflow-desktop / spark-desktop / chatgpt-desktop / gemini-desktop / grok-desktop / mistral-desktop`
   - 现在已经是独立 `source_id`，不再混进 generic fallback
   - 统一走原生 `Chromium / Electron` 桌面适配框架：现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
-  - 其中 `Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity` 这一批已拿到更强的 exact-native 覆盖；其余新补桌面 source 先标 `detect-ready`，等真实 fixture 到位后再升级 `exact-ready`
+  - 这一整批桌面 source 现在都已经有 fixture-backed 的 exact-native 覆盖，不再停留在 `detect-ready`
   - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_QIANFAN_DESKTOP_ROOT`、`TOKEN_USAGE_YUANBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`、`TOKEN_USAGE_STEPFUN_DESKTOP_ROOT`、`TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT`、`TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT`、`TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT`、`TOKEN_USAGE_SPARK_DESKTOP_ROOT`、`TOKEN_USAGE_CHATGPT_DESKTOP_ROOT`、`TOKEN_USAGE_GEMINI_DESKTOP_ROOT`、`TOKEN_USAGE_GROK_DESKTOP_ROOT`、`TOKEN_USAGE_MISTRAL_DESKTOP_ROOT`
 - `generic-openai-compatible`
   - 当前显示名是 `Generic API Compatible`
@@ -166,7 +171,7 @@ Top20 执行主线文档：
   - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
   - 当前已经支持 `openai / anthropic / generic` 三种协议模式
   - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
-  - 当前已经内置 bootstrap profiles：`openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
+  - 当前已经内置 bootstrap profiles：`openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / qwen / kimi / glm / doubao / minimax / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
 
 Top20 provider family 的适配规则是统一的：
 
@@ -219,6 +224,7 @@ Top20 provider family 的适配规则是统一的：
 | `TOKEN_USAGE_MISTRAL_DESKTOP_ROOT` | 覆写 Mistral / Le Chat Desktop app-data 目录 |
 | `TOKEN_USAGE_QWEN_CODE_ROOT` | 覆写 Qwen Code CLI runtime root |
 | `TOKEN_USAGE_KIMI_CLI_ROOT` | 覆写 Kimi CLI share root |
+| `TOKEN_USAGE_GEMINI_CLI_ROOT` | 覆写 Gemini CLI runtime root |
 | `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |
 | `TOKEN_USAGE_OPENCODE_ROOTS` | 覆写 OpenCode 本地 roots 列表 |
 | `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置兼容 API exact log 的逗号分隔 glob |

@@ -110,11 +110,12 @@ export TOKEN_USAGE_MINIMAX_AGENT_ROOT="$HOME/Library/Application Support/MiniMax
 - exact 是否可得，取决于当前客户端缓存里是否落下了带 usage 的 chat/completion JSON。
 - 如果 health 里提示“cache detected but no exact token payloads”，意思不是 parser 没做，而是当前缓存快照里确实没有 token 真源。
 
-### Qwen Code CLI / Kimi CLI
+### Qwen Code CLI / Kimi CLI / Gemini CLI
 
 ```bash
 export TOKEN_USAGE_QWEN_CODE_ROOT="$HOME/.qwen"
 export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
+export TOKEN_USAGE_GEMINI_CLI_ROOT="$HOME/.gemini"
 ```
 
 说明：
@@ -123,6 +124,8 @@ export TOKEN_USAGE_KIMI_CLI_ROOT="$HOME/.kimi"
 - 默认根目录会跟随 `~/.qwen` 或上游 `QWEN_RUNTIME_DIR`；当前优先扫描 `projects/*/chats/*.jsonl`，并兼容旧的 `tmp/*/chats/*.jsonl`。
 - `kimi-cli` 现在会原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`。
 - 默认根目录会跟随 `~/.kimi` 或上游 `KIMI_SHARE_DIR`；exact token 来自 `StatusUpdate.token_usage`。
+- `gemini-cli` 现在会原生读取官方 `~/.gemini/tmp/*/chats/session-*.json`。
+- 默认根目录是 `~/.gemini`；exact token 来自每条 Gemini assistant message 的 `tokens`。
 
 ### Chromium / Electron 桌面端
 
@@ -150,7 +153,7 @@ export TOKEN_USAGE_MISTRAL_DESKTOP_ROOT="$HOME/Library/Application Support/Mistr
 
 - 这批来源现在已经拆成独立 `source_id`，分别是 `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop / stepfun-desktop / sensenova-desktop / baichuan-desktop / siliconflow-desktop / spark-desktop / chatgpt-desktop / gemini-desktop / grok-desktop / mistral-desktop`。
 - 它们统一走原生 `Chromium / Electron` 桌面适配框架，现在会同时读取 `Cache_Data / IndexedDB / Local Storage`，不再只依赖 `generic-openai-compatible`。
-- `Kimi / GLM / Qwen / DeepSeek / Doubao / Qianfan / Yuanbao / Perplexity` 当前已是更强的 exact-native；新补的其余桌面生态先进入 `detect-ready`，等拿到真实 fixture 再升 `exact-ready`。
+- 这整批桌面生态当前都已是 fixture-backed 的 `exact-ready`，不再停留在 `detect-ready`。
 - 如果默认目录没命中，直接设对应 env override；如果命中但没有 exact，health 会明确告诉您“有桌面痕迹但当前没有 token 真源”。
 
 ### IDE / 内网 launcher / 自定义 base_url
@@ -170,7 +173,7 @@ python3 scripts/token_usage.py ingress bootstrap \
 说明：
 
 - `ingress bootstrap` 会直接打印 Continue 的 `VS Code / JetBrains` 配置片段、CLI shell env 示例，以及 companion 的本地代理地址。
-- `ingress profiles` 会列出内置 profile，目前包括 `openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`。
+- `ingress profiles` 会列出内置 profile，目前包括 `openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / qwen / kimi / glm / doubao / minimax / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`。
 - `ingress config` 仍然保留，适合您要手动指定 provider/base URL 时单独查看本地代理地址。
 - `ingress serve` 会启动本地 companion，把 exact usage 响应落成 JSONL，供 provider family 自动发现。
 - 这条链路优先面向 `IDE / 私有 launcher / 企业内网封装 CLI`，不要求对方一定有 `skills` 目录。

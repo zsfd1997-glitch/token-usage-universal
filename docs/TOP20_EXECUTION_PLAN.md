@@ -122,9 +122,10 @@
 - provider family 现在不仅看 `provider / model`，也会看 `request url / base_url / endpoint`，用于兼容 IDE 代理日志和 provider passthrough 日志
 - `Qwen Code CLI` 已进入 `exact-ready`：直接读取官方 project-scoped session JSONL
 - `Kimi CLI` 已进入 `exact-ready`：直接读取官方 `~/.kimi/sessions/*/*/wire.jsonl` 与 `StatusUpdate.token_usage`
+- `Gemini CLI` 已进入 `exact-ready`：直接读取官方 `~/.gemini/tmp/*/chats/session-*.json` 与每条 Gemini message 的 `tokens`
 - `GLM Desktop / Doubao Desktop / Perplexity Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
 - `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 已完成桌面端 exact-native 强化：统一支持 `Cache_Data + IndexedDB + Local Storage` 三类本地真源
-- `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 已补齐桌面端 Chromium/Electron source skeleton，先推进到 `detect-ready`
+- `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 已补齐真实 fixture，并升级到 `exact-ready`
 - `pricing_db.json` 已补齐 `ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao alias` 这一批国产生态的费用估算基线
 
 验收：
@@ -140,16 +141,8 @@
 
 当前进度：
 
-- `StepFun Desktop`
-- `SenseNova Desktop`
-- `Baichuan Desktop`
-- `SiliconFlow Desktop`
-- `Spark Desktop`
-- `ChatGPT Desktop`
-- `Gemini Desktop`
-- `Grok Desktop`
-- `Mistral Desktop`
-  以上桌面端都已接入统一 `Chromium / Electron` 真源骨架，但当前仍按 `detect-ready` 管理，等待真实 fixture 再升 `exact-ready`
+- `StepFun Desktop / SenseNova Desktop / Baichuan Desktop / SiliconFlow Desktop / Spark Desktop / ChatGPT Desktop / Gemini Desktop / Grok Desktop / Mistral Desktop`
+  以上桌面端都已用真实 fixture 跑通，当前已统一升到 `exact-ready`
 
 第一梯队：
 
@@ -191,6 +184,11 @@
   - `xAI CLI / IDE`
   - `Mistral CLI / IDE`
 - 已补齐中国优先 runtime bootstrap：
+  - `Qwen IDE`
+  - `Kimi IDE`
+  - `GLM CLI / IDE`
+  - `Doubao CLI / IDE`
+  - `MiniMax CLI / IDE`
   - `StepFun CLI / IDE`
   - `DeepSeek CLI / IDE`
   - `Qianfan CLI / IDE`

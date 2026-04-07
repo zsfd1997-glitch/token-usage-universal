@@ -8,26 +8,26 @@
 
 | Ecosystem | Priority | Provider Lane | Desktop | CLI | IDE |
 |---|---|---|---|---|---|
-| Qwen / DashScope / Qwen Code | China | `qwen-api` `exact-ready` | `qwen-desktop` `exact-ready` `native-client` | `qwen-code-cli` `exact-ready` `native-client` | `qwen-ide-proxy` `planned` `ingress-capture` |
-| Kimi / Moonshot / Kimi CLI | China | `moonshot-kimi-api` `exact-ready` | `kimi-desktop` `exact-ready` `native-client` | `kimi-cli` `exact-ready` `native-client` | `kimi-ide-proxy` `planned` `ingress-capture` |
-| GLM / BigModel / Z.ai | China | `zhipu-glm-api` `exact-ready` | `glm-desktop` `exact-ready` `native-client` | `glm-cli` `planned` `native-client` | `glm-ide-proxy` `planned` `ingress-capture` |
-| MiniMax / MiniMax Agent | China | `minimax-api` `exact-ready` | `minimax-agent` `exact-ready` `native-client` | `minimax-cli-proxy` `planned` `ingress-capture` | `minimax-ide-proxy` `planned` `ingress-capture` |
+| Qwen / DashScope / Qwen Code | China | `qwen-api` `exact-ready` | `qwen-desktop` `exact-ready` `native-client` | `qwen-code-cli` `exact-ready` `native-client` | `qwen-ide-proxy` `exact-ready` `ingress-capture` |
+| Kimi / Moonshot / Kimi CLI | China | `moonshot-kimi-api` `exact-ready` | `kimi-desktop` `exact-ready` `native-client` | `kimi-cli` `exact-ready` `native-client` | `kimi-ide-proxy` `exact-ready` `ingress-capture` |
+| GLM / BigModel / Z.ai | China | `zhipu-glm-api` `exact-ready` | `glm-desktop` `exact-ready` `native-client` | `glm-cli-proxy` `exact-ready` `ingress-capture` | `glm-ide-proxy` `exact-ready` `ingress-capture` |
+| MiniMax / MiniMax Agent | China | `minimax-api` `exact-ready` | `minimax-agent` `exact-ready` `native-client` | `minimax-cli-proxy` `exact-ready` `ingress-capture` | `minimax-ide-proxy` `exact-ready` `ingress-capture` |
 | DeepSeek | China | `deepseek-api` `exact-ready` | `deepseek-desktop` `exact-ready` `native-client` | `deepseek-cli-proxy` `exact-ready` `ingress-capture` | `deepseek-ide-proxy` `exact-ready` `ingress-capture` |
-| Doubao / Volcengine Ark | China | `doubao-api` `exact-ready` | `doubao-desktop` `exact-ready` `native-client` | `doubao-cli-proxy` `planned` `ingress-capture` | `doubao-ide-proxy` `planned` `ingress-capture` |
+| Doubao / Volcengine Ark | China | `doubao-api` `exact-ready` | `doubao-desktop` `exact-ready` `native-client` | `doubao-cli-proxy` `exact-ready` `ingress-capture` | `doubao-ide-proxy` `exact-ready` `ingress-capture` |
 | Baidu Qianfan / Wenxin | China | `baidu-qianfan-api` `exact-ready` | `qianfan-desktop` `exact-ready` `native-client` | `qianfan-cli-proxy` `exact-ready` `ingress-capture` | `qianfan-ide-proxy` `exact-ready` `ingress-capture` |
 | Tencent Hunyuan / Yuanbao | China | `tencent-hunyuan-api` `exact-ready` | `yuanbao-desktop` `exact-ready` `native-client` | `hunyuan-cli-proxy` `exact-ready` `ingress-capture` | `hunyuan-ide-proxy` `exact-ready` `ingress-capture` |
-| StepFun | China | `stepfun-api` `exact-ready` | `stepfun-desktop` `detect-ready` `native-client` | `stepfun-cli-proxy` `exact-ready` `ingress-capture` | `stepfun-ide-proxy` `exact-ready` `ingress-capture` |
-| SenseNova | China | `sensenova-api` `exact-ready` | `sensenova-desktop` `detect-ready` `native-client` | `sensenova-cli-proxy` `exact-ready` `ingress-capture` | `sensenova-ide-proxy` `exact-ready` `ingress-capture` |
-| Baichuan | China | `baichuan-api` `exact-ready` | `baichuan-desktop` `detect-ready` `native-client` | `baichuan-cli-proxy` `exact-ready` `ingress-capture` | `baichuan-ide-proxy` `exact-ready` `ingress-capture` |
-| SiliconFlow | China | `siliconflow-api` `exact-ready` | `siliconflow-desktop` `detect-ready` `native-client` | `siliconflow-cli-proxy` `exact-ready` `ingress-capture` | `siliconflow-ide-proxy` `exact-ready` `ingress-capture` |
-| 讯飞星火 / Spark | China | `spark-api` `exact-ready` | `spark-desktop` `detect-ready` `native-client` | `spark-cli-proxy` `exact-ready` `ingress-capture` | `spark-ide-proxy` `exact-ready` `ingress-capture` |
-| OpenAI / Codex / ChatGPT Desktop | Global | `openai-api` `exact-ready` | `chatgpt-desktop` `detect-ready` `native-client` | `codex` `exact-ready` `native-client` | `openai-ide-proxy` `exact-ready` `ingress-capture` |
+| StepFun | China | `stepfun-api` `exact-ready` | `stepfun-desktop` `exact-ready` `native-client` | `stepfun-cli-proxy` `exact-ready` `ingress-capture` | `stepfun-ide-proxy` `exact-ready` `ingress-capture` |
+| SenseNova | China | `sensenova-api` `exact-ready` | `sensenova-desktop` `exact-ready` `native-client` | `sensenova-cli-proxy` `exact-ready` `ingress-capture` | `sensenova-ide-proxy` `exact-ready` `ingress-capture` |
+| Baichuan | China | `baichuan-api` `exact-ready` | `baichuan-desktop` `exact-ready` `native-client` | `baichuan-cli-proxy` `exact-ready` `ingress-capture` | `baichuan-ide-proxy` `exact-ready` `ingress-capture` |
+| SiliconFlow | China | `siliconflow-api` `exact-ready` | `siliconflow-desktop` `exact-ready` `native-client` | `siliconflow-cli-proxy` `exact-ready` `ingress-capture` | `siliconflow-ide-proxy` `exact-ready` `ingress-capture` |
+| 讯飞星火 / Spark | China | `spark-api` `exact-ready` | `spark-desktop` `exact-ready` `native-client` | `spark-cli-proxy` `exact-ready` `ingress-capture` | `spark-ide-proxy` `exact-ready` `ingress-capture` |
+| OpenAI / Codex / ChatGPT Desktop | Global | `openai-api` `exact-ready` | `chatgpt-desktop` `exact-ready` `native-client` | `codex` `exact-ready` `native-client` | `openai-ide-proxy` `exact-ready` `ingress-capture` |
 | Anthropic / Claude Code / Claude Desktop | Global | `anthropic-api` `exact-ready` | `claude-desktop` `exact-ready` `native-client` | `claude-code` `exact-ready` `native-client` | `anthropic-ide-proxy` `exact-ready` `ingress-capture` |
-| Google Gemini / Gemini CLI | Global | `google-gemini-api` `exact-ready` | `gemini-desktop` `detect-ready` `native-client` | `gemini-cli` `planned` `native-client` | `gemini-ide-proxy` `exact-ready` `ingress-capture` |
+| Google Gemini / Gemini CLI | Global | `google-gemini-api` `exact-ready` | `gemini-desktop` `exact-ready` `native-client` | `gemini-cli` `exact-ready` `native-client` | `gemini-ide-proxy` `exact-ready` `ingress-capture` |
 | OpenRouter | Global | `openrouter-api` `exact-ready` | `openrouter-desktop-proxy` `exact-ready` `ingress-capture` | `openrouter-cli-proxy` `exact-ready` `ingress-capture` | `openrouter-ide-proxy` `exact-ready` `ingress-capture` |
 | Perplexity | Global | `perplexity-api` `exact-ready` | `perplexity-desktop` `exact-ready` `native-client` | `perplexity-cli-proxy` `exact-ready` `ingress-capture` | `perplexity-ide-proxy` `exact-ready` `ingress-capture` |
-| xAI / Grok | Global | `xai-grok-api` `exact-ready` | `grok-desktop` `detect-ready` `native-client` | `grok-cli-proxy` `exact-ready` `ingress-capture` | `grok-ide-proxy` `exact-ready` `ingress-capture` |
-| Mistral | Global | `mistral-api` `exact-ready` | `mistral-desktop` `detect-ready` `native-client` | `mistral-cli-proxy` `exact-ready` `ingress-capture` | `mistral-ide-proxy` `exact-ready` `ingress-capture` |
+| xAI / Grok | Global | `xai-grok-api` `exact-ready` | `grok-desktop` `exact-ready` `native-client` | `grok-cli-proxy` `exact-ready` `ingress-capture` | `grok-ide-proxy` `exact-ready` `ingress-capture` |
+| Mistral | Global | `mistral-api` `exact-ready` | `mistral-desktop` `exact-ready` `native-client` | `mistral-cli-proxy` `exact-ready` `ingress-capture` | `mistral-ide-proxy` `exact-ready` `ingress-capture` |
 
 ## Current Reading Rule
 

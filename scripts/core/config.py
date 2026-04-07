@@ -30,6 +30,7 @@ TOKEN_USAGE_GROK_DESKTOP_ROOT_ENV = "TOKEN_USAGE_GROK_DESKTOP_ROOT"
 TOKEN_USAGE_MISTRAL_DESKTOP_ROOT_ENV = "TOKEN_USAGE_MISTRAL_DESKTOP_ROOT"
 TOKEN_USAGE_QWEN_CODE_ROOT_ENV = "TOKEN_USAGE_QWEN_CODE_ROOT"
 TOKEN_USAGE_KIMI_CLI_ROOT_ENV = "TOKEN_USAGE_KIMI_CLI_ROOT"
+TOKEN_USAGE_GEMINI_CLI_ROOT_ENV = "TOKEN_USAGE_GEMINI_CLI_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
 TOKEN_USAGE_OPENCODE_ROOTS_ENV = "TOKEN_USAGE_OPENCODE_ROOTS"
 TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV = "TOKEN_USAGE_GENERIC_LOG_GLOBS"
@@ -205,6 +206,11 @@ def default_kimi_share_root(*, home: Path | None = None) -> Path:
     if configured:
         return Path(expand_path_text(configured))
     return home_path / ".kimi"
+
+
+def default_gemini_cli_root(*, home: Path | None = None) -> Path:
+    home_path = home or Path.home()
+    return home_path / ".gemini"
 
 
 def default_discovery_roots(
@@ -394,6 +400,11 @@ ENVIRONMENT_VARIABLES = (
         "name": TOKEN_USAGE_KIMI_CLI_ROOT_ENV,
         "description": "Override the Kimi CLI share root (~/.kimi or KIMI_SHARE_DIR).",
         "default": lambda: _path_text(default_kimi_share_root()),
+    },
+    {
+        "name": TOKEN_USAGE_GEMINI_CLI_ROOT_ENV,
+        "description": "Override the Gemini CLI runtime root (~/.gemini).",
+        "default": lambda: _path_text(default_gemini_cli_root()),
     },
     {
         "name": TOKEN_USAGE_OPENCODE_BIN_ENV,

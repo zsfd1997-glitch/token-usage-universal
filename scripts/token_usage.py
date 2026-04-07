@@ -16,6 +16,7 @@ from adapters.claude_desktop import ClaudeDesktopAdapter
 from adapters.chromium_desktop_family import build_chromium_desktop_family_adapters
 from adapters.compatible_api_family import build_provider_api_adapters
 from adapters.codex import CodexAdapter
+from adapters.gemini_cli import GeminiCliAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from adapters.kimi_cli import KimiCliAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
@@ -52,6 +53,7 @@ def _build_adapters():
         MiniMaxAgentAdapter(),
         QwenCodeCliAdapter(),
         KimiCliAdapter(),
+        GeminiCliAdapter(),
         *build_chromium_desktop_family_adapters(),
         *build_provider_api_adapters(),
         GenericOpenAICompatibleAdapter(),

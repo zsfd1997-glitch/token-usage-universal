@@ -340,7 +340,7 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 49)
+        self.assertEqual(len(source_ids), 50)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
         self.assertIn("claude-desktop", source_ids)
@@ -348,6 +348,7 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("minimax-agent", source_ids)
         self.assertIn("qwen-code-cli", source_ids)
         self.assertIn("kimi-cli", source_ids)
+        self.assertIn("gemini-cli", source_ids)
         self.assertIn("kimi-desktop", source_ids)
         self.assertIn("glm-desktop", source_ids)
         self.assertIn("stepfun-desktop", source_ids)
@@ -394,8 +395,8 @@ class CliIntegrationTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["total_ecosystems"], 20)
         self.assertEqual(payload["summary"]["china_priority_ecosystems"], 13)
-        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 42)
-        self.assertEqual(payload["summary"]["surface_maturity"]["detect-ready"], 9)
+        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 60)
+        self.assertEqual(payload["summary"]["surface_maturity"].get("detect-ready", 0), 0)
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
 
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
@@ -451,10 +452,15 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("xai", profile_ids)
         self.assertIn("mistral", profile_ids)
         self.assertIn("stepfun", profile_ids)
+        self.assertIn("qwen", profile_ids)
+        self.assertIn("kimi", profile_ids)
+        self.assertIn("glm", profile_ids)
+        self.assertIn("doubao", profile_ids)
+        self.assertIn("minimax", profile_ids)
         self.assertIn("deepseek", profile_ids)
         self.assertIn("anthropic-compatible", profile_ids)
         self.assertIn("spark", profile_ids)
-        self.assertEqual(payload["summary"]["profiles"], 17)
+        self.assertEqual(payload["summary"]["profiles"], 22)
 
     def test_ingress_bootstrap_json_outputs_continue_snippet(self) -> None:
         result = subprocess.run(
@@ -508,6 +514,56 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["companion"]["upstream_base_url"], "https://api.anthropic.com")
         self.assertIn("provider: anthropic", payload["continue"]["snippet"])
         self.assertIn("claude-sonnet-4-20250514", payload["continue"]["snippet"])
+
+    def test_ingress_bootstrap_json_outputs_qwen_profile(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI_PATH),
+                "ingress",
+                "bootstrap",
+                "--profile",
+                "qwen",
+                "--editor",
+                "vscode",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["profile"]["profile_id"], "qwen")
+        self.assertEqual(payload["companion"]["local_base_url"], "http://127.0.0.1:8787/compatible-mode/v1")
+        self.assertIn("qwen3-coder-plus", payload["continue"]["snippet"])
+
+    def test_ingress_bootstrap_json_outputs_glm_profile(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI_PATH),
+                "ingress",
+                "bootstrap",
+                "--profile",
+                "glm",
+                "--editor",
+                "jetbrains",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["profile"]["profile_id"], "glm")
+        self.assertEqual(payload["companion"]["local_base_url"], "http://127.0.0.1:8787/api/coding/paas/v4")
+        self.assertIn("glm-4.7", payload["continue"]["snippet"])
 
     def test_ingress_bootstrap_json_outputs_perplexity_root_base_profile(self) -> None:
         result = subprocess.run(

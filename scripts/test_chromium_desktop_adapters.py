@@ -395,6 +395,249 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertEqual(result.events[0].total_tokens, 410)
         self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
 
+    def test_sensenova_desktop_collects_exact_usage_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            cache_dir.joinpath("sense000_0").write_bytes(
+                _cache_blob(
+                    "https://api.sensenova.cn/v1/chat/completions",
+                    {
+                        "created_at": "2026-03-25T17:10:00-07:00",
+                        "conversation_id": "sensenova-1",
+                        "model": "sensechat-5",
+                        "usage": {
+                            "prompt_tokens": 210,
+                            "completion_tokens": 60,
+                            "total_tokens": 270,
+                        },
+                    },
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "sensenova-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "sensenova-1")
+        self.assertEqual(result.events[0].total_tokens, 270)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
+
+    def test_baichuan_desktop_collects_exact_usage_from_indexeddb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_api.baichuan-ai.com_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000040.log").write_bytes(
+                (
+                    b"\x00https://api.baichuan-ai.com/v1/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:15:00-07:00",
+                            "conversation_id": "baichuan-1",
+                            "model": "baichuan4",
+                            "usage": {
+                                "prompt_tokens": 190,
+                                "completion_tokens": 70,
+                                "total_tokens": 260,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "baichuan-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "baichuan-1")
+        self.assertEqual(result.events[0].total_tokens, 260)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
+
+    def test_siliconflow_desktop_collects_exact_usage_from_local_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_storage_dir = root / "Local Storage" / "leveldb"
+            local_storage_dir.mkdir(parents=True)
+            local_storage_dir.joinpath("000041.log").write_bytes(
+                (
+                    b"\x00https://api.siliconflow.cn/v1/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:20:00-07:00",
+                            "conversation_id": "siliconflow-1",
+                            "model": "deepseek-v3.1",
+                            "usage": {
+                                "prompt_tokens": 240,
+                                "completion_tokens": 80,
+                                "total_tokens": 320,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "siliconflow-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "siliconflow-1")
+        self.assertEqual(result.events[0].total_tokens, 320)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:local_storage_usage")
+
+    def test_spark_desktop_collects_exact_usage_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            cache_dir.joinpath("spark000_0").write_bytes(
+                _cache_blob(
+                    "https://spark-api-open.xf-yun.com/v1/chat/completions",
+                    {
+                        "created_at": "2026-03-25T17:25:00-07:00",
+                        "conversation_id": "spark-1",
+                        "model": "spark-max-32k",
+                        "usage": {
+                            "prompt_tokens": 230,
+                            "completion_tokens": 90,
+                            "total_tokens": 320,
+                        },
+                    },
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "spark-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "spark-1")
+        self.assertEqual(result.events[0].total_tokens, 320)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
+
+    def test_gemini_desktop_collects_exact_usage_from_local_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_storage_dir = root / "Local Storage" / "leveldb"
+            local_storage_dir.mkdir(parents=True)
+            local_storage_dir.joinpath("000042.ldb").write_bytes(
+                (
+                    b"\x00https://generativelanguage.googleapis.com/v1beta/openai/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:30:00-07:00",
+                            "conversation_id": "gemini-desktop-1",
+                            "model": "gemini-2.5-flash",
+                            "usage": {
+                                "input_tokens": 260,
+                                "cached_input_tokens": 30,
+                                "output_tokens": 70,
+                                "reasoning_tokens": 10,
+                                "total_tokens": 340,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "gemini-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "gemini-desktop-1")
+        self.assertEqual(result.events[0].cached_input_tokens, 30)
+        self.assertEqual(result.events[0].reasoning_tokens, 10)
+        self.assertEqual(result.events[0].total_tokens, 340)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:local_storage_usage")
+
+    def test_grok_desktop_collects_exact_usage_from_indexeddb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexeddb_dir = root / "IndexedDB" / "https_api.x.ai_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000043.log").write_bytes(
+                (
+                    b"\x00https://api.x.ai/v1/chat/completions\x00"
+                    + json.dumps(
+                        {
+                            "created_at": "2026-03-25T17:35:00-07:00",
+                            "conversation_id": "grok-1",
+                            "model": "grok-4",
+                            "usage": {
+                                "input_tokens": 280,
+                                "output_tokens": 60,
+                                "total_tokens": 340,
+                            },
+                        }
+                    ).encode("utf-8")
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "grok-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "grok-1")
+        self.assertEqual(result.events[0].total_tokens, 340)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:indexeddb_usage")
+
+    def test_mistral_desktop_collects_exact_usage_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            cache_dir.joinpath("mist0000_0").write_bytes(
+                _cache_blob(
+                    "https://api.mistral.ai/v1/chat/completions",
+                    {
+                        "created_at": "2026-03-25T17:40:00-07:00",
+                        "conversation_id": "mistral-1",
+                        "model": "mistral-medium-2505",
+                        "usage": {
+                            "prompt_tokens": 220,
+                            "completion_tokens": 75,
+                            "total_tokens": 295,
+                        },
+                    },
+                )
+            )
+
+            adapter = next(item for item in build_chromium_desktop_family_adapters() if item.source_id == "mistral-desktop")
+            adapter.root = root
+            detection = adapter.detect()
+            result = adapter.collect(_window())
+
+        self.assertTrue(detection.available)
+        self.assertEqual(detection.status, "ready")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].session_id, "mistral-1")
+        self.assertEqual(result.events[0].total_tokens, 295)
+        self.assertEqual(result.events[0].raw_event_kind, "chromium_desktop:cache_usage")
+
 
 if __name__ == "__main__":
     unittest.main()
