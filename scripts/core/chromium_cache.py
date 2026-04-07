@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 import zlib
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,6 +12,18 @@ from typing import Iterator
 
 _URL_PREFIXES = (b"https://", b"http://")
 _GZIP_MAGIC = b"\x1f\x8b"
+_ZSTD_MAGIC = b"\x28\xb5\x2f\xfd"
+_BROTLI_WINDOW_BYTES = 96
+_BROTLI_START_PROBES = 12
+_BROTLI_HEADER_TOKENS = (
+    b"content-encoding:",
+    b"content-type:",
+    b"cache-control:",
+    b"date:",
+    b"server:",
+    b"access-control-allow-origin:",
+    b"cf-cache-status:",
+)
 _JSON_MARKERS = (
     '"usage"',
     '"usageMetadata"',
@@ -23,6 +37,8 @@ _JSON_MARKERS = (
 _MAX_JSON_BACKTRACK_CHARS = 8192
 _MAX_MARKERS_PER_FILE = 32
 _MAX_OBJECTS_PER_FILE = 8
+_ZSTD_CLI = shutil.which("zstd")
+_BROTLI_CLI = shutil.which("brotli")
 
 
 @dataclass(frozen=True)
@@ -68,6 +84,14 @@ def _extract_url(data: bytes) -> str | None:
         return data[best_index:cursor].decode("utf-8")
     except UnicodeDecodeError:
         return None
+
+
+def _find_url_end(data: bytes, url: str) -> int:
+    url_bytes = url.encode("utf-8", errors="ignore")
+    index = data.find(url_bytes)
+    if index < 0:
+        return 0
+    return index + len(url_bytes)
 
 
 def _decode_json_text(text: str) -> object | None:
@@ -152,6 +176,54 @@ def _decode_gzip_payload(data: bytes, start: int) -> tuple[object | None, str | 
     return payload, "gzip"
 
 
+def _decode_zstd_payload(data: bytes, start: int) -> tuple[object | None, str | None]:
+    if _ZSTD_CLI is None:
+        return None, None
+    try:
+        result = subprocess.run(
+            [_ZSTD_CLI, "-d", "-q", "-c"],
+            input=data[start:],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None, None
+    if not result.stdout:
+        return None, None
+    try:
+        text = result.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return None, None
+    payload = _decode_json_text(text)
+    if payload is None:
+        return None, None
+    return payload, "zstd"
+
+
+def _decode_brotli_payload(chunk: bytes) -> tuple[object | None, str | None]:
+    if _BROTLI_CLI is None or not chunk:
+        return None, None
+    try:
+        result = subprocess.run(
+            [_BROTLI_CLI, "-d", "-c"],
+            input=chunk,
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None, None
+    if not result.stdout:
+        return None, None
+    try:
+        text = result.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return None, None
+    payload = _decode_json_text(text)
+    if payload is None:
+        return None, None
+    return payload, "br"
+
+
 def _decode_plain_payload(data: bytes, start: int) -> tuple[object | None, str | None]:
     try:
         text = data[start:].decode("utf-8", errors="ignore")
@@ -163,17 +235,105 @@ def _decode_plain_payload(data: bytes, start: int) -> tuple[object | None, str |
     return payload, "identity"
 
 
-def _extract_json_payload(data: bytes, *, url: str) -> tuple[object | None, str | None]:
-    url_bytes = url.encode("utf-8", errors="ignore")
-    search_start = 0
-    url_index = data.find(url_bytes)
-    if url_index >= 0:
-        search_start = url_index + len(url_bytes)
+def _extract_content_encoding(data: bytes, search_start: int) -> str | None:
+    header_window = data[search_start:]
+    for token, value in (
+        (b"content-encoding:gzip", "gzip"),
+        (b"content-encoding:zstd", "zstd"),
+        (b"content-encoding:br", "br"),
+    ):
+        if token in header_window:
+            return value
+    return None
 
-    for offset in range(search_start, len(data) - 1):
-        if data[offset : offset + 2] != _GZIP_MAGIC:
+
+def _iter_magic_offsets(data: bytes, start: int, magic: bytes) -> Iterator[int]:
+    cursor = start
+    while True:
+        offset = data.find(magic, cursor)
+        if offset < 0:
+            break
+        yield offset
+        cursor = offset + 1
+
+
+def _brotli_candidate_starts(data: bytes, search_start: int) -> list[int]:
+    starts: list[int] = []
+    limit = min(len(data), search_start + _BROTLI_WINDOW_BYTES)
+    for offset in range(search_start, min(limit, search_start + _BROTLI_START_PROBES)):
+        starts.append(offset)
+
+    in_null_run = False
+    for offset in range(search_start, limit):
+        byte = data[offset]
+        if byte == 0:
+            in_null_run = True
             continue
+        if in_null_run:
+            starts.append(offset)
+            in_null_run = False
+
+    return sorted(dict.fromkeys(offset for offset in starts if offset < len(data)))
+
+
+def _brotli_candidate_ends(data: bytes, search_start: int) -> list[int]:
+    ends = {len(data)}
+    for token in _BROTLI_HEADER_TOKENS:
+        index = data.find(token, search_start)
+        if index < 0:
+            continue
+        header_start = index
+        while header_start > search_start and data[header_start - 1] != 0:
+            header_start -= 1
+        if header_start > search_start:
+            ends.add(header_start)
+    return sorted(ends)
+
+
+def _decode_brotli_from_candidates(data: bytes, search_start: int) -> tuple[object | None, str | None]:
+    starts = _brotli_candidate_starts(data, search_start)
+    ends = _brotli_candidate_ends(data, search_start)
+    for end in ends:
+        for start in starts:
+            if start >= end:
+                continue
+            payload, encoding = _decode_brotli_payload(data[start:end])
+            if payload is not None:
+                return payload, encoding
+    return None, None
+
+
+def _extract_json_payload(data: bytes, *, url: str) -> tuple[object | None, str | None]:
+    search_start = _find_url_end(data, url)
+    encoding_hint = _extract_content_encoding(data, search_start)
+
+    if encoding_hint == "zstd":
+        for offset in _iter_magic_offsets(data, search_start, _ZSTD_MAGIC):
+            payload, encoding = _decode_zstd_payload(data, offset)
+            if payload is not None:
+                return payload, encoding
+    elif encoding_hint == "gzip":
+        for offset in _iter_magic_offsets(data, search_start, _GZIP_MAGIC):
+            payload, encoding = _decode_gzip_payload(data, offset)
+            if payload is not None:
+                return payload, encoding
+    elif encoding_hint == "br":
+        payload, encoding = _decode_brotli_from_candidates(data, search_start)
+        if payload is not None:
+            return payload, encoding
+
+    for offset in _iter_magic_offsets(data, search_start, _ZSTD_MAGIC):
+        payload, encoding = _decode_zstd_payload(data, offset)
+        if payload is not None:
+            return payload, encoding
+
+    for offset in _iter_magic_offsets(data, search_start, _GZIP_MAGIC):
         payload, encoding = _decode_gzip_payload(data, offset)
+        if payload is not None:
+            return payload, encoding
+
+    if encoding_hint == "br":
+        payload, encoding = _decode_brotli_from_candidates(data, search_start)
         if payload is not None:
             return payload, encoding
 
