@@ -1,0 +1,174 @@
+# MasterReport
+
+## Status
+- partial-success
+
+## Completed
+- 已正式冻结 Top20 模型生态/客户端家族的执行口径，范围限定为 `Desktop + CLI + IDE`。
+- 已新增 Top20 registry 真源 [ecosystem_registry.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/ecosystem_registry.py)，覆盖 20 个生态、60 个 surface。
+- 已新增 `targets` CLI，并接入 ASCII 输出 [token_usage.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/token_usage.py)、[ascii_hifi.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/ascii_hifi.py)。
+- 已新增执行计划与 surface matrix 文档：
+  - [TOP20_EXECUTION_PLAN.md](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_EXECUTION_PLAN.md)
+  - [TOP20_SURFACE_MATRIX.md](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_SURFACE_MATRIX.md)
+- 已补齐 China Priority batch A 的 provider exact pack：
+  - `sensenova-api`
+  - `baichuan-api`
+  - `siliconflow-api`
+  - `spark-api`
+- provider family 现在不仅匹配 `provider / model`，也支持匹配 `request url / base_url / endpoint`，用于识别 passthrough 和代理日志。
+- 已完成第一批 CLI native pack：
+  - `qwen-code-cli`
+  - `kimi-cli`
+- 已完成 `Gemini CLI` native pack：
+  - `gemini-cli`
+- 已完成第二批 Desktop native pack：
+  - `glm-desktop`
+  - `doubao-desktop`
+  - `perplexity-desktop`
+- 已完成第三批 Desktop native pack：
+  - `deepseek-desktop`
+  - `qianfan-desktop`
+  - `yuanbao-desktop`
+- 已新增 `ingress companion`：
+  - `python3 scripts/token_usage.py ingress config`
+  - `python3 scripts/token_usage.py ingress serve`
+- 已新增 `ingress bootstrap`：
+  - `python3 scripts/token_usage.py ingress profiles`
+  - `python3 scripts/token_usage.py ingress bootstrap`
+- `Claude Code` 现在会优先读取官方 `~/.claude/projects/**/*.jsonl`，直接从 assistant `message.usage` 提取 `input / cache / output / total token`。
+- `Claude Desktop` 现在会在 `IndexedDB / Local Storage / Session Storage` 中补抓模型痕迹；即使当前没有 exact token payload，report 也会把“已观测但未计量”的来源和模型单列展示，避免静默漏掉。
+- `ingress companion` 当前已支持 `openai / anthropic / generic` 三种协议模式，会把 exact usage 响应落成 JSONL，供 provider family 自动发现。
+- `ingress bootstrap` 当前已内置：
+  - `openai`
+  - `anthropic`
+  - `gemini`
+  - `openrouter`
+  - `perplexity`
+  - `xai`
+  - `mistral`
+  - `stepfun`
+  - `openai-compatible`
+  - `anthropic-compatible`
+  - `deepseek`
+  - `qianfan`
+  - `hunyuan`
+  - `sensenova`
+  - `baichuan`
+  - `siliconflow`
+  - `spark`
+- `ingress bootstrap` 已能直接生成 `VS Code / JetBrains` 的 Continue 配置片段和 CLI shell env 示例。
+- `Qwen Code CLI` 现在会原生读取官方 project-scoped session JSONL，兼容 `~/.qwen/projects/*/chats/*.jsonl` 和旧布局 `~/.qwen/tmp/*/chats/*.jsonl`。
+- `Kimi CLI` 现在会原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`，并从 `StatusUpdate.token_usage` 提取 exact token。
+- `Gemini CLI` 现在会原生读取官方 `~/.gemini/tmp/*/chats/session-*.json`，并从每条 Gemini assistant message 的 `tokens` 提取 exact token。
+- Top20 registry 已同步升级，`Qwen Code CLI`、`Kimi CLI`、`Gemini CLI` 三条 CLI surface 都已进入 `exact-ready`。
+- Chromium/Electron 桌面端底座现已从只读 `Cache_Data`，升级为同时读取 `Cache_Data / IndexedDB / Local Storage` 三类存储。
+- `GLM Desktop` 目录发现已覆盖 `Z Code / ZCODE`，`Perplexity Desktop` 目录发现已覆盖 `Comet`，`Doubao Desktop` 已覆盖中文目录别名 `豆包`。
+- `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 现在也已进入独立 `source_id` 与 `exact-ready` 桌面端 surface。
+- `DeepSeek / Qianfan / Hunyuan` 的 `CLI / IDE` runtime surface 已推进到 `exact-ready`。
+- `SenseNova / Baichuan / SiliconFlow / Spark` 的 `CLI / IDE` runtime surface 已推进到 `exact-ready`。
+- `OpenAI / Anthropic` 的 `IDE` runtime surface 已通过官方 bootstrap profile 推进到 `exact-ready`。
+- `Gemini / OpenRouter / Perplexity / xAI / Mistral` 的 `IDE` runtime surface 已通过官方/兼容 bootstrap profile 推进到 `exact-ready`。
+- `OpenRouter / Perplexity / xAI / Mistral / StepFun` 的 `CLI` ingress surface 已通过共享 bootstrap 推进到 `exact-ready`。
+- `Qwen / Kimi / GLM / Doubao / MiniMax` 的中国优先剩余 runtime surface 已继续推进：
+  - `Qwen IDE`
+  - `Kimi IDE`
+  - `GLM CLI / IDE`
+  - `Doubao CLI / IDE`
+  - `MiniMax CLI / IDE`
+  以上都已通过共享 ingress bootstrap 升到 `exact-ready`。
+- `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 的桌面端现在都已补齐 fixture-backed exact 证据，并升为 `exact-ready`。
+- 已补齐费用估算基线：
+  - `ERNIE 4.5 Turbo / ERNIE X1 Turbo`
+  - `Hunyuan TurboS / Hunyuan T1 / Tencent HY 2.0`
+  - `SenseNova V6 Turbo / Pro / Reasoner`
+  - `Baichuan4 Air / Turbo / Base`
+  - `Spark X`
+  - `Doubao Seed` 常见别名
+- 已完成回归验证：
+  - `python3 -m unittest scripts.test_claude_code scripts.test_reporting scripts.test_chromium_desktop_adapters`
+  - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'`
+  - `python3 scripts/token_usage.py --help`
+  - `python3 scripts/token_usage.py health --format json`
+  - `python3 scripts/token_usage.py sources --format json`
+  - `python3 scripts/token_usage.py targets --format json`
+  - `python3 scripts/token_usage.py ingress config --provider deepseek --upstream-base-url https://api.deepseek.com --protocol openai --format json`
+  - `python3 scripts/token_usage.py ingress profiles --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile gemini --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile openrouter --editor jetbrains --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile perplexity --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile stepfun --editor jetbrains --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile qwen --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile kimi --editor jetbrains --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile glm --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile doubao --editor jetbrains --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile minimax --editor vscode --format json`
+  - 临时 fixture 驱动的 `TOKEN_USAGE_GEMINI_CLI_ROOT=<tmp> python3 scripts/token_usage.py report --source gemini-cli --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile openai --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile anthropic --editor jetbrains --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile deepseek --editor vscode --format json`
+  - `python3 scripts/token_usage.py ingress bootstrap --profile anthropic-compatible --editor jetbrains --upstream-base-url https://api.anthropic.example --format json`
+  - `gh workflow run hostless-evidence.yml --ref main`
+  - `gh run view 24126522036 --job 70392362108 --log`
+  - `python3 -m unittest scripts.test_time_window scripts.test_reporting scripts.test_chromium_desktop_adapters scripts.test_file_cache scripts.test_token_usage_fast_path`
+  - `python3 -m unittest scripts.test_codex_adapter scripts.test_provider_api_adapters scripts.test_generic_openai_compatible scripts.test_claude_code scripts.test_qwen_code_cli scripts.test_kimi_cli scripts.test_gemini_cli scripts.test_minimax_agent scripts.test_opencode`
+  - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'`
+  - `python3 scripts/token_usage.py release-gate --format json`
+- 最新验证结果：
+  - `Claude Code` project JSONL fixture 已成功输出 `total_tokens = 30848`、`input_tokens = 30109`、`cached_input_tokens = 123`、`output_tokens = 616`
+  - report 现在已能单列 `claude-sonnet-4-6` 这类“只观测到模型痕迹但未计量”的来源
+  - report 现在已能单列 `minimax-agent` 这类“只观测到客户端痕迹但未计量”的来源
+  - 全量单测已提升到 `153` 个通过
+  - `supported_sources = 50`
+  - 当前机器 `ready_sources = 3`
+  - `surface_maturity.exact-ready = 60`
+  - `surface_maturity.detect-ready = 0`
+  - `surface_maturity.planned = 0`
+  - 当前机器已确认 `qwen-desktop` 为 `ready`
+  - 当前机器已确认 `opencode` 为 `ready`，真源来自 `~/.local/share/opencode/storage/message/*.json`
+  - `ingress config` 已成功输出 `http://127.0.0.1:8787/v1 -> https://api.deepseek.com/v1`
+  - `ingress profiles` 已成功输出 `22` 个 bootstrap profile，其中 `openai=20`、`anthropic=2`
+  - `gemini` VS Code bootstrap 已成功输出 `/v1beta/openai` companion 地址
+  - `openrouter` JetBrains bootstrap 已成功输出本地 `/v1` 到上游 `/api/v1` 的 companion 地址
+  - `perplexity` VS Code bootstrap 已成功输出 root-base companion 地址 `http://127.0.0.1:8787`
+  - `stepfun` JetBrains bootstrap 已成功输出官方 `api.stepfun.ai/v1` 入口对应的本地 `/v1` companion 地址
+  - `qwen` VS Code bootstrap 已成功输出 DashScope `/compatible-mode/v1` 对应的本地 companion 地址
+  - `kimi` JetBrains bootstrap 已成功输出官方 `api.moonshot.cn/v1` 对应的本地 `/v1` companion 地址
+  - `glm` VS Code bootstrap 已成功输出 BigModel coding `/api/coding/paas/v4` 对应的本地 companion 地址
+  - `doubao` JetBrains bootstrap 已成功输出 Ark `/api/v3` 对应的本地 companion 地址
+  - `minimax` VS Code bootstrap 已成功输出官方 `api.minimaxi.com/v1` 对应的本地 `/v1` companion 地址
+  - 临时 fixture 驱动的 `gemini-cli` report 已成功输出 `total_tokens = 142`、`effective_tokens = 122`、`session_id = gemini-session-fixture`
+  - 本机 `opencode` exact report 已成功输出 `total_tokens = 2770474`、`effective_tokens = 532994`、`events = 22`
+  - `openai` VS Code bootstrap 已成功输出官方 `api.openai.com/v1` 入口对应的本地 `/v1` companion 地址
+  - `anthropic` JetBrains bootstrap 已成功输出官方 `api.anthropic.com` 入口对应的 root-base companion 地址 `http://127.0.0.1:8787`
+  - `anthropic-compatible` JetBrains bootstrap 已成功输出 root-base Anthropic companion 地址 `http://127.0.0.1:8787`
+  - 当前机器未安装 `GLM / Doubao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 等多条桌面端 app-data 根目录，因此相关来源在本机 `health` 仍多为 `not-found`，这是“没有本地 app-data 真源”，不是适配未落地
+  - GitHub Actions `hostless-evidence` 首轮实跑中，`macos-latest` 已成功产出 evidence artifact
+  - GitHub Actions `hostless-evidence` 首轮 `windows-latest` 失败根因已确认：runner 缺少 `US/Pacific` 所需的 IANA tz data，导致 `Run unit tests` 爆出 `ZoneInfoNotFoundError` / `ValueError: unknown timezone: US/Pacific`
+  - 已新增 `resolve_timezone` 的 legacy US alias fallback，`US/Pacific` 在缺少 alias 时会兜底解析到 `America/Los_Angeles`
+  - 已新增测试辅助 [test_time.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_time.py) 与专项回归 [test_time_window.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_time_window.py)，避免测试直接依赖平台是否自带 tz alias
+  - `hostless-evidence` workflow 现已避免在 `EVIDENCE_DIR` 缺失时继续触发 artifact `path` 报错
+  - Windows CLI 子进程在 legacy stdout codec 下输出中文 JSON 时，会在 hosted runner 上触发 `UnicodeEncodeError`；CLI 现已在 [token_usage.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/token_usage.py) 启动时统一强制 `stdout/stderr` 使用 UTF-8
+  - [test_cli_integration.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_cli_integration.py) 现已统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，并在失败时直接回显 stdout/stderr，避免 Windows hosted runner 上再出现 `result.stdout is None` 这类假阳性
+  - GitHub Actions `hostless-evidence` 第三轮 run `24128775284` 已双平台通过：
+    - `windows-latest` job `70399851410` 成功完成单测、`release-gate --output-dir ...` 与 artifact 上传
+    - `macos-latest` job `70399851412` 成功完成单测、`release-gate --output-dir ...` 与 artifact 上传
+  - 最新 hosted evidence artifact 已下载到 [github-hosted](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/output/github-hosted)
+  - 全量单测已从 `153` 提升到 `158` 个通过
+  - 本地 `release-gate` 仍保持 `7/7 gates passed`
+
+## Not Completed
+- 当前机器上 `claude-desktop / minimax-agent` 仍只有本地痕迹，没有 exact token-bearing 真源，所以 `sonnet / minimax` 还不能被本机最终计入。
+- 真实 `claude-desktop / minimax-agent` exact 样本与更多真机大样本仍未补齐。
+
+## Blockers
+- 当前没有结构性 blocker。
+- 当前机器没有 `~/.qwen` 和 `~/.kimi`，所以 `qwen-code-cli / kimi-cli` 在本机 `health` 中属于“已支持但未命中真源”，这不是 parser 缺失。
+- 当前机器也没有多条新补桌面端来源的 app-data 根目录，因此虽然 fixture 已把它们升到 `exact-ready`，但本机仍只能验证 not-found 分支，不能验证真机 exact 命中。
+- 后续最大的推进依赖是：真实客户端 fixture、各生态 CLI/desktop 的官方行为样本，以及 ingress companion 从最小可用推进到通用伴生服务的工程时间。
+
+## Next Step
+- 下一步直接开始真实客户端测试；当前 `windows + macos` hosted evidence 已通过，可以把测试重点转到真实样本和您关心的使用路径。
+- 之后继续补更多真机样本，验证新升 `exact-ready` desktop source 的真实命中表现。
+- 然后继续补：
+  - `claude-desktop / minimax-agent` 的 exact 真源样本
+  - ingress companion 从最小可用继续抬到更通用的伴生服务

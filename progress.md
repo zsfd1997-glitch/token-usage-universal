@@ -1,0 +1,117 @@
+# progress
+
+> 已替代：上一轮团队版交付进度已完成；当前文件跟踪 `top20-ecosystem-execution`。
+
+## 当前阶段
+- 状态: partial-success
+- 当前链路位置: HANDOFF
+
+## 状态摘要
+- done:
+  - 已冻结 Top20 生态/客户端家族口径
+  - 已落地 `Desktop / CLI / IDE` surface matrix
+  - 已新增 Top20 registry 代码真源和 `targets` CLI
+  - 已完成文档、CLI、测试的一致性校验
+  - 已补齐 `SenseNova / Baichuan / SiliconFlow / Spark` 的 provider exact pack
+  - provider family 现已支持通过 `request url / base_url / endpoint` 识别 provider，覆盖 passthrough 日志
+  - 已补齐 `Qwen Code CLI / Kimi CLI` 两条官方 CLI 原生 exact 适配
+  - 已补齐 `GLM Desktop / Doubao Desktop / Perplexity Desktop` 三条桌面端 exact-native 适配
+  - 已补齐 `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 三条桌面端 exact-native 适配
+  - 已新增 `ingress companion` 最小可用代码路径，支持 `token_usage.py ingress config/serve`
+  - 已支持 `OpenAI-compatible / Anthropic-compatible / generic` 三种 ingress 协议模式
+  - 已新增 `ingress profiles / ingress bootstrap`，可直接生成 `VS Code / JetBrains` 的 Continue 配置片段与 CLI shell env 示例
+  - 已补齐 `pricing_db.json` 的国产生态费用估算基线：`ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao aliases`
+  - 已补齐 `DeepSeek / Qianfan / Hunyuan` 的 `CLI / IDE` ingress runtime surface
+  - 已补齐 `SenseNova / Baichuan / SiliconFlow / Spark` 的 `CLI / IDE` ingress runtime surface
+  - 已补齐 `OpenAI / Anthropic` 官方 ingress bootstrap profile，并把两条全球生态 `IDE` surface 推进到 `exact-ready`
+  - 已补齐 `Gemini / OpenRouter / Perplexity / xAI / Mistral / StepFun` 的 ingress bootstrap profile，并把剩余全球生态 IDE lane 全部推进到 `exact-ready`
+  - 已把 `OpenRouter / Perplexity / xAI / Mistral / StepFun` 的 CLI ingress surface 推进到 `exact-ready`
+  - 已补齐 `Qwen / Kimi / GLM / Doubao / MiniMax` 的 ingress bootstrap profile，并把中国优先剩余 IDE / CLI lane 推进到 `exact-ready`
+  - 已补齐 `Gemini CLI` 原生 exact 适配：直接读取官方 `~/.gemini/tmp/*/chats/session-*.json`
+  - 已为 `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 补齐真实 desktop fixture，并统一推进到 `exact-ready`
+  - Chromium/Electron 桌面端底座现已支持从 `Cache_Data / IndexedDB / Local Storage` 三类存储抽取 exact usage
+  - `GLM Desktop` 已接入 `Z Code / ZCODE` 根目录发现，`Perplexity Desktop` 已接入 `Comet` 根目录发现，`Doubao Desktop` 已接入 `豆包` 目录别名
+  - `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 已分别接入官方产品名与中文目录别名发现
+  - `supported_sources` 已从 `35` 提升到 `50`
+  - Top20 `surface_maturity.exact-ready` 已提升到 `60`
+  - Top20 `surface_maturity.detect-ready` 已归零
+  - Top20 `surface_maturity.planned` 已归零
+  - 已新增强化版 `release-gate` 命令，可自动校验 Top20 覆盖率、exact 覆盖率、结构性误报 ready、默认 report 重复计数 probe、diagnose 可解释率与双平台 root matrix
+  - `release-gate --output-dir ...` 已可导出真实机器证据包，自动落出 `health / sources / targets / report / diagnose / gate`
+  - `build_release.py` 已支持 `--validate`，会先跑全量单测，再跑 `release-gate`
+  - 当前 `release-gate` 实跑结果为 `7/7 gates passed`
+  - 已新增 `hostless-evidence.yml`，可在 `windows-latest + macos-latest` 的 GitHub-hosted runners 上导出双平台 evidence artifact
+  - 已新增 `run-hostless-evidence.sh`，可直接用 `gh` 触发 workflow、等待完成并把 artifact 下载回本地
+  - 已把 token 查询 skill 的短触发词扩到 `用量 / 消耗量 / 使用量 / 消耗`，并把默认聊天输出协议收紧为“先贴 `ascii-hifi` 面板，再补简短结论”
+  - 已把这套交互契约下沉到仓库自身：README 新增 `GitHub 交付契约`，并新增 `test_skill_contract.py` 防止 `token` 默认触发和 `ascii-hifi` 默认输出协议回退到本机私有配置
+  - 已补齐 GitHub 产品外壳：`CODE_OF_CONDUCT.md / SECURITY.md / SUPPORT.md / .github/ISSUE_TEMPLATE/* / .github/pull_request_template.md`
+  - 已新增 `test_github_repo_contract.py`，把 GitHub 社区健康相关文件固化成仓库测试
+  - `Claude Code` 已新增 project JSONL exact 路径支持：直接读取 `~/.claude/projects/**/*.jsonl` 的 assistant `message.usage`
+  - `Claude Desktop` 已新增模型痕迹观测层：即使当前没有 exact token payload，report 也会单列“已观测来源 / 已观测模型（未计入 token）”
+  - `ingress profiles` 已扩到 `22` 个，其中 `openai=20`、`anthropic=2`
+  - GitHub-hosted `hostless-evidence` 首轮已真实跑通 `macos-latest` 证据采集；`windows-latest` 的失败根因已定位到 `US/Pacific` 时区 alias 在无 tzdata 环境下不可用
+  - 已为 `resolve_timezone` 增加 legacy US timezone alias fallback，并把测试统一切到仓库内兼容 helper，避免 Windows 因 `ZoneInfo("US/Pacific")` 批量爆红
+  - `hostless-evidence` workflow 已避免在 `EVIDENCE_DIR` 缺失时继续触发 artifact `path` 报错
+  - Windows hosted runner 的第二层失败根因已确认：CLI 子进程在 legacy stdout codec 下输出中文 JSON 时会报 `UnicodeEncodeError`；现已在 CLI 启动时统一强制 UTF-8 输出
+  - `test_cli_integration.py` 现已统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，避免 Windows hosted runner 上出现 `result.stdout is None` 的假阳性
+  - GitHub-hosted `hostless-evidence` 第三轮 run `24128775284` 已真实完成 `windows + macos` 双平台证据采集，artifact 已下载到 [github-hosted](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/output/github-hosted)
+  - 全量回归已到 `158` 个测试通过
+  - 当前机器 `ready_sources` 已从 `2` 提升到 `3`
+  - 本机 `opencode` 已从“只有痕迹”推进到 `ready`
+- not done:
+  - 真实 `Windows + macOS` 双机 E2E 仍未补跑，当前通过的是 GitHub-hosted runner 上的 hosted evidence + 全部 root-aware source 默认路径矩阵 gate
+  - `重复计数率 <= 0.5%` 当前已补默认 report runtime probe，但仍未补大样本实测
+- next step:
+  - 下一步开始真实客户端测试，把 release gate 从“hosted runner + 结构通过”推进到“真机平台实测通过”
+  - 然后继续补更多真机样本，验证 `claude-desktop / minimax-agent` 等 desktop source 的真实命中表现
+
+## 阻塞与回滚
+- 阻塞: 当前没有实现性 blocker，主要缺真实 fixture 与后续工程时间。
+- 回滚点: 删除本轮新增 Top20 registry / docs / CLI 资产即可回到上一阶段能力。
+
+## 时间戳日志
+- [2026-04-02 02:30 PDT] DISCOVER: 确认当前项目已有多 source 基础，但缺 Top20 执行主线和统一 registry。
+- [2026-04-02 02:34 PDT] BRAINSTORM: 冻结“生态/客户端家族”口径，确认三层采集路线。
+- [2026-04-02 02:40 PDT] EXECUTE: 新增 `ecosystem_registry.py`、`targets` CLI、Top20 计划文档与 surface matrix。
+- [2026-04-02 02:46 PDT] VERIFY: 全量单测通过，CLI `targets / health / sources` 校验通过。
+- [2026-04-02 03:12 PDT] EXECUTE: 新增 `sensenova-api / baichuan-api / siliconflow-api / spark-api`，并补 provider endpoint 匹配能力。
+- [2026-04-02 03:56 PDT] EXECUTE: 新增 `qwen-code-cli / kimi-cli` adapter，补 runtime env、health 引导、README/INSTALL/Top20 matrix。
+- [2026-04-02 04:09 PDT] VERIFY: `94` 个单测通过；`health --format json` 显示 `supported_sources = 37`；`targets --format json` 显示 Qwen/Kimi CLI 已升为 `exact-ready`。
+- [2026-04-02 18:02 PDT] EXECUTE: Chromium/Electron 桌面端底座扩展到 `Cache_Data / IndexedDB / Local Storage`，并完成 `GLM Desktop / Doubao Desktop / Perplexity Desktop` exact-native 接入。
+- [2026-04-02 18:11 PDT] VERIFY: `98` 个单测通过；`targets --format json` 显示 `surface_maturity.exact-ready = 11`；`health --format json` 维持 `supported_sources = 37`、`ready_sources = 2`。
+- [2026-04-02 19:28 PDT] EXECUTE: 新增 `DeepSeek Desktop / Qianfan Desktop / Yuanbao Desktop` 原生桌面端适配，并上线 `ingress companion` 的 `config / serve` CLI。
+- [2026-04-02 19:41 PDT] EXECUTE: 补齐 `pricing_db.json` 的 `ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao aliases` 费用估算基线。
+- [2026-04-02 19:49 PDT] VERIFY: `108` 个单测通过；`health --format json` 显示 `supported_sources = 40`；`targets --format json` 显示 `surface_maturity.exact-ready = 14`。
+- [2026-04-02 20:18 PDT] EXECUTE: 新增 `ingress profiles / ingress bootstrap`，补齐 `DeepSeek / Qianfan / Hunyuan / SenseNova / Baichuan / SiliconFlow / Spark` 的 CLI/IDE ingress bootstrap runtime surface。
+- [2026-04-02 20:27 PDT] VERIFY: `114` 个单测通过；`targets --format json` 显示 `surface_maturity.exact-ready = 28`；`anthropic-compatible` 的 JetBrains bootstrap 命令实跑通过。
+- [2026-04-06 22:10 PDT] EXECUTE: 新增 `openai / anthropic` 官方 ingress bootstrap profile，同步更新 Top20 registry、surface matrix、README 和 INSTALL。
+- [2026-04-06 22:10 PDT] VERIFY: `117` 个单测通过；`ingress profiles --format json` 显示 `11` 个 profile；`targets --format json` 显示 `surface_maturity.exact-ready = 30`；`openai / anthropic` 官方 bootstrap 命令实跑通过。
+- [2026-04-06 23:15 PDT] EXECUTE: 新增 `gemini / openrouter / perplexity / xai / mistral / stepfun` bootstrap profile，并补齐 `stepfun / sensenova / baichuan / siliconflow / spark / chatgpt / gemini / grok / mistral` 的桌面端 source skeleton。
+- [2026-04-06 23:15 PDT] VERIFY: `122` 个单测通过；`health --format json` 显示 `supported_sources = 49`；`ingress profiles --format json` 显示 `17` 个 profile；`targets --format json` 显示 `surface_maturity.exact-ready = 42`、`detect-ready = 9`；`gemini / openrouter / perplexity / stepfun` profile 实跑通过。
+- [2026-04-06 23:52 PDT] EXECUTE: 新增 `qwen / kimi / glm / doubao / minimax` bootstrap profile，并把中国优先剩余 `Qwen / Kimi / GLM / Doubao / MiniMax` 的 IDE / CLI lane 全部推进到 `exact-ready`。
+- [2026-04-06 23:52 PDT] VERIFY: `126` 个单测通过；`ingress profiles --format json` 显示 `22` 个 profile；`targets --format json` 显示 `surface_maturity.exact-ready = 50`、`detect-ready = 9`、`planned = 1`；`qwen / kimi / glm / doubao / minimax` profile 实跑通过。
+- [2026-04-07 10:12 PDT] EXECUTE: 新增 `gemini-cli` 原生 adapter、`TOKEN_USAGE_GEMINI_CLI_ROOT` 契约与 health 指引，并为 `SenseNova / Baichuan / SiliconFlow / Spark / Gemini / Grok / Mistral` 补齐 desktop exact fixture。
+- [2026-04-07 10:12 PDT] VERIFY: `135` 个单测通过；`health --format json` 显示 `supported_sources = 50`；`targets --format json` 显示 `surface_maturity.exact-ready = 60`；临时 fixture 驱动的 `gemini-cli` CLI report 实跑得到 `142 total_tokens / 122 effective_tokens`。
+- [2026-04-07 11:02 PDT] EXECUTE: `opencode` 改为优先直读本地 `storage/session + storage/message` assistant token JSON；同步补测试、README/INSTALL、health 指引与主线文档。
+- [2026-04-07 11:08 PDT] VERIFY: `136` 个单测通过；`health --format json` 显示 `supported_sources = 50`、`ready_sources = 3`；本机 `opencode` report 实跑得到 `2770474 total_tokens / 532994 effective_tokens / 22 events`。
+- [2026-04-07 20:25 PDT] EXECUTE: 新增 `core/release_gate.py`、`token_usage.py release-gate` 与 `build_release.py --validate`，同步更新 README / INSTALL / PUBLISH / Top20 主线文档。
+- [2026-04-07 20:25 PDT] VERIFY: `python3 scripts/token_usage.py release-gate --format json` 实跑通过，当前 `7/7 gates passed`；新增 `release-gate` 单测与 CLI 集成测试通过。
+- [2026-04-07 20:25 PDT] VERIFY: `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，`143` tests；`python3 scripts/build_release.py --output-dir /tmp/token-usage-universal-release-gate --validate --force` 也已实跑成功。
+- [2026-04-07 20:25 PDT] EXECUTE: `release-gate` 进一步升级为 runtime duplicate probe + full root-aware source platform matrix；同时清理 `BaseAdapter` 的重复默认字段。
+- [2026-04-07 20:25 PDT] EXECUTE: `release-gate --output-dir ...` 已落地，可直接导出当前机器的 release evidence bundle；本机已实跑到 `/tmp/token-usage-universal-evidence`。
+- [2026-04-07 21:05 PDT] EXECUTE: 新增 `.github/workflows/hostless-evidence.yml`、`docs/VM_RUNBOOK.md`、`examples/vm-testing/run-hostless-evidence.sh` 与 Tart/macOS 脚手架，把“没有 host 环境”的双平台证据采集切换到 GitHub-hosted runners + VM PoC 双通路。
+- [2026-04-07 21:05 PDT] VERIFY: 已确认 `origin` 指向 GitHub，且 `gh auth status` 登录正常；本地已具备触发 hosted runner workflow 的条件，但仍需先把新增 workflow push 到远端分支。
+- [2026-04-07 23:35 PDT] EXECUTE: 已同步更新仓库内与全局 `token-usage-universal` skill，补强短触发词 `用量 / 消耗量 / 使用量 / 消耗`，并把默认聊天输出协议收紧为“原样贴 `ascii-hifi` 面板 + 简短结论”。
+- [2026-04-07 23:48 PDT] EXECUTE: README 新增 `GitHub 交付契约`，明确以仓库根目录 `SKILL.md` 为 GitHub 分发时的真源；同时新增 `scripts/test_skill_contract.py`，把 `token` 默认触发和 `ascii-hifi` 输出协议固化成仓库测试。
+- [2026-04-07 23:48 PDT] VERIFY: `python3 -m unittest scripts.test_skill_contract` 通过；全量回归提升到 `146` tests passing。
+- [2026-04-08 00:03 PDT] EXECUTE: 按 GitHub 官方社区标准补齐 `CODE_OF_CONDUCT / SECURITY / SUPPORT / issue forms / PR template`，并新增 `scripts/test_github_repo_contract.py` 防止社区健康文件回退。
+- [2026-04-08 00:03 PDT] VERIFY: `python3 -m unittest scripts.test_github_repo_contract scripts.test_skill_contract` 通过；全量回归提升到 `149` tests passing。远端 `community/profile` 仍显示 `57%`，原因是这些新文件尚未 push 到默认分支。
+- [2026-04-08 00:43 PDT] EXECUTE: `Claude Code` 新增 project JSONL exact usage 读取；`Claude Desktop` 新增模型痕迹观测层；report / ascii-hifi 新增“已观测但未计量”分栏。
+- [2026-04-08 00:43 PDT] VERIFY: `python3 -m unittest scripts.test_claude_code scripts.test_reporting scripts.test_chromium_desktop_adapters` 通过；`python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过；全量回归提升到 `153` tests passing。
+- [2026-04-08 01:47 PDT] VERIFY: 触发 `gh workflow run hostless-evidence.yml --ref main`；`macos-latest` 已成功产出 evidence artifact，`windows-latest` 在单测阶段失败，日志确认根因为 `ZoneInfoNotFoundError: No time zone found with key US/Pacific`。
+- [2026-04-08 01:55 PDT] EXECUTE: 为 `resolve_timezone` 增加 legacy US alias fallback，新增 `test_time.py / test_time_window.py`，并把多处测试从直接 `ZoneInfo("US/Pacific")` 改为仓库内兼容 helper；同时收紧 `hostless-evidence.yml` 的 artifact 上传条件。
+- [2026-04-08 01:55 PDT] VERIFY: `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 再次通过，当前 `155` tests；`python3 scripts/token_usage.py release-gate --format json` 仍为 `7/7 gates passed`。
+- [2026-04-08 02:23 PDT] EXECUTE: 修复 Windows hosted runner 上 CLI 子进程中文 JSON 输出的 legacy codec 问题，在 `token_usage.py` 启动时强制 UTF-8 输出，并新增 `cp1252` 回归测试。
+- [2026-04-08 02:32 PDT] EXECUTE: 将 `test_cli_integration.py` 统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，并在失败时直接回显 stdout/stderr，消除 Windows hosted runner 的平台差异假阳性。
+- [2026-04-08 02:40 PDT] VERIFY: `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，当前 `158` tests；`python3 scripts/token_usage.py release-gate --format json` 仍为 `7/7 gates passed`。
+- [2026-04-08 02:41 PDT] VERIFY: GitHub-hosted `hostless-evidence` 第三轮 run `24128775284` 已双平台通过；`windows-latest` job `70399851410` 与 `macos-latest` job `70399851412` 均成功上传 evidence artifact，并已下载到本地输出目录。
