@@ -9,6 +9,8 @@ WORKFLOW_FILE="${TOKEN_USAGE_HOSTLESS_WORKFLOW:-hostless-evidence.yml}"
 ARTIFACT_PREFIX="${TOKEN_USAGE_ARTIFACT_PREFIX:-hosted-evidence-$(date +%Y%m%d-%H%M%S)}"
 OUTPUT_DIR="${TOKEN_USAGE_HOSTLESS_OUTPUT_DIR:-${SCRIPT_DIR}/output/github-hosted}"
 BRANCH_NAME="${TOKEN_USAGE_HOSTLESS_BRANCH:-$(git -C "${REPO_ROOT}" branch --show-current)}"
+HEAD_SHA="$(git -C "${REPO_ROOT}" rev-parse HEAD)"
+DISPATCHED_AFTER="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -44,9 +46,9 @@ for _ in $(seq 1 12); do
   RUN_ID="$(gh run list \
     --workflow "${WORKFLOW_FILE}" \
     --branch "${BRANCH_NAME}" \
-    --limit 1 \
-    --json databaseId \
-    --jq '.[0].databaseId // empty')"
+    --limit 10 \
+    --json databaseId,status,headSha,createdAt \
+    --jq "map(select(.headSha == \"${HEAD_SHA}\" and .createdAt >= \"${DISPATCHED_AFTER}\")) | .[0].databaseId // empty")"
   if [[ -n "${RUN_ID}" ]]; then
     break
   fi
