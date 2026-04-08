@@ -22,6 +22,7 @@ description: "Use when the user asks to view local token usage, summarize today'
 - 用户问“为什么 Claude / Codex / 其他客户端没统计到”
 - 用户问“为什么 OpenCode / MiniMax Agent / 其他桌面端没统计到”
 - 用户要求一个极简、可推广、基于本地日志真源的 usage 统计能力
+- 用户只说“token / 用量 / 消耗量 / 使用量 / 消耗”
 
 ## 更丰富的触发说法
 
@@ -32,8 +33,16 @@ description: "Use when the user asks to view local token usage, summarize today'
 ### 1. 看今天 / 当前总量
 
 - “token”
+- “用量”
+- “消耗量”
+- “使用量”
+- “消耗”
 - “今日 token”
 - “今天的 token”
+- “token 用量”
+- “token 消耗量”
+- “AI 用量”
+- “AI 消耗量”
 - “我今天 AI 用了多少”
 - “今天 token 用了多少”
 - “今天一共消耗了多少 token”
@@ -120,6 +129,8 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 - “帮我看今天 token 用量”
 - “token”
+- “用量”
+- “消耗量”
 - “本周 token”
 - “帮我看最近 7 天趋势”
 - “帮我按模型看看今天哪个最消耗 token”
@@ -140,7 +151,7 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 默认引导规则：
 
-- 如果用户只说“token”“今日 token”“今天的 token”
+- 如果用户只说“token”“用量”“消耗量”“使用量”“今日 token”“今天的 token”
   - 默认先给：`今天总览 + 当前会话 + 按模型 + 按项目 + 最近 7 天趋势 + 月历热力图`
 - 如果用户只说“本周 token”“这周 token”“最近 token”
   - 优先先给一个短选择：
@@ -177,11 +188,23 @@ description: "Use when the user asks to view local token usage, summarize today'
 对短触发词尤其要严格执行，例如：
 
 - “token”
+- “用量”
+- “消耗量”
+- “使用量”
+- “消耗”
 - “今日 token”
 - “本周 token”
 - “这周 token”
 
 这些输入都不应该只返回一个数字。
+
+聊天输出协议也要更硬：
+
+- 只要底层 CLI 已返回 `ascii-hifi` 面板，最终回复必须先原样贴出面板，再补简短结论
+- 默认把面板放进 fenced code block，避免被二次改写成项目符号摘要
+- 不要先写口语总结再省略面板
+- 不要把 ASCII 面板“翻译”为另一套表述后冒充等价输出
+- 只有用户明确说“简单说 / 不用图 / 纯文字”时，才允许跳过面板
 
 默认至少要包含：
 
@@ -207,6 +230,12 @@ description: "Use when the user asks to view local token usage, summarize today'
 - “纯文字版本”
 
 才允许降级成不带图的简版说明。
+
+推荐的默认回复骨架：
+
+1. 先输出 `ascii-hifi` 面板
+2. 再补 1 到 3 句高信号结论
+3. 最后补一句可选展开方向，例如“如果您要，我再拆模型 / 项目 / 当前会话”
 
 推荐的收口式引导：
 

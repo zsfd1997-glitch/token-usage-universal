@@ -32,6 +32,7 @@ python3 scripts/token_usage.py health --format json
 
 - 文档改动与代码改动尽量分开提交
 - 如果影响用户入口，请同步更新 `README.md` 与 `SKILL.md`
+- 如果影响 GitHub 分发体验，请同步检查 `CODE_OF_CONDUCT.md / SECURITY.md / SUPPORT.md / .github/*template*`
 - 如果影响公开发布目录，请重新运行：
 
 ```bash
