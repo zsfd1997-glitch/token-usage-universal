@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from adapters.base import BaseAdapter
@@ -33,6 +34,7 @@ class ClaudeCodeAdapter(BaseAdapter):
             TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
             Path.home() / ".claude" / "transcripts",
         )
+        self.project_root = self.transcript_root.parent / "projects"
         self.local_agent_root = local_agent_root or resolve_path_override(
             TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,
             default_claude_local_agent_root(),
@@ -43,6 +45,11 @@ class ClaudeCodeAdapter(BaseAdapter):
         if not self.transcript_root.exists():
             return []
         return sorted(self.transcript_root.glob("*.jsonl"))
+
+    def _project_session_files(self) -> list[Path]:
+        if not self.project_root.exists():
+            return []
+        return sorted(path for path in self.project_root.rglob("*.jsonl") if path.is_file())
 
     def _local_agent_json_files(self) -> list[Path]:
         if not self.local_agent_root.exists():
@@ -90,14 +97,119 @@ class ClaudeCodeAdapter(BaseAdapter):
         }
         return self._local_agent_inventory
 
+    def _collect_project_usage_events(self, window=None) -> tuple[list[UsageEvent], list[str], list[Path]]:
+        project_files = self._project_session_files()
+        if not project_files:
+            return [], [], []
+
+        events: list[UsageEvent] = []
+        issues: list[str] = []
+        fallback_tz = (
+            window.start.tzinfo
+            if window and window.start
+            else datetime.now().astimezone().tzinfo
+        )
+
+        for path in project_files:
+            try:
+                lines = path.read_text(encoding="utf-8").splitlines()
+            except OSError as exc:
+                issues.append(f"failed reading {path}: {exc}")
+                continue
+
+            for line_number, line in enumerate(lines, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    issues.append(f"failed parsing {path}:{line_number}: {exc}")
+                    continue
+
+                if not isinstance(payload, dict) or payload.get("type") != "assistant":
+                    continue
+
+                message = payload.get("message")
+                if not isinstance(message, dict):
+                    continue
+                usage = message.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+
+                input_tokens = int(usage.get("input_tokens") or 0)
+                cache_creation_tokens = int(usage.get("cache_creation_input_tokens") or 0)
+                cache_read_tokens = int(usage.get("cache_read_input_tokens") or 0)
+                output_tokens = int(usage.get("output_tokens") or 0)
+                total_tokens = input_tokens + cache_creation_tokens + cache_read_tokens + output_tokens
+                if total_tokens <= 0:
+                    continue
+
+                timestamp_value = payload.get("timestamp")
+                if timestamp_value in (None, ""):
+                    issues.append(f"missing timestamp in {path}:{line_number}")
+                    continue
+
+                try:
+                    timestamp = parse_timestamp(str(timestamp_value), fallback_tz)
+                except (TypeError, ValueError) as exc:
+                    issues.append(f"invalid timestamp in {path}:{line_number}: {exc}")
+                    continue
+
+                if window and not within_window(window, timestamp):
+                    continue
+
+                model = message.get("model")
+                session_id = str(payload.get("sessionId") or path.stem)
+                project_path = payload.get("cwd")
+                events.append(
+                    UsageEvent(
+                        source=self.source_id,
+                        provider=self.provider,
+                        timestamp=timestamp,
+                        session_id=session_id,
+                        project_path=str(project_path) if project_path else None,
+                        model=str(model) if model else None,
+                        input_tokens=input_tokens + cache_creation_tokens,
+                        cached_input_tokens=cache_read_tokens,
+                        output_tokens=output_tokens,
+                        reasoning_tokens=None,
+                        total_tokens=total_tokens,
+                        accuracy_level=self.accuracy_level,
+                        raw_event_kind=f"{path.name}:assistant_usage",
+                        source_path=str(path),
+                        raw_model=str(model) if model else None,
+                        model_resolution="exact" if model else "unknown",
+                        model_source="message.model" if model else None,
+                    )
+                )
+
+        return events, issues, project_files
+
     def detect(self) -> SourceDetection:
         transcripts = self._transcript_files()
+        project_events, project_issues, project_files = self._collect_project_usage_events()
         inventory = self._build_local_agent_inventory()
         exact_files = list(inventory["exact_files"])
         marker_files = list(inventory["marker_files"])
         json_files = list(inventory["json_files"])
-        candidate_paths = [str(path) for path in exact_files[:2] + transcripts[:1]]
+        candidate_paths = [str(path) for path in exact_files[:2] + project_files[:2] + transcripts[:1]]
         details: list[str] = []
+
+        if project_events:
+            details.append(f"detected {len(project_files)} Claude project JSONL file(s)")
+            details.append("project assistant messages expose exact usage and model fields")
+            details.extend(project_issues[:3])
+            return SourceDetection(
+                source_id=self.source_id,
+                display_name=self.display_name,
+                provider=self.provider,
+                accuracy_level=self.accuracy_level,
+                supported=True,
+                available=True,
+                summary="Claude project JSONL files found with exact usage payloads",
+                candidate_paths=candidate_paths[:5],
+                details=details,
+            )
 
         if exact_files:
             details.append("supports old timing.json and any Claude JSON that exposes total_tokens + executor_end/grader_end")
@@ -110,7 +222,7 @@ class ClaudeCodeAdapter(BaseAdapter):
                 supported=True,
                 available=True,
                 summary="captured Claude exact JSON files found for exact total-token collection",
-                candidate_paths=candidate_paths,
+                candidate_paths=candidate_paths[:5],
                 details=details,
             )
 
@@ -118,6 +230,8 @@ class ClaudeCodeAdapter(BaseAdapter):
             marker_names = ", ".join(sorted({path.name for path in marker_files})) or "session/config JSONs"
             details.append(f"detected local-agent JSON layout markers: {marker_names}")
             details.append("none of the JSON files under local-agent-mode-sessions expose both total_tokens and executor_end/grader_end")
+            if project_files:
+                details.append("project JSONL files were found, but none exposed positive exact usage payloads")
             if transcripts:
                 details.append("transcripts are text-only and cannot recover exact totals")
             details.append("local transcripts are text-only and do not contain exact token usage fields")
@@ -137,9 +251,12 @@ class ClaudeCodeAdapter(BaseAdapter):
                 details=details,
             )
 
-        if transcripts:
-            details.append("local transcripts are text-only and do not contain exact token usage fields")
-            details.append("Claude exact totals need a token-bearing local-agent JSON (old builds commonly used timing.json)")
+        if project_files or transcripts:
+            if project_files:
+                details.append("project JSONL files were found, but none exposed positive exact usage payloads")
+            if transcripts:
+                details.append("local transcripts are text-only and do not contain exact token usage fields")
+            details.append("Claude exact totals need a token-bearing project JSONL usage payload or local-agent exact JSON")
             return SourceDetection(
                 source_id=self.source_id,
                 display_name=self.display_name,
@@ -148,10 +265,10 @@ class ClaudeCodeAdapter(BaseAdapter):
                 supported=True,
                 available=False,
                 summary=(
-                    "transcripts detected, but no Claude exact JSON was found for total-token collection; "
+                    "Claude traces detected, but no exact Claude usage payload was found for total-token collection; "
                     f"override with {TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV} if needed"
                 ),
-                candidate_paths=[str(path) for path in transcripts[:1]] + [str(self.transcript_root), str(self.local_agent_root)],
+                candidate_paths=candidate_paths[:5] + [str(self.transcript_root), str(self.local_agent_root)],
                 details=details,
             )
 
@@ -181,32 +298,33 @@ class ClaudeCodeAdapter(BaseAdapter):
                 "Claude local traces not found; "
                 f"check {TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV} / {TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV}"
             ),
-            candidate_paths=[str(self.transcript_root), str(self.local_agent_root)],
+            candidate_paths=[str(self.transcript_root), str(self.project_root), str(self.local_agent_root)],
         )
 
     def collect(self, window) -> SourceCollectResult:
         detection = self.detect()
+        project_events, project_issues, project_files = self._collect_project_usage_events(window)
         inventory = self._build_local_agent_inventory()
         json_files = list(inventory["json_files"])
         candidate_files = list(inventory["candidate_files"])
-        if not candidate_files:
+        if not candidate_files and not project_events:
+            verification_issues = []
+            if json_files:
+                verification_issues.append("inspected local-agent JSON files, but none exposed total_tokens + executor_end/grader_end")
+            verification_issues.extend(project_issues)
             return SourceCollectResult(
                 detection=detection,
-                scanned_files=len(json_files),
-                verification_issues=(
-                    ["inspected local-agent JSON files, but none exposed total_tokens + executor_end/grader_end"]
-                    if json_files
-                    else []
-                ),
+                scanned_files=len(json_files) + len(project_files),
+                verification_issues=verification_issues[:10],
                 skipped_reasons=[detection.summary],
             )
 
-        events: list[UsageEvent] = []
-        verification_issues: list[str] = []
+        events: list[UsageEvent] = list(project_events)
+        verification_issues: list[str] = list(project_issues)
         fallback_tz = (
             window.start.tzinfo
             if window.start
-            else __import__("datetime").datetime.now().astimezone().tzinfo
+            else datetime.now().astimezone().tzinfo
         )
 
         for path in candidate_files:
@@ -251,16 +369,16 @@ class ClaudeCodeAdapter(BaseAdapter):
                 )
             )
 
-        if events:
+        if any(event.raw_event_kind.endswith(":session_total") for event in events):
             verification_issues.append(
                 "Claude exact JSON only provides total_tokens; input/output/cache breakdown is unavailable"
             )
-        elif not verification_issues:
-            verification_issues.append("no Claude exact JSON sessions landed inside the selected time window")
+        elif not events and not verification_issues:
+            verification_issues.append("no Claude exact usage events landed inside the selected time window")
 
         return SourceCollectResult(
             detection=detection,
-            events=events,
-            scanned_files=len(candidate_files),
+            events=sorted(events, key=lambda event: event.timestamp),
+            scanned_files=len(candidate_files) + len(project_files),
             verification_issues=verification_issues[:10],
         )

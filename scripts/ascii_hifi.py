@@ -233,6 +233,31 @@ def _render_session_detail(lines: list[str], session_detail: dict[str, object] |
     )
 
 
+def _render_observed_only_models(lines: list[str], observed_models: list[dict[str, object]]) -> None:
+    if not observed_models:
+        return
+    lines.append(_rule("已观测模型（未计入 token）"))
+    for item in observed_models:
+        sources = ", ".join(str(source) for source in item.get("sources") or [])
+        _append_field(
+            lines,
+            "模型",
+            f"{item['name']}   来源 {sources or '(unknown)'}   仅观测到使用痕迹，当前无 exact token payload",
+        )
+
+
+def _render_observed_only_sources(lines: list[str], observed_sources: list[dict[str, object]]) -> None:
+    if not observed_sources:
+        return
+    lines.append(_rule("已观测来源（未计入 token）"))
+    for item in observed_sources:
+        _append_field(
+            lines,
+            "来源",
+            f"{item['source_id']}   {item['display_name']}   已识别到本机痕迹/缓存，当前无 exact token payload",
+        )
+
+
 def _render_trend(lines: list[str], trend: dict[str, object], *, plain_ascii: bool) -> None:
     lines.append(_rule(f"最近 {trend['days']} 天（去缓存后）"))
     points = trend["points"]
@@ -349,6 +374,16 @@ def render_report(report: dict[str, object], *, plain_ascii: bool = False, show_
             "费用",
             f"估算 {_format_cost(float(summary.get('estimated_cost_usd', 0.0)))}",
         )
+    if int(summary.get("observed_only_sources", 0)) or int(summary.get("observed_only_models", 0)):
+        _append_field(
+            lines,
+            "观测层",
+            (
+                f"未计量来源 {int(summary.get('observed_only_sources', 0))}   "
+                f"未计量模型 {int(summary.get('observed_only_models', 0))}   "
+                "下方会单列展示，避免静默漏掉"
+            ),
+        )
 
     _render_current_session(lines, report.get("current_session"))
 
@@ -356,10 +391,12 @@ def render_report(report: dict[str, object], *, plain_ascii: bool = False, show_
     show_dashboard_groups = dashboard_mode in {"today", "recent"}
     if report.get("requested_group") == "source" or len(report["by_source"]) > 1:
         _render_group_section(lines, "按来源（去缓存后）", report["by_source"], key="name", label="来源", plain_ascii=plain_ascii)
+    _render_observed_only_sources(lines, report.get("observed_only_sources") or [])
     if report.get("requested_group") == "model" or show_dashboard_groups or len(report["by_model"]) > 1:
         _render_group_section(lines, "按模型（去缓存后）", report["by_model"], key="name", label="模型", plain_ascii=plain_ascii)
     if report.get("requested_group") == "project" or show_dashboard_groups or len(report["by_project"]) > 1:
         _render_group_section(lines, "按项目（去缓存后）", report["by_project"], key="name", label="项目", plain_ascii=plain_ascii)
+    _render_observed_only_models(lines, report.get("observed_only_models") or [])
 
     if report.get("requested_group") == "session":
         _render_group_section(lines, "按会话（去缓存后）", report["by_session"], key="name", label="会话", plain_ascii=plain_ascii)

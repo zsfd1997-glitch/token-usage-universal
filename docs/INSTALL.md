@@ -50,9 +50,11 @@ export TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT="$HOME/path/to/local-agent-mode-sessi
 
 说明：
 
+- `Claude Code` 现在优先读取 `~/.claude/projects/**/*.jsonl` 里的 assistant `message.usage`。
 - `Claude` exact 真源不是只认 `timing.json` 这个文件名。
 - 现在会接受任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON。
 - 如果目录里只有 `.claude.json / cowork_settings.json / manifest.json` 这类 session-config 文件，skill 会明确诊断为“有本地布局，但没有 token 真源”。
+- 如果 report 里出现“已观测来源（未计入 token）/ 已观测模型（未计入 token）”，意思是本机痕迹已识别，但当前快照没有 exact token payload，所以不会被偷偷算进总量。
 
 Windows PowerShell 常见写法：
 

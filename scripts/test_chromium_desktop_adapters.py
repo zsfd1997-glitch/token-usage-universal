@@ -92,6 +92,26 @@ class ChromiumDesktopAdapterTests(unittest.TestCase):
         self.assertIn("desktop traces detected", detection.summary)
         self.assertTrue(any("IndexedDB" in detail for detail in detection.details))
 
+    def test_claude_desktop_surfaces_model_traces_without_exact_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache_dir = root / "Cache" / "Cache_Data"
+            cache_dir.mkdir(parents=True)
+            indexeddb_dir = root / "IndexedDB" / "https_claude.ai_0.indexeddb.leveldb"
+            indexeddb_dir.mkdir(parents=True)
+            indexeddb_dir.joinpath("000004.log").write_bytes(b"random bytes claude-sonnet-4-6 more bytes")
+            cache_dir.joinpath("feedface_0").write_bytes(
+                _cache_blob(
+                    "https://api.anthropic.com/mcp-registry/v0/servers?version=latest",
+                    {"servers": [{"server": {"name": "demo"}}]},
+                )
+            )
+
+            detection = ClaudeDesktopAdapter(root=root).detect()
+
+        self.assertFalse(detection.available)
+        self.assertTrue(any("claude-sonnet-4-6" in detail for detail in detection.details))
+
     def test_family_builder_exposes_independent_desktop_sources(self) -> None:
         source_ids = {adapter.source_id for adapter in build_chromium_desktop_family_adapters()}
 

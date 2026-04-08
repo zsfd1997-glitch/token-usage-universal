@@ -180,7 +180,9 @@ Top20 执行主线文档：
   - 支持 env override：`TOKEN_USAGE_CODEX_ROOT`
 - `claude-code`
   - transcript 默认路径：`~/.claude/transcripts`
+  - project exact usage 默认路径：`~/.claude/projects/**/*.jsonl`
   - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`（Windows 常见等价目录是 `%APPDATA%\Claude\local-agent-mode-sessions`）
+  - 现在优先读取 project JSONL 里的 assistant `message.usage`；旧版 `timing.json` / local-agent exact JSON 仍继续兼容
   - exact 文件支持旧版 `timing.json`，也支持任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON
   - 支持 env override：`TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT`、`TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT`
 - `claude-desktop`
@@ -242,13 +244,15 @@ Top20 provider family 的适配规则是统一的：
 - Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
 - Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
 - 拿不到 exact 时明确告诉您是“没 parser”还是“当前缓存里确实没有 token 真源”
+- report 现在会把“已观测到客户端/模型痕迹，但当前没有 exact token payload”的来源单列出来，避免看起来像被静默漏记
 
 ## Claude Code 真源矩阵
 
 | 布局版本 | 是否可 exact | 典型文件 | macOS 默认位置 | Windows 默认位置 | 说明 |
 |---|---|---|---|---|---|
+| project JSONL / assistant usage | 是 | `session-*.jsonl` 里的 `message.usage` | `~/.claude/projects/**` | `%USERPROFILE%\\.claude\\projects\\**` | 新布局优先走这里，可恢复 input / cache / output / total token |
 | 旧布局 / exact JSON | 是 | `timing.json` 或其他带 `total_tokens + executor_end/grader_end` 的 JSON | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | skill 会直接统计 total token |
-| 新布局 / 只有 session-config | 否，先 diagnose | `.claude.json`、`cowork_settings.json`、`manifest.json` | 同上 | 同上 | 说明本地目录存在，但当前没有 token 真源 |
+| 新布局 / 只有 session-config | 否，先 diagnose | `.claude.json`、`cowork_settings.json`、`manifest.json` | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | 说明本地目录存在，但当前没有 token 真源 |
 | transcript only | 否，先 diagnose | `~/.claude/transcripts/*.jsonl` | `~/.claude/transcripts` | `%USERPROFILE%\.claude\transcripts` | transcript 是文本，不含 exact token 字段 |
 
 ## 环境变量

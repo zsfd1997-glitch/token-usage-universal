@@ -28,6 +28,64 @@ def _make_window() -> TimeWindow:
 
 
 class ClaudeCodeAdapterTests(unittest.TestCase):
+    def test_collect_uses_project_jsonl_usage_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_file = root / ".claude" / "projects" / "-Users-example-project" / "session-1.jsonl"
+            project_file.parent.mkdir(parents=True)
+            project_file.write_text(
+                "\n".join(
+                    [
+                        json.dumps(
+                            {
+                                "type": "user",
+                                "timestamp": "2026-03-25T12:00:00Z",
+                                "sessionId": "session-1",
+                            }
+                        ),
+                        json.dumps(
+                            {
+                                "type": "assistant",
+                                "timestamp": "2026-03-25T12:01:00Z",
+                                "sessionId": "session-1",
+                                "cwd": "/tmp/example-project",
+                                "message": {
+                                    "role": "assistant",
+                                    "model": "claude-haiku-4-5-20251001",
+                                    "usage": {
+                                        "input_tokens": 10,
+                                        "cache_creation_input_tokens": 30099,
+                                        "cache_read_input_tokens": 123,
+                                        "output_tokens": 616,
+                                    },
+                                },
+                            }
+                        ),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            adapter = ClaudeCodeAdapter(
+                transcript_root=root / ".claude" / "transcripts",
+                local_agent_root=root / "local-agent-mode-sessions",
+            )
+            detection = adapter.detect()
+            result = adapter.collect(_make_window())
+
+            self.assertTrue(detection.available)
+            self.assertIn("project JSONL", detection.summary)
+            self.assertEqual(result.scanned_files, 1)
+            self.assertEqual(len(result.events), 1)
+            self.assertEqual(result.events[0].model, "claude-haiku-4-5-20251001")
+            self.assertEqual(result.events[0].input_tokens, 30109)
+            self.assertEqual(result.events[0].cached_input_tokens, 123)
+            self.assertEqual(result.events[0].output_tokens, 616)
+            self.assertEqual(result.events[0].total_tokens, 30848)
+            self.assertEqual(result.events[0].project_path, "/tmp/example-project")
+            self.assertEqual(result.events[0].raw_event_kind, "session-1.jsonl:assistant_usage")
+
     def test_detect_transcript_only_reports_missing_exact_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -47,7 +105,7 @@ class ClaudeCodeAdapterTests(unittest.TestCase):
             self.assertTrue(detection.supported)
             self.assertFalse(detection.available)
             self.assertEqual(detection.status, "not-found")
-            self.assertIn("no Claude exact JSON", detection.summary)
+            self.assertIn("no exact Claude usage payload", detection.summary)
             self.assertIn("text-only", " ".join(detection.details))
 
     def test_collect_uses_timing_json_exact_total_tokens(self) -> None:

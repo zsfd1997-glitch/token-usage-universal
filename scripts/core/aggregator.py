@@ -592,6 +592,59 @@ def _build_calendar_month(
     }
 
 
+def _extract_observed_only_models(results: list[SourceCollectResult]) -> list[dict[str, object]]:
+    exact_models = {
+        (event.model or "").strip().lower()
+        for result in results
+        for event in result.events
+        if event.model
+    }
+    observed: dict[str, set[str]] = defaultdict(set)
+
+    for result in results:
+        for detail in result.detection.details:
+            prefix = "detected model traces in desktop stores:"
+            if not detail.lower().startswith(prefix):
+                continue
+            raw_models = detail.split(":", 1)[1] if ":" in detail else ""
+            for raw_model in raw_models.split(","):
+                model = raw_model.strip()
+                if not model:
+                    continue
+                if model.lower() in exact_models:
+                    continue
+                observed[model].add(result.detection.source_id)
+
+    return [
+        {
+            "name": model,
+            "sources": sorted(sources),
+            "evidence": "model-trace-only",
+        }
+        for model, sources in sorted(observed.items())
+    ]
+
+
+def _extract_observed_only_sources(results: list[SourceCollectResult]) -> list[dict[str, object]]:
+    observed_sources: list[dict[str, object]] = []
+    for result in results:
+        if result.events:
+            continue
+        detection = result.detection
+        summary = detection.summary.lower()
+        if "traces detected" not in summary and "decoded" not in summary:
+            continue
+        observed_sources.append(
+            {
+                "source_id": detection.source_id,
+                "display_name": detection.display_name,
+                "reason": detection.summary,
+                "files": result.scanned_files,
+            }
+        )
+    return observed_sources
+
+
 def build_report(
     results: list[SourceCollectResult],
     *,
@@ -657,6 +710,10 @@ def build_report(
         "estimated_cost_usd": estimated_total,
         "cost_accuracy": "estimated" if estimated_total or events else "unavailable",
     }
+    observed_only_sources = _extract_observed_only_sources(results)
+    observed_only_models = _extract_observed_only_models(results)
+    summary["observed_only_sources"] = len(observed_only_sources)
+    summary["observed_only_models"] = len(observed_only_models)
 
     by_day = _group_by_day(annotated_events, tz_name=window.timezone_name)
     chart_by_day = _group_by_day(annotated_chart_events, tz_name=window.timezone_name)
@@ -675,6 +732,8 @@ def build_report(
         "by_day": by_day[-limit:] if group_by == "day" else by_day,
         "current_session": _select_current_session(annotated_events),
         "session_detail": _build_session_detail(annotated_events, session_id) if session_id else None,
+        "observed_only_sources": observed_only_sources,
+        "observed_only_models": observed_only_models,
         "diagnostics": diagnostics[: max(limit, 10)],
         "benchmark_examples": BENCHMARK_EXAMPLES,
         "insights": _build_insights(summary, window=window),

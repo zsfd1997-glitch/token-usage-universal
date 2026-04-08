@@ -155,6 +155,56 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(report["by_model"][0]["name"], "gpt-5.4")
         self.assertEqual(report["by_model"][1]["name"], "deepseek-chat")
 
+    def test_report_surfaces_observed_models_not_counted_in_exact_usage(self) -> None:
+        observed = _make_unavailable_result(
+            source="claude-desktop",
+            summary="Claude Desktop desktop traces detected, but no exact token payloads were present in the current snapshot",
+        )
+        observed.detection.details.append("detected model traces in desktop stores: claude-sonnet-4-6")
+
+        report = build_report([_make_result(12_000_000, model="gpt-5.4"), observed], window=_make_window(), group_by=None, limit=5)
+        rendered = render_report(report, show_estimated_cost=True)
+
+        self.assertEqual(
+            report["observed_only_models"],
+            [{"name": "claude-sonnet-4-6", "sources": ["claude-desktop"], "evidence": "model-trace-only"}],
+        )
+        self.assertEqual(report["summary"]["observed_only_models"], 1)
+        self.assertIn("已观测模型（未计入 token）", rendered)
+        self.assertIn("claude-sonnet-4-6", rendered)
+        self.assertIn("当前无 exact token payload", rendered)
+
+    def test_report_surfaces_observed_sources_not_counted_in_exact_usage(self) -> None:
+        observed = _make_unavailable_result(
+            source="minimax-agent",
+            provider="minimax",
+            summary="MiniMax Agent desktop traces detected, but no exact token payloads were present in the current snapshot",
+        )
+        observed.detection.display_name = "MiniMax Agent"
+        observed.scanned_files = 51
+
+        report = build_report([_make_result(12_000_000, model="gpt-5.4"), observed], window=_make_window(), group_by=None, limit=5)
+        rendered = render_report(report, show_estimated_cost=True)
+
+        self.assertEqual(
+            report["observed_only_sources"],
+            [
+                {
+                    "source_id": "minimax-agent",
+                    "display_name": "MiniMax Agent",
+                    "reason": "MiniMax Agent desktop traces detected, but no exact token payloads were present in the current snapshot",
+                    "files": 51,
+                }
+            ],
+        )
+        self.assertEqual(report["summary"]["observed_only_sources"], 1)
+        self.assertIn("观测层", rendered)
+        self.assertIn("未计量来源 1", rendered)
+        self.assertIn("避免静默漏掉", rendered)
+        self.assertIn("已观测来源（未计入 token）", rendered)
+        self.assertIn("minimax-agent", rendered)
+        self.assertIn("MiniMax Agent", rendered)
+
     def test_effective_tokens_are_exposed_in_summary_and_groups(self) -> None:
         report = build_report([_make_result(10_000_000)], window=_make_window(), group_by="model", limit=5)
 
