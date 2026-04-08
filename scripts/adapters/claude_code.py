@@ -10,6 +10,7 @@ from core.config import (
     TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
     default_claude_local_agent_root,
     resolve_path_override,
+    safe_home_path,
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.time_window import parse_timestamp, within_window
@@ -32,7 +33,7 @@ class ClaudeCodeAdapter(BaseAdapter):
     ) -> None:
         self.transcript_root = transcript_root or resolve_path_override(
             TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
-            Path.home() / ".claude" / "transcripts",
+            safe_home_path() / ".claude" / "transcripts",
         )
         self.project_root = self.transcript_root.parent / "projects"
         self.local_agent_root = local_agent_root or resolve_path_override(

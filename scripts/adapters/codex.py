@@ -7,7 +7,7 @@ from pathlib import Path
 
 from adapters.base import BaseAdapter
 from core.day_rollup import build_day_rollups, day_key, split_window_days
-from core.config import TOKEN_USAGE_CODEX_ROOT_ENV, resolve_path_override
+from core.config import TOKEN_USAGE_CODEX_ROOT_ENV, resolve_path_override, safe_home_path
 from core.file_cache import FileEventCache
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.pricing import PricingDatabase
@@ -170,7 +170,7 @@ class CodexAdapter(BaseAdapter):
     def __init__(self) -> None:
         self.root = resolve_path_override(
             TOKEN_USAGE_CODEX_ROOT_ENV,
-            Path.home() / ".codex" / "sessions",
+            safe_home_path() / ".codex" / "sessions",
         )
         self.cache = FileEventCache()
 
