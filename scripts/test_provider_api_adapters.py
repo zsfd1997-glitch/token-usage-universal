@@ -8,7 +8,6 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -19,10 +18,11 @@ from adapters.compatible_api_family import build_provider_api_adapters
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from core.config import TOKEN_USAGE_DISCOVERY_ROOTS_ENV, TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV
 from core.models import TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),

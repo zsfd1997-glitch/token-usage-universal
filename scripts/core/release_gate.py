@@ -6,7 +6,6 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 from adapters.chromium_desktop_family import build_chromium_desktop_family_adapters
 from adapters.claude_desktop import ClaudeDesktopAdapter
@@ -22,6 +21,7 @@ from core.config import (
 )
 from core.ecosystem_registry import build_top20_registry_payload
 from core.models import TimeWindow, UsageEvent
+from core.time_window import resolve_timezone
 
 
 EXPECTED_TOTAL_ECOSYSTEMS = 20
@@ -74,7 +74,7 @@ def _collect_claimed_source_ids(payload: dict[str, object]) -> tuple[list[str], 
 
 
 def _probe_window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = resolve_timezone("US/Pacific")
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),

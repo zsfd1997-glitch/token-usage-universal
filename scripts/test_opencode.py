@@ -8,7 +8,6 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -17,10 +16,11 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from adapters.opencode import OpenCodeAdapter
 from core.models import TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),
@@ -35,8 +35,8 @@ class OpenCodeAdapterTests(unittest.TestCase):
             root = Path(tmp)
             session_dir = root / "storage" / "session" / "global"
             message_dir = root / "storage" / "message" / "ses_local"
-            completed_at = int(datetime(2026, 3, 25, 12, 0, tzinfo=ZoneInfo("US/Pacific")).timestamp() * 1000)
-            created_at = int(datetime(2026, 3, 25, 11, 59, tzinfo=ZoneInfo("US/Pacific")).timestamp() * 1000)
+            completed_at = int(datetime(2026, 3, 25, 12, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+            created_at = int(datetime(2026, 3, 25, 11, 59, tzinfo=PACIFIC_TZ).timestamp() * 1000)
             session_dir.mkdir(parents=True)
             message_dir.mkdir(parents=True)
 

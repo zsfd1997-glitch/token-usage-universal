@@ -4,7 +4,6 @@ import sys
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -14,10 +13,11 @@ if str(SCRIPT_DIR) not in sys.path:
 from ascii_hifi import render_diagnose, render_report
 from core.aggregator import build_report
 from core.models import SourceCollectResult, SourceDetection, TimeWindow, UsageEvent
+from test_time import PACIFIC_TZ
 
 
 def _make_window(days: float = 1.0) -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     end = datetime(2026, 3, 25, 12, 0, tzinfo=tzinfo)
     start = end - timedelta(days=days)
     return TimeWindow(
@@ -40,7 +40,7 @@ def _make_result(
     event = UsageEvent(
         source=source,
         provider=provider,
-        timestamp=timestamp or datetime(2026, 3, 25, 10, 0, tzinfo=ZoneInfo("US/Pacific")),
+        timestamp=timestamp or datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ),
         session_id=session_id or f"{source}-session-1",
         project_path="/tmp/example",
         model=model,
@@ -212,7 +212,7 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(report["by_model"][0]["effective_tokens"], 8_000_000)
 
     def test_by_day_groups_across_dates(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         older = _make_result(
             5_000_000,
             timestamp=datetime(2026, 3, 24, 9, 0, tzinfo=tzinfo),
@@ -230,7 +230,7 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(report["by_day"][-1]["effective_tokens"], 5_600_000)
 
     def test_current_session_prefers_latest_timestamp(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         older = _make_result(
             20_000_000,
             session_id="older",
@@ -265,7 +265,7 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("estimated cost incomplete for one or more events", reasons)
 
     def test_trend_and_calendar_are_exposed(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         results = [
             _make_result(1_000_000 + index * 100_000, timestamp=datetime(2026, 3, 20 + index, 10, 0, tzinfo=tzinfo), session_id=f"s-{index}")
             for index in range(6)
@@ -277,7 +277,7 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(len(report["charts"]["calendar_month"]["days"]), 31)
 
     def test_plain_ascii_renderer_uses_ascii_graphics(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         results = [
             _make_result(2_000_000, timestamp=datetime(2026, 3, 24, 10, 0, tzinfo=tzinfo), session_id="a"),
             _make_result(4_000_000, timestamp=datetime(2026, 3, 25, 10, 0, tzinfo=tzinfo), session_id="b"),
@@ -294,7 +294,7 @@ class ReportingTests(unittest.TestCase):
         self.assertNotIn("统计", rendered)
 
     def test_dashboard_mode_renders_trend_and_calendar_without_extra_flags(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         today_result = _make_result(
             4_000_000,
             timestamp=datetime(2026, 3, 25, 10, 0, tzinfo=tzinfo),
@@ -379,7 +379,7 @@ class ReportingTests(unittest.TestCase):
         self.assertNotIn(r"C:\Users\boss\workspace\windows-demo", rendered)
 
     def test_trend_includes_zero_days_for_calendar_window(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         results = [
             _make_result(2_000_000, timestamp=datetime(2026, 3, 20, 10, 0, tzinfo=tzinfo), session_id="a"),
             _make_result(4_000_000, timestamp=datetime(2026, 3, 25, 10, 0, tzinfo=tzinfo), session_id="b"),
@@ -396,7 +396,7 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(points[2]["total_tokens"], 0)
 
     def test_trend_stats_use_total_average_and_peak(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         results = [
             _make_result(2_000_000, timestamp=datetime(2026, 3, 24, 10, 0, tzinfo=tzinfo), session_id="a"),
             _make_result(4_000_000, timestamp=datetime(2026, 3, 25, 10, 0, tzinfo=tzinfo), session_id="b"),
@@ -413,7 +413,7 @@ class ReportingTests(unittest.TestCase):
         self.assertNotIn("统计", rendered)
 
     def test_trend_and_calendar_total_stats_show_estimated_cost(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         results = [
             _make_result(2_000_000, timestamp=datetime(2026, 3, 24, 10, 0, tzinfo=tzinfo), session_id="a"),
             _make_result(4_000_000, timestamp=datetime(2026, 3, 25, 10, 0, tzinfo=tzinfo), session_id="b"),

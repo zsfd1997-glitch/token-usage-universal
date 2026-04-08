@@ -7,7 +7,6 @@ import unittest
 from datetime import datetime
 from hashlib import md5
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -16,10 +15,11 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from adapters.kimi_cli import KimiCliAdapter
 from core.models import TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),
@@ -56,7 +56,7 @@ class KimiCliAdapterTests(unittest.TestCase):
                         json.dumps({"type": "metadata", "protocol_version": "1.0"}),
                         json.dumps(
                             {
-                                "timestamp": datetime(2026, 3, 25, 12, 0, tzinfo=ZoneInfo("US/Pacific")).timestamp(),
+                                "timestamp": datetime(2026, 3, 25, 12, 0, tzinfo=PACIFIC_TZ).timestamp(),
                                 "message": {
                                     "type": "StatusUpdate",
                                     "payload": {
@@ -106,7 +106,7 @@ class KimiCliAdapterTests(unittest.TestCase):
                         json.dumps({"type": "metadata", "protocol_version": "1.0"}),
                         json.dumps(
                             {
-                                "timestamp": datetime(2026, 3, 25, 13, 0, tzinfo=ZoneInfo("US/Pacific")).timestamp(),
+                                "timestamp": datetime(2026, 3, 25, 13, 0, tzinfo=PACIFIC_TZ).timestamp(),
                                 "message": {
                                     "type": "SubagentEvent",
                                     "payload": {
@@ -148,7 +148,7 @@ class KimiCliAdapterTests(unittest.TestCase):
                         json.dumps({"type": "metadata", "protocol_version": "1.0"}),
                         json.dumps(
                             {
-                                "timestamp": datetime(2026, 3, 25, 14, 0, tzinfo=ZoneInfo("US/Pacific")).timestamp(),
+                                "timestamp": datetime(2026, 3, 25, 14, 0, tzinfo=PACIFIC_TZ).timestamp(),
                                 "message": {"type": "TurnBegin", "payload": {"user_input": "hi"}},
                             }
                         ),

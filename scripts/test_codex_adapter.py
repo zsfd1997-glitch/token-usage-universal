@@ -8,7 +8,6 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -18,10 +17,11 @@ if str(SCRIPT_DIR) not in sys.path:
 from adapters.codex import CodexAdapter
 from core.config import TOKEN_USAGE_CACHE_ROOT_ENV, TOKEN_USAGE_CODEX_ROOT_ENV
 from core.models import SourceDetection, TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _make_window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),
@@ -264,8 +264,8 @@ class CodexAdapterTests(unittest.TestCase):
             with patch.dict(os.environ, {TOKEN_USAGE_CODEX_ROOT_ENV: str(root)}, clear=False):
                 result = CodexAdapter().collect(
                     TimeWindow(
-                        start=datetime(2026, 3, 30, 0, 0, tzinfo=ZoneInfo("US/Pacific")),
-                        end=datetime(2026, 3, 30, 23, 59, tzinfo=ZoneInfo("US/Pacific")),
+                        start=datetime(2026, 3, 30, 0, 0, tzinfo=PACIFIC_TZ),
+                        end=datetime(2026, 3, 30, 23, 59, tzinfo=PACIFIC_TZ),
                         label="Today (2026-03-30 PDT)",
                         timezone_name="US/Pacific",
                     )
@@ -370,8 +370,8 @@ class CodexAdapterTests(unittest.TestCase):
             with patch.dict(os.environ, {TOKEN_USAGE_CODEX_ROOT_ENV: str(root)}, clear=False):
                 result = CodexAdapter().collect(
                     TimeWindow(
-                        start=datetime(2026, 3, 3, 0, 0, tzinfo=ZoneInfo("US/Pacific")),
-                        end=datetime(2026, 3, 3, 23, 59, tzinfo=ZoneInfo("US/Pacific")),
+                        start=datetime(2026, 3, 3, 0, 0, tzinfo=PACIFIC_TZ),
+                        end=datetime(2026, 3, 3, 23, 59, tzinfo=PACIFIC_TZ),
                         label="Today (2026-03-03 PST)",
                         timezone_name="US/Pacific",
                     )
@@ -383,7 +383,7 @@ class CodexAdapterTests(unittest.TestCase):
             self.assertEqual(result.events[0].model_resolution, "inferred")
 
     def test_collect_chart_reuses_day_rollup_cache_for_full_days(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             cache_root = root / "cache"
@@ -454,7 +454,7 @@ class CodexAdapterTests(unittest.TestCase):
             self.assertEqual(len(second.events), 2)
 
     def test_collect_scans_relevant_date_dirs_without_full_tree_walk(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             session_file = root / "2026" / "03" / "29" / "rollout.jsonl"

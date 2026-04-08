@@ -6,7 +6,6 @@ import threading
 import unittest
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -15,13 +14,14 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from core.file_cache import FileEventCache
 from core.models import UsageEvent
+from test_time import PACIFIC_TZ
 
 
 def _sample_event(source_path: str) -> UsageEvent:
     return UsageEvent(
         source="codex",
         provider="openai",
-        timestamp=datetime(2026, 3, 30, 10, 0, tzinfo=ZoneInfo("US/Pacific")),
+        timestamp=datetime(2026, 3, 30, 10, 0, tzinfo=PACIFIC_TZ),
         session_id="sess-1",
         project_path="/tmp/project-a",
         model="gpt-5.4",

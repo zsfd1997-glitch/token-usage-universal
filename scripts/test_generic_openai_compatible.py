@@ -8,7 +8,6 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -22,10 +21,11 @@ from core.config import (
     TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV,
 )
 from core.models import TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _make_window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),
@@ -402,7 +402,7 @@ class GenericAdapterTests(unittest.TestCase):
             self.assertEqual(len(second.events), 2)
 
     def test_collect_chart_uses_day_rollups_but_keeps_boundary_days_exact(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             cache_root = root / "cache"
@@ -494,7 +494,7 @@ class GenericAdapterTests(unittest.TestCase):
             self.assertEqual(per_day["2026-03-26"], 480)
 
     def test_collect_chart_reuses_day_rollup_cache_for_full_days(self) -> None:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             cache_root = root / "cache"

@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -15,10 +14,11 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from adapters.gemini_cli import GeminiCliAdapter
 from core.models import TimeWindow
+from test_time import PACIFIC_TZ
 
 
 def _window() -> TimeWindow:
-    tzinfo = ZoneInfo("US/Pacific")
+    tzinfo = PACIFIC_TZ
     return TimeWindow(
         start=datetime(2026, 3, 25, 0, 0, tzinfo=tzinfo),
         end=datetime(2026, 3, 25, 23, 59, tzinfo=tzinfo),

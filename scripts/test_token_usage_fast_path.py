@@ -8,7 +8,6 @@ from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from zoneinfo import ZoneInfo
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -17,6 +16,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import token_usage
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
+from test_time import PACIFIC_TZ
 
 
 class _FakeAdapter:
@@ -27,7 +27,7 @@ class _FakeAdapter:
         self.collect_chart_calls = 0
 
     def _result(self) -> SourceCollectResult:
-        tzinfo = ZoneInfo("US/Pacific")
+        tzinfo = PACIFIC_TZ
         detection = SourceDetection(
             source_id="fake",
             display_name="Fake",
