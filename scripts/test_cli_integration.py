@@ -399,6 +399,35 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["surface_maturity"].get("detect-ready", 0), 0)
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
 
+    def test_targets_json_survives_legacy_stdout_encoding(self) -> None:
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "cp1252"
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "targets", "--format", "json"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["total_ecosystems"], 20)
+
+    def test_health_json_survives_legacy_stdout_encoding(self) -> None:
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "cp1252"
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "health", "--format", "json"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        payload = json.loads(result.stdout)
+        self.assertIn("overall_status", payload)
+        self.assertEqual(len(payload["sources"]), 50)
+
     def test_release_gate_json_exposes_automated_gate_status(self) -> None:
         result = subprocess.run(
             [sys.executable, str(CLI_PATH), "release-gate", "--format", "json"],

@@ -11,6 +11,22 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+
+def _configure_stdio_utf8() -> None:
+    # Windows-hosted subprocess pipes may default to a legacy codec like cp1252.
+    # Force UTF-8 so JSON/text output with Chinese copy stays printable in CI.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="strict")
+        except (LookupError, ValueError):
+            continue
+
+
+_configure_stdio_utf8()
+
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.claude_desktop import ClaudeDesktopAdapter
 from adapters.chromium_desktop_family import build_chromium_desktop_family_adapters
