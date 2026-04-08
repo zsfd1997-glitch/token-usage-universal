@@ -14,6 +14,32 @@ CLI_PATH = SCRIPT_DIR / "token_usage.py"
 
 
 class CliIntegrationTests(unittest.TestCase):
+    def _run_cli(
+        self,
+        args: list[str],
+        *,
+        env: dict[str, str] | None = None,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[str]:
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), *args],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+            errors="strict",
+            env=env,
+        )
+        if check and result.returncode != 0:
+            self.fail(
+                "CLI command failed with non-zero exit status:\n"
+                f"args={result.args}\n"
+                f"returncode={result.returncode}\n"
+                f"stdout={result.stdout}\n"
+                f"stderr={result.stderr}"
+            )
+        return result
+
     def _write_fixture(self, root: Path) -> Path:
         log_file = root / "generic.jsonl"
         log_file.write_text(
@@ -72,10 +98,8 @@ class CliIntegrationTests(unittest.TestCase):
             env["TOKEN_USAGE_OPENCODE_ROOTS"] = str(root / "unused-opencode")
             env["TOKEN_USAGE_OPENCODE_BIN"] = str(root / "missing-opencode")
             env["TOKEN_USAGE_MINIMAX_AGENT_ROOT"] = str(root / "unused-minimax")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -86,9 +110,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -112,10 +133,8 @@ class CliIntegrationTests(unittest.TestCase):
             env["TOKEN_USAGE_OPENCODE_ROOTS"] = str(root / "unused-opencode")
             env["TOKEN_USAGE_OPENCODE_BIN"] = str(root / "missing-opencode")
             env["TOKEN_USAGE_MINIMAX_AGENT_ROOT"] = str(root / "unused-minimax")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -124,9 +143,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -140,10 +156,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -156,9 +170,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -172,10 +183,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--trend",
                     "7d",
@@ -184,9 +193,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -200,10 +206,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--calendar",
                     "month",
@@ -214,9 +218,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -230,10 +231,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -245,9 +244,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -261,10 +257,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -275,9 +269,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--source",
                     "generic-openai-compatible",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -304,10 +295,8 @@ class CliIntegrationTests(unittest.TestCase):
             env = os.environ.copy()
             env["TOKEN_USAGE_GENERIC_LOG_GLOBS"] = str(log_file)
             env["TOKEN_USAGE_DISCOVERY_ROOTS"] = str(root / "unused")
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "report",
                     "--start",
                     "2026-03-24T00:00:00-07:00",
@@ -320,9 +309,6 @@ class CliIntegrationTests(unittest.TestCase):
                     "--format",
                     "json",
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=env,
             )
 
@@ -330,13 +316,7 @@ class CliIntegrationTests(unittest.TestCase):
             self.assertEqual(payload["report"]["session_detail"]["session_id"], "cli-1")
 
     def test_health_json_includes_all_supported_sources(self) -> None:
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "health", "--format", "json"],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ.copy(),
-        )
+        result = self._run_cli(["health", "--format", "json"], env=os.environ.copy())
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
@@ -373,24 +353,13 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("overall_status", payload)
 
     def test_explore_requires_tty(self) -> None:
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "explore"],
-            capture_output=True,
-            text=True,
-            env=os.environ.copy(),
-        )
+        result = self._run_cli(["explore"], check=False, env=os.environ.copy())
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("interactive TTY", result.stderr or result.stdout)
 
     def test_targets_json_exposes_frozen_registry(self) -> None:
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "targets", "--format", "json"],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ.copy(),
-        )
+        result = self._run_cli(["targets", "--format", "json"], env=os.environ.copy())
 
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["total_ecosystems"], 20)
@@ -402,13 +371,7 @@ class CliIntegrationTests(unittest.TestCase):
     def test_targets_json_survives_legacy_stdout_encoding(self) -> None:
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "cp1252"
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "targets", "--format", "json"],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=env,
-        )
+        result = self._run_cli(["targets", "--format", "json"], env=env)
 
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["total_ecosystems"], 20)
@@ -416,26 +379,14 @@ class CliIntegrationTests(unittest.TestCase):
     def test_health_json_survives_legacy_stdout_encoding(self) -> None:
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "cp1252"
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "health", "--format", "json"],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=env,
-        )
+        result = self._run_cli(["health", "--format", "json"], env=env)
 
         payload = json.loads(result.stdout)
         self.assertIn("overall_status", payload)
         self.assertEqual(len(payload["sources"]), 50)
 
     def test_release_gate_json_exposes_automated_gate_status(self) -> None:
-        result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "release-gate", "--format", "json"],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ.copy(),
-        )
+        result = self._run_cli(["release-gate", "--format", "json"], env=os.environ.copy())
 
         payload = json.loads(result.stdout)
         gate_ids = {item["gate_id"] for item in payload["gates"]}
@@ -450,19 +401,14 @@ class CliIntegrationTests(unittest.TestCase):
     def test_release_gate_can_write_release_evidence_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output_dir = Path(tmp) / "release-evidence"
-            result = subprocess.run(
+            result = self._run_cli(
                 [
-                    sys.executable,
-                    str(CLI_PATH),
                     "release-gate",
                     "--format",
                     "json",
                     "--output-dir",
                     str(output_dir),
                 ],
-                check=True,
-                capture_output=True,
-                text=True,
                 env=os.environ.copy(),
             )
 
@@ -482,10 +428,8 @@ class CliIntegrationTests(unittest.TestCase):
             self.assertEqual(release_payload["summary"]["status"], "pass")
 
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "config",
                 "--provider",
@@ -497,9 +441,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -509,18 +450,13 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["upstream_base_url"], "https://api.deepseek.com/v1")
 
     def test_ingress_profiles_json_lists_bootstrap_catalog(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "profiles",
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -545,10 +481,8 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["profiles"], 22)
 
     def test_ingress_bootstrap_json_outputs_continue_snippet(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "bootstrap",
                 "--profile",
@@ -558,9 +492,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -572,10 +503,8 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("OPENAI_BASE_URL", payload["cli"]["shell_exports"])
 
     def test_ingress_bootstrap_json_outputs_official_anthropic_profile(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "bootstrap",
                 "--profile",
@@ -585,9 +514,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -598,10 +524,8 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("claude-sonnet-4-20250514", payload["continue"]["snippet"])
 
     def test_ingress_bootstrap_json_outputs_qwen_profile(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "bootstrap",
                 "--profile",
@@ -611,9 +535,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -623,10 +544,8 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("qwen3-coder-plus", payload["continue"]["snippet"])
 
     def test_ingress_bootstrap_json_outputs_glm_profile(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "bootstrap",
                 "--profile",
@@ -636,9 +555,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
@@ -648,10 +564,8 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("glm-4.7", payload["continue"]["snippet"])
 
     def test_ingress_bootstrap_json_outputs_perplexity_root_base_profile(self) -> None:
-        result = subprocess.run(
+        result = self._run_cli(
             [
-                sys.executable,
-                str(CLI_PATH),
                 "ingress",
                 "bootstrap",
                 "--profile",
@@ -661,9 +575,6 @@ class CliIntegrationTests(unittest.TestCase):
                 "--format",
                 "json",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
             env=os.environ.copy(),
         )
 
