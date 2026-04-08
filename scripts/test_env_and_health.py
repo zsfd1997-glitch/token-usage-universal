@@ -36,6 +36,7 @@ from core.config import (
     default_desktop_app_roots,
     default_minimax_agent_root,
     default_opencode_roots,
+    safe_home_path,
 )
 from core.health import build_health_report
 from core.models import SourceCollectResult, SourceDetection
@@ -168,6 +169,13 @@ class EnvironmentOverrideTests(unittest.TestCase):
 
         self.assertIn(Path("C:/Users/tester/AppData/Roaming/OpenCode"), roots)
         self.assertIn(Path("C:/Users/tester/AppData/Local/opencode"), roots)
+
+    def test_safe_home_path_falls_back_to_userprofile(self) -> None:
+        with patch("pathlib.Path.home", side_effect=RuntimeError("missing home")):
+            with patch.dict(os.environ, {"HOME": "", "USERPROFILE": "C:/Users/tester"}, clear=False):
+                path = safe_home_path()
+
+        self.assertEqual(path, Path("C:/Users/tester"))
 
 
 class HealthReportTests(unittest.TestCase):

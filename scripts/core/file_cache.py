@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from core.config import TOKEN_USAGE_CACHE_ROOT_ENV, default_cache_root
@@ -11,6 +12,8 @@ from core.models import UsageEvent
 
 
 _CACHE_VERSION = 1
+_ATOMIC_REPLACE_RETRIES = 12
+_ATOMIC_REPLACE_SLEEP_SECONDS = 0.01
 
 
 def _default_cache_root() -> Path:
@@ -169,7 +172,19 @@ class FileEventCache:
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
-            temp_path.replace(entry_path)
+            last_error: PermissionError | None = None
+            for attempt in range(_ATOMIC_REPLACE_RETRIES):
+                try:
+                    temp_path.replace(entry_path)
+                    last_error = None
+                    break
+                except PermissionError as exc:
+                    last_error = exc
+                    if attempt == _ATOMIC_REPLACE_RETRIES - 1:
+                        raise
+                    time.sleep(_ATOMIC_REPLACE_SLEEP_SECONDS)
+            if last_error is not None:
+                raise last_error
         finally:
             if temp_path.exists():
                 temp_path.unlink()

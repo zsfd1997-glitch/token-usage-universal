@@ -39,6 +39,21 @@ TOKEN_USAGE_CACHE_ROOT_ENV = "TOKEN_USAGE_CACHE_ROOT"
 _WINDOWS_ENV_RE = re.compile(r"%([^%]+)%")
 
 
+def safe_home_path() -> Path:
+    try:
+        return Path.home()
+    except RuntimeError:
+        for env_name in ("HOME", "USERPROFILE"):
+            raw = os.environ.get(env_name, "").strip()
+            if raw:
+                return Path(expand_path_text(raw))
+        homedrive = os.environ.get("HOMEDRIVE", "").strip()
+        homepath = os.environ.get("HOMEPATH", "").strip()
+        if homedrive and homepath:
+            return Path(f"{homedrive}{homepath}")
+        return Path.cwd()
+
+
 def _path_text(path: Path) -> str:
     return str(path.expanduser())
 
@@ -55,7 +70,7 @@ def default_claude_local_agent_root(
     appdata: str | None = None,
 ) -> Path:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     if target_os == "nt":
         appdata_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
         base = Path(appdata_text) if appdata_text else home_path / "AppData" / "Roaming"
@@ -77,7 +92,7 @@ def default_minimax_agent_root(
     platform_name: str | None = None,
 ) -> Path:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     if target_os == "nt":
         appdata_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
         base = Path(appdata_text) if appdata_text else home_path / "AppData" / "Roaming"
@@ -97,7 +112,7 @@ def default_desktop_app_roots(
     platform_name: str | None = None,
 ) -> list[Path]:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     names = tuple(dict.fromkeys(name for name in app_names if name))
     if not names:
         return []
@@ -133,7 +148,7 @@ def default_opencode_roots(
     platform_name: str | None = None,
 ) -> list[Path]:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     if target_os == "nt":
         roots: list[Path] = []
         roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
@@ -181,7 +196,7 @@ def default_cache_root(
     platform_name: str | None = None,
 ) -> Path:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     if target_os == "nt":
         local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
         roaming_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
@@ -193,7 +208,7 @@ def default_cache_root(
 
 
 def default_qwen_runtime_root(*, home: Path | None = None) -> Path:
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     configured = os.environ.get("QWEN_RUNTIME_DIR", "").strip()
     if configured:
         return Path(expand_path_text(configured))
@@ -201,7 +216,7 @@ def default_qwen_runtime_root(*, home: Path | None = None) -> Path:
 
 
 def default_kimi_share_root(*, home: Path | None = None) -> Path:
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     configured = os.environ.get("KIMI_SHARE_DIR", "").strip()
     if configured:
         return Path(expand_path_text(configured))
@@ -209,7 +224,7 @@ def default_kimi_share_root(*, home: Path | None = None) -> Path:
 
 
 def default_gemini_cli_root(*, home: Path | None = None) -> Path:
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     return home_path / ".gemini"
 
 
@@ -221,7 +236,7 @@ def default_discovery_roots(
     localappdata: str | None = None,
 ) -> list[Path]:
     target_os = os_name or os.name
-    home_path = home or Path.home()
+    home_path = home or safe_home_path()
     if target_os == "nt":
         roots: list[Path] = []
         local_text = (localappdata if localappdata is not None else os.environ.get("LOCALAPPDATA", "")).strip()
@@ -252,12 +267,12 @@ ENVIRONMENT_VARIABLES = (
     {
         "name": TOKEN_USAGE_CODEX_ROOT_ENV,
         "description": "Override the Codex session root directory.",
-        "default": lambda: _path_text(Path.home() / ".codex" / "sessions"),
+        "default": lambda: _path_text(safe_home_path() / ".codex" / "sessions"),
     },
     {
         "name": TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT_ENV,
         "description": "Override the Claude transcript directory.",
-        "default": lambda: _path_text(Path.home() / ".claude" / "transcripts"),
+        "default": lambda: _path_text(safe_home_path() / ".claude" / "transcripts"),
     },
     {
         "name": TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT_ENV,

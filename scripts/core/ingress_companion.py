@@ -13,12 +13,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from uuid import uuid4
 
-from core.config import expand_path_text
+from core.config import expand_path_text, safe_home_path
 from core.usage_records import MODEL_KEYS, SESSION_KEYS, find_first_value, find_usage_dict, normalize_usage
 
 
 def _default_ingress_log_root(provider: str) -> Path:
-    home = Path.home()
+    home = safe_home_path()
     safe_provider = provider.strip().lower().replace("/", "-").replace("_", "-") or "generic"
     if os.name == "nt":
         base = Path(os.environ.get("LOCALAPPDATA", "") or (home / "AppData" / "Local"))
