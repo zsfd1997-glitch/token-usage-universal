@@ -116,6 +116,7 @@
 
 推荐主方案：
 
+- `无 host`: `GitHub-hosted runners`
 - `macOS`: `Tart`
 - `Windows`: `Vagrant + Hyper-V`
 - `手动调试`: `UTM`
@@ -175,10 +176,15 @@ python3 scripts/token_usage.py release-gate \
 
 当前仓库已先落了最小脚手架：
 
+- [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
+- [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
 - [examples/vm-testing/README.md](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/README.md)
 - [examples/vm-testing/Vagrantfile](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/Vagrantfile)
 - [examples/vm-testing/provision-windows.ps1](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/provision-windows.ps1)
 - [examples/vm-testing/collect-evidence.ps1](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/collect-evidence.ps1)
+- [examples/vm-testing/tart-run-macos.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/tart-run-macos.sh)
+- [examples/vm-testing/collect-evidence-macos.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/collect-evidence-macos.sh)
+- [VM_RUNBOOK.md](/Users/guokeyu/AI/codex/token-usage-universal/docs/VM_RUNBOOK.md)
 
 ### 3. 退出条件
 

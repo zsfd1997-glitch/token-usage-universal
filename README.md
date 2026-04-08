@@ -75,6 +75,12 @@ python3 scripts/token_usage.py release-gate --format json
 
 它会直接给出当前自动化门禁结果：Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 的重复计数 probe，以及全部 root-aware source 的 `Windows + macOS` 路径矩阵。
 
+如果您本地没有 `Windows/macOS` host，现在也可以直接走 GitHub 托管 runner：
+
+- workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
+- 行为：在 `windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
+- 本地触发脚本: [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
+
 如果您要在真实机器上留存可交接证据，可以直接导出证据包：
 
 ```bash
@@ -101,6 +107,7 @@ Top20 执行主线文档：
 - [Top20 Execution Plan](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_EXECUTION_PLAN.md)
 - [Top20 Surface Matrix](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_SURFACE_MATRIX.md)
 - [Simulated Machine Testing](/Users/guokeyu/AI/codex/token-usage-universal/docs/SIMULATED_MACHINE_TESTING.md)
+- [VM Runbook](/Users/guokeyu/AI/codex/token-usage-universal/docs/VM_RUNBOOK.md)
 
 - `native clients`
   - `codex`

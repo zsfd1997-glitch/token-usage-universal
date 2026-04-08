@@ -1,0 +1,48 @@
+name: hostless-evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact-prefix:
+        description: "Artifact name prefix"
+        required: false
+        default: "hosted-evidence"
+
+jobs:
+  collect-evidence:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_suffix: windows
+          - os: macos-latest
+            artifact_suffix: macos
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run unit tests
+        shell: bash
+        run: python -m unittest discover -s scripts -t . -p 'test_*.py'
+
+      - name: Export release evidence bundle
+        shell: bash
+        run: |
+          EVIDENCE_DIR="${RUNNER_TEMP}/token-usage-universal-evidence"
+          python scripts/token_usage.py release-gate --format json --output-dir "${EVIDENCE_DIR}"
+          echo "EVIDENCE_DIR=${EVIDENCE_DIR}" >> "${GITHUB_ENV}"
+
+      - name: Upload evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ matrix.artifact_suffix }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: warn
