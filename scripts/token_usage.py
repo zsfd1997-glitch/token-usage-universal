@@ -22,7 +22,7 @@ from adapters.kimi_cli import KimiCliAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
 from adapters.opencode import OpenCodeAdapter
 from adapters.qwen_code_cli import QwenCodeCliAdapter
-from ascii_hifi import render_diagnose, render_health, render_report, render_sources, render_targets
+from ascii_hifi import render_diagnose, render_health, render_release_gate, render_report, render_sources, render_targets
 from core.health import build_health_report
 from core.ingress_companion import (
     build_ingress_companion_config,
@@ -40,6 +40,7 @@ from core.ingress_bootstrap import (
 from core.aggregator import build_report
 from core.ecosystem_registry import build_top20_registry_payload
 from core.models import SourceCollectResult
+from core.release_gate import build_release_gate_payload
 from core.time_window import build_month_window, build_time_window, within_window
 from core.verifier import verify_result
 
@@ -292,6 +293,170 @@ def command_targets(args) -> int:
     return 0
 
 
+def _release_evidence_focus_source_ids(results: list[SourceCollectResult], registry: dict[str, object]) -> list[str]:
+    priority = [
+        "codex",
+        "claude-code",
+        "claude-desktop",
+        "opencode",
+        "minimax-agent",
+        "qwen-code-cli",
+        "kimi-cli",
+        "gemini-cli",
+    ]
+    source_ids: list[str] = [source_id for source_id in priority if source_id in registry]
+    for result in results:
+        detection = result.detection
+        if detection.available and detection.source_id not in source_ids:
+            source_ids.append(detection.source_id)
+    return source_ids
+
+
+def _build_release_evidence_bundle(
+    *,
+    registry: dict[str, object],
+    source_results: list[SourceCollectResult],
+    health_payload: dict[str, object],
+    targets_payload: dict[str, object],
+    release_gate_payload: dict[str, object],
+) -> dict[str, object]:
+    report_today_window = build_time_window(today=True, last=None, start=None, end=None, tz_name=None)
+    report_recent_window = build_time_window(today=False, last="30d", start=None, end=None, tz_name=None)
+
+    default_adapters = [adapter for adapter in registry.values() if getattr(adapter, "default_selected", True)]
+    report_today_results = _collect_results(report_today_window, default_adapters)
+    report_recent_results = _collect_results(report_recent_window, default_adapters, chart_mode=True)
+
+    report_today_payload = build_report(
+        report_today_results,
+        window=report_today_window,
+        group_by=None,
+        limit=5,
+    )
+    report_recent_payload = build_report(
+        report_recent_results,
+        window=report_recent_window,
+        group_by="day",
+        limit=10,
+        trend="30d",
+        chart_results=report_recent_results,
+        dashboard_mode="recent",
+    )
+
+    focus_source_ids = _release_evidence_focus_source_ids(source_results, registry)
+    diagnose_window = report_recent_window
+    diagnose_payloads: dict[str, object] = {}
+    for source_id in focus_source_ids:
+        adapter = registry[source_id]
+        result = adapter.collect(diagnose_window)
+        result.verification_issues.extend(verify_result(result))
+        diagnose_payloads[source_id] = result.as_dict()
+
+    return {
+        "metadata": {
+            "cwd": str(Path.cwd()),
+            "focus_source_ids": focus_source_ids,
+            "today_window": report_today_window.as_dict(),
+            "recent_window": report_recent_window.as_dict(),
+        },
+        "health": health_payload,
+        "sources": [item.as_dict() for item in source_results],
+        "targets": targets_payload,
+        "release_gate": release_gate_payload,
+        "report_today": report_today_payload,
+        "report_recent_30d": report_recent_payload,
+        "diagnose": diagnose_payloads,
+    }
+
+
+def _render_release_evidence_summary(bundle: dict[str, object]) -> str:
+    release_summary = bundle["release_gate"]["summary"]
+    release_metrics = bundle["release_gate"]["metrics"]
+    today_summary = bundle["report_today"]["summary"]
+    recent_summary = bundle["report_recent_30d"]["summary"]
+    lines = [
+        "# Release Evidence Bundle",
+        "",
+        f"- cwd: `{bundle['metadata']['cwd']}`",
+        f"- release-gate: `{release_summary['status']}` ({release_summary['passed_gates']}/{release_summary['total_gates']})",
+        f"- Top20 coverage: `{release_metrics['coverage_ratio'] * 100:.1f}%`",
+        f"- exact surface coverage: `{release_metrics['exact_surface_ratio'] * 100:.1f}%`",
+        f"- default duplicate probe: `{release_metrics['default_duplicate_event_ratio'] * 100:.1f}%`",
+        f"- macOS root matrix: `{release_metrics['macos_root_coverage_ratio'] * 100:.1f}%`",
+        f"- Windows root matrix: `{release_metrics['windows_root_coverage_ratio'] * 100:.1f}%`",
+        f"- report today total_tokens: `{today_summary['total_tokens']}`",
+        f"- report 30d total_tokens: `{recent_summary['total_tokens']}`",
+        "",
+        "## Files",
+        "",
+        "- `release_gate.json`",
+        "- `health.json`",
+        "- `sources.json`",
+        "- `targets.json`",
+        "- `report_today.json`",
+        "- `report_recent_30d.json`",
+        "- `diagnose/*.json`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def _write_release_evidence_bundle(output_dir: Path, bundle: dict[str, object]) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    diagnose_dir = output_dir / "diagnose"
+    diagnose_dir.mkdir(parents=True, exist_ok=True)
+
+    top_level_files = {
+        "metadata.json": bundle["metadata"],
+        "health.json": bundle["health"],
+        "sources.json": bundle["sources"],
+        "targets.json": bundle["targets"],
+        "release_gate.json": bundle["release_gate"],
+        "report_today.json": bundle["report_today"],
+        "report_recent_30d.json": bundle["report_recent_30d"],
+    }
+    for filename, payload in top_level_files.items():
+        (output_dir / filename).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default) + "\n",
+            encoding="utf-8",
+        )
+
+    for source_id, payload in bundle["diagnose"].items():
+        (diagnose_dir / f"{source_id}.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default) + "\n",
+            encoding="utf-8",
+        )
+
+    (output_dir / "SUMMARY.md").write_text(
+        _render_release_evidence_summary(bundle),
+        encoding="utf-8",
+    )
+
+
+def command_release_gate(args) -> int:
+    registry = _build_adapters()
+    results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
+    health = build_health_report(results)
+    targets_payload = build_top20_registry_payload()
+    payload = build_release_gate_payload(
+        adapter_source_ids=set(registry.keys()),
+        health_report=health,
+    )
+    if args.output_dir:
+        bundle = _build_release_evidence_bundle(
+            registry=registry,
+            source_results=results,
+            health_payload=health,
+            targets_payload=targets_payload,
+            release_gate_payload=payload,
+        )
+        _write_release_evidence_bundle(Path(args.output_dir).expanduser(), bundle)
+    if args.format == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default))
+    else:
+        print(render_release_gate(payload))
+    return 0
+
+
 def command_ingress_config(args) -> int:
     config = build_ingress_companion_config(
         provider=args.provider,
@@ -401,6 +566,11 @@ def build_parser() -> argparse.ArgumentParser:
     targets = subparsers.add_parser("targets", help="show the frozen Top20 ecosystem registry")
     targets.add_argument("--format", choices=("ascii", "json"), default="ascii")
     targets.set_defaults(func=command_targets)
+
+    release_gate = subparsers.add_parser("release-gate", help="evaluate the current automated release gates")
+    release_gate.add_argument("--format", choices=("ascii", "json"), default="ascii")
+    release_gate.add_argument("--output-dir", help="optional directory to write a release evidence bundle")
+    release_gate.set_defaults(func=command_release_gate)
 
     ingress = subparsers.add_parser("ingress", help="run or inspect the local ingress companion for IDE/CLI capture")
     ingress_subparsers = ingress.add_subparsers(dest="ingress_command", required=True)

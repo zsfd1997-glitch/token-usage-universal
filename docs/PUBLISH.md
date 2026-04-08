@@ -35,6 +35,7 @@ git push -u origin main
 ```bash
 python3 scripts/build_release.py \
   --output-dir /tmp/token-usage-universal-github \
+  --validate \
   --force
 ```
 
@@ -54,6 +55,15 @@ git branch -M main
 - `python3 scripts/token_usage.py --help`
 - `python3 scripts/token_usage.py health --format json`
 - `python3 scripts/token_usage.py sources --format json`
+- `python3 scripts/token_usage.py release-gate --format json`
+- `python3 scripts/token_usage.py release-gate --format json --output-dir /tmp/token-usage-universal-evidence`
+
+说明：
+
+- `build_release.py --validate` 会先跑全量单测，再跑一次 `release-gate`。
+- `release-gate` 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的双平台默认根路径矩阵。
+- `release-gate --output-dir ...` 可以把当前机器的 `health / sources / targets / report / diagnose / gate` 一次性落盘，适合做 Windows/macOS 真机交接证据。
+- 真实双机 E2E 与大样本重复计数实测仍建议在正式对外发布前补跑。
 
 ## Task Master 说明
 

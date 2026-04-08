@@ -53,6 +53,10 @@ def _format_compact_cost(value: float) -> str:
     return _format_cost(value)
 
 
+def _percent(value: float) -> str:
+    return f"{value * 100:.1f}%"
+
+
 def _truncate_middle(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
@@ -525,5 +529,72 @@ def render_targets(payload: dict[str, object]) -> str:
                 surface["surface_type"],
                 f"{surface['display_name']}   {surface['primary_lane']}   {surface['maturity']}{suffix}",
             )
+    lines.append("+" + "-" * (WIDTH - 2) + "+")
+    return "\n".join(lines)
+
+
+def render_release_gate(payload: dict[str, object]) -> str:
+    summary = payload["summary"]
+    metrics = payload["metrics"]
+    platform_matrix = payload["platform_matrix"]
+
+    lines = [
+        _rule("Release Gate"),
+        _rule("摘要"),
+    ]
+    _append_field(lines, "状态", f"{summary['status']}   {summary['passed_gates']}/{summary['total_gates']} gates passed")
+    _append_field(lines, "证据范围", str(summary["evidence_scope"]))
+    _append_field(lines, "覆盖率", _percent(float(metrics["coverage_ratio"])))
+    _append_field(lines, "中国优先", _percent(float(metrics["china_priority_ratio"])))
+    _append_field(lines, "exact 覆盖", _percent(float(metrics["exact_surface_ratio"])))
+    _append_field(lines, "默认去重", _percent(float(metrics["default_duplicate_event_ratio"])))
+    _append_field(lines, "Explain", _percent(float(metrics["diagnose_explainability_ratio"])))
+
+    lines.append(_rule("门禁"))
+    for gate in payload["gates"]:
+        _append_field(
+            lines,
+            gate["gate_id"],
+            f"{gate['status']}   {gate['label']}   actual {gate['actual']}   threshold {gate['threshold']}",
+        )
+
+    gap_section_opened = False
+    if payload.get("missing_backing_source_ids"):
+        lines.append(_rule("缺口"))
+        gap_section_opened = True
+        _append_field(lines, "missing", ", ".join(payload["missing_backing_source_ids"]))
+
+    duplicate_probe = payload.get("duplicate_probe") or {}
+    manual_only_source_ids = duplicate_probe.get("manual_only_source_ids") or []
+    if manual_only_source_ids:
+        if not gap_section_opened:
+            lines.append(_rule("缺口"))
+            gap_section_opened = True
+        _append_field(lines, "manual", ", ".join(manual_only_source_ids))
+
+    lines.append(_rule("平台"))
+    _append_field(
+        lines,
+        "macOS",
+        (
+            f"{platform_matrix['macos']['supported']}   "
+            f"{platform_matrix['macos']['covered_sources']}/{platform_matrix['macos']['total_sources']}   "
+            f"{platform_matrix['macos']['evidence_scope']}"
+        ),
+    )
+    _append_field(
+        lines,
+        "Windows",
+        (
+            f"{platform_matrix['windows']['supported']}   "
+            f"{platform_matrix['windows']['covered_sources']}/{platform_matrix['windows']['total_sources']}   "
+            f"{platform_matrix['windows']['evidence_scope']}"
+        ),
+    )
+
+    lines.append(_rule("备注"))
+    for note in payload.get("notes", []):
+        _append_field(lines, "note", note)
+
     lines.append("+" + "-" * (WIDTH - 2) + "+")
     return "\n".join(lines)

@@ -1,0 +1,31 @@
+# Minimal scaffold for Windows guest evidence collection.
+
+VM_BOX = ENV.fetch("TOKEN_USAGE_VAGRANT_BOX", "windows-placeholder-box")
+VM_PROVIDER = ENV.fetch("TOKEN_USAGE_VAGRANT_PROVIDER", "hyperv")
+REPO_ROOT = File.expand_path("../..", __dir__)
+OUTPUT_ROOT = File.expand_path("output/windows-evidence", __dir__)
+
+Vagrant.configure("2") do |config|
+  config.vm.box = VM_BOX
+  config.vm.guest = :windows
+  config.vm.hostname = "token-usage-win"
+
+  config.vm.synced_folder REPO_ROOT, "C:/workspace/token-usage-universal"
+  config.vm.synced_folder OUTPUT_ROOT, "C:/workspace-output"
+
+  config.vm.provision "shell",
+    path: "provision-windows.ps1",
+    privileged: true
+
+  config.vm.provider "hyperv" do |h|
+    h.vmname = "token-usage-universal-win"
+    h.memory = 8192
+    h.cpus = 4
+  end
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "token-usage-universal-win"
+    vb.memory = 8192
+    vb.cpus = 4
+  end
+end

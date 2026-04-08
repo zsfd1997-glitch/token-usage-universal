@@ -18,6 +18,8 @@ cd token-usage-universal
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
 python3 scripts/token_usage.py targets
+python3 scripts/token_usage.py release-gate
+python3 scripts/token_usage.py release-gate --output-dir /tmp/token-usage-universal-evidence
 ```
 
 推荐判断方法：
@@ -193,6 +195,8 @@ python3 scripts/token_usage.py ingress serve \
 
 ```bash
 python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py release-gate --format json
+python3 scripts/token_usage.py release-gate --format json --output-dir /tmp/token-usage-universal-evidence
 python3 scripts/token_usage.py diagnose --source codex --today
 python3 scripts/token_usage.py diagnose --source qwen-code-cli --today
 python3 scripts/token_usage.py diagnose --source kimi-cli --today

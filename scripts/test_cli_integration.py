@@ -399,6 +399,59 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["surface_maturity"].get("detect-ready", 0), 0)
         self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
 
+    def test_release_gate_json_exposes_automated_gate_status(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "release-gate", "--format", "json"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+
+        payload = json.loads(result.stdout)
+        gate_ids = {item["gate_id"] for item in payload["gates"]}
+        self.assertEqual(payload["summary"]["status"], "pass")
+        self.assertIn("top20-coverage", gate_ids)
+        self.assertIn("false-ready-claims", gate_ids)
+        self.assertIn("default-report-duplicate-rate", gate_ids)
+        self.assertIn("windows-macos-root-matrix", gate_ids)
+        self.assertEqual(payload["registry_summary"]["surface_maturity"]["exact-ready"], 60)
+        self.assertEqual(payload["metrics"]["default_duplicate_event_ratio"], 0.0)
+
+    def test_release_gate_can_write_release_evidence_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "release-evidence"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI_PATH),
+                    "release-gate",
+                    "--format",
+                    "json",
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=os.environ.copy(),
+            )
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["summary"]["status"], "pass")
+            self.assertTrue((output_dir / "release_gate.json").exists())
+            self.assertTrue((output_dir / "health.json").exists())
+            self.assertTrue((output_dir / "sources.json").exists())
+            self.assertTrue((output_dir / "targets.json").exists())
+            self.assertTrue((output_dir / "report_today.json").exists())
+            self.assertTrue((output_dir / "report_recent_30d.json").exists())
+            self.assertTrue((output_dir / "SUMMARY.md").exists())
+            self.assertTrue((output_dir / "diagnose").is_dir())
+            summary_text = (output_dir / "SUMMARY.md").read_text(encoding="utf-8")
+            self.assertIn("Release Evidence Bundle", summary_text)
+            release_payload = json.loads((output_dir / "release_gate.json").read_text(encoding="utf-8"))
+            self.assertEqual(release_payload["summary"]["status"], "pass")
+
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
         result = subprocess.run(
             [

@@ -60,6 +60,7 @@ SKILL.md
 - `session_detail`
 - `charts.trend_7d / charts.trend_30d / charts.calendar_month`
 - `targets`（冻结的 Top20 ecosystem/client-family registry）
+- `release-gate`（自动化校验 Top20 覆盖率、exact 覆盖率、结构性误报、默认 report 重复计数 probe 与双平台 root matrix）
 
 ### 3. Rendering Layer
 
@@ -69,7 +70,7 @@ SKILL.md
 
 - 把聚合结果渲染成 ASCII-HIFI 终端控制面
 - 支持条形图、sparkline、月历热力图和当前会话卡片
-- 支持 `report / sources / diagnose / health / explore`
+- 支持 `report / sources / diagnose / health / targets / release-gate / explore`
 
 ### 4. Explore Layer
 

@@ -243,6 +243,13 @@
 
 - Win/mac matrix + release gate
 
+当前进度：
+
+- `token_usage.py release-gate` 已落地：自动计算 Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 重复计数率、diagnose 可解释率
+- `token_usage.py release-gate --output-dir ...` 已可直接导出真实机器证据包：`health / sources / targets / report / diagnose / gate`
+- `build_release.py --validate` 已接入自动门禁：先跑全量单测，再跑 `release-gate`
+- `Windows + macOS` 当前已扩到全部 root-aware source 的默认路径矩阵 gate；真实双机 E2E 仍保留为后续补强项
+
 验收：
 
 - 覆盖率、误报率、重复计数率全部达标后才对外宣称完成

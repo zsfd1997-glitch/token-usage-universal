@@ -9,7 +9,6 @@ class BaseAdapter:
     provider = ""
     accuracy_level = "unsupported"
     default_selected = True
-    default_selected = True
 
     def detect(self) -> SourceDetection:
         raise NotImplementedError

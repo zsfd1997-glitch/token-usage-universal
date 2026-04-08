@@ -47,6 +47,7 @@ cd token-usage-universal
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
 python3 scripts/token_usage.py targets
+python3 scripts/token_usage.py release-gate
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py report --trend 7d
 python3 scripts/token_usage.py report --calendar month
@@ -66,12 +67,40 @@ python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 - 哪些来源还需要路径配置
 - 哪些来源缺的是真源，而不是命令本身有问题
 
+如果您在推进 Top20 主线交付，建议再跑一次：
+
+```bash
+python3 scripts/token_usage.py release-gate --format json
+```
+
+它会直接给出当前自动化门禁结果：Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 的重复计数 probe，以及全部 root-aware source 的 `Windows + macOS` 路径矩阵。
+
+如果您要在真实机器上留存可交接证据，可以直接导出证据包：
+
+```bash
+python3 scripts/token_usage.py release-gate \
+  --format json \
+  --output-dir /tmp/token-usage-universal-evidence
+```
+
+它会落出：
+
+- `release_gate.json`
+- `health.json`
+- `sources.json`
+- `targets.json`
+- `report_today.json`
+- `report_recent_30d.json`
+- `diagnose/*.json`
+- `SUMMARY.md`
+
 ## 当前支持来源
 
 Top20 执行主线文档：
 
 - [Top20 Execution Plan](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_EXECUTION_PLAN.md)
 - [Top20 Surface Matrix](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_SURFACE_MATRIX.md)
+- [Simulated Machine Testing](/Users/guokeyu/AI/codex/token-usage-universal/docs/SIMULATED_MACHINE_TESTING.md)
 
 - `native clients`
   - `codex`
@@ -339,6 +368,8 @@ python3 scripts/token_usage.py ingress serve \
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py sources
 python3 scripts/token_usage.py targets
+python3 scripts/token_usage.py release-gate
+python3 scripts/token_usage.py release-gate --output-dir /tmp/token-usage-universal-evidence
 python3 scripts/token_usage.py report --today
 python3 scripts/token_usage.py report --today --by day
 python3 scripts/token_usage.py report --last 7d --by model
@@ -387,6 +418,7 @@ python3 scripts/token_usage.py report --today --plain-ascii
 python3 -m unittest discover -s scripts -t . -p 'test_*.py'
 python3 scripts/token_usage.py --help
 python3 scripts/token_usage.py health --format json
+python3 scripts/token_usage.py release-gate --format json
 ```
 
 CI 也会执行这些基础验证，见 `.github/workflows/ci.yml`。
@@ -424,5 +456,5 @@ token-usage-universal/
 如果您想从当前本机 skill 目录导出一个干净的 GitHub 发布目录，可以运行：
 
 ```bash
-python3 scripts/build_release.py --output-dir /path/to/token-usage-universal --force
+python3 scripts/build_release.py --output-dir /path/to/token-usage-universal --validate --force
 ```
