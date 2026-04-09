@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "qwen-code-cli",
+    "display_name": "Qwen Code CLI",
+    "provider": "qwen",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "Qwen Code CLI runtime root not found; check TOKEN_USAGE_QWEN_CODE_ROOT or upstream QWEN_RUNTIME_DIR",
+    "candidate_paths": [
+      "/Users/runner/.qwen"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "Qwen Code CLI runtime root not found; check TOKEN_USAGE_QWEN_CODE_ROOT or upstream QWEN_RUNTIME_DIR"
+  ]
+}

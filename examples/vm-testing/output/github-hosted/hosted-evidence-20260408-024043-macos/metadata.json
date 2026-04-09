@@ -1,0 +1,25 @@
+{
+  "cwd": "/Users/runner/work/token-usage-universal/token-usage-universal",
+  "focus_source_ids": [
+    "codex",
+    "claude-code",
+    "claude-desktop",
+    "opencode",
+    "minimax-agent",
+    "qwen-code-cli",
+    "kimi-cli",
+    "gemini-cli"
+  ],
+  "today_window": {
+    "start": "2026-04-08T00:00:00+00:00",
+    "end": "2026-04-08T09:41:46.393192+00:00",
+    "label": "Today (2026-04-08 UTC)",
+    "timezone_name": "UTC"
+  },
+  "recent_window": {
+    "start": "2026-03-09T09:41:46.393700+00:00",
+    "end": "2026-04-08T09:41:46.393700+00:00",
+    "label": "Last 30d ending 2026-04-08 09:41 UTC",
+    "timezone_name": "UTC"
+  }
+}

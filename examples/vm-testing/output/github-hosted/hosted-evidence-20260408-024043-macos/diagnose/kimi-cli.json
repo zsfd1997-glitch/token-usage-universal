@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "kimi-cli",
+    "display_name": "Kimi CLI",
+    "provider": "moonshotai",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "Kimi CLI share root not found; check TOKEN_USAGE_KIMI_CLI_ROOT or upstream KIMI_SHARE_DIR",
+    "candidate_paths": [
+      "/Users/runner/.kimi"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "Kimi CLI share root not found; check TOKEN_USAGE_KIMI_CLI_ROOT or upstream KIMI_SHARE_DIR"
+  ]
+}

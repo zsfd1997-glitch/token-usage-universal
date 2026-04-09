@@ -1,0 +1,24 @@
+{
+  "detection": {
+    "source_id": "opencode",
+    "display_name": "OpenCode",
+    "provider": "opencode",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "OpenCode traces were not found; check local storage roots or set TOKEN_USAGE_OPENCODE_ROOTS / TOKEN_USAGE_OPENCODE_BIN",
+    "candidate_paths": [
+      "C:\\Users\\runneradmin\\AppData\\Roaming\\OpenCode",
+      "C:\\Users\\runneradmin\\AppData\\Roaming\\ai.opencode.desktop",
+      "C:\\Users\\runneradmin\\AppData\\Roaming\\opencode"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "OpenCode traces were not found; check local storage roots or set TOKEN_USAGE_OPENCODE_ROOTS / TOKEN_USAGE_OPENCODE_BIN"
+  ]
+}

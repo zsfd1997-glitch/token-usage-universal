@@ -1,0 +1,984 @@
+[
+  {
+    "detection": {
+      "source_id": "codex",
+      "display_name": "Codex",
+      "provider": "openai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "session directory not found; set TOKEN_USAGE_CODEX_ROOT if logs live elsewhere",
+      "candidate_paths": [
+        "/Users/runner/.codex/sessions"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "claude-code",
+      "display_name": "Claude Code",
+      "provider": "anthropic",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Claude local traces not found; check TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT / TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT",
+      "candidate_paths": [
+        "/Users/runner/.claude/transcripts",
+        "/Users/runner/.claude/projects",
+        "/Users/runner/Library/Application Support/Claude/local-agent-mode-sessions"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "claude-desktop",
+      "display_name": "Claude Desktop",
+      "provider": "anthropic",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Claude Desktop desktop data directory not found; set TOKEN_USAGE_CLAUDE_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Claude"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "opencode",
+      "display_name": "OpenCode",
+      "provider": "opencode",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "OpenCode traces were not found; check local storage roots or set TOKEN_USAGE_OPENCODE_ROOTS / TOKEN_USAGE_OPENCODE_BIN",
+      "candidate_paths": [
+        "/Users/runner/.config/opencode",
+        "/Users/runner/.local/state/opencode",
+        "/Users/runner/.local/share/opencode"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "minimax-agent",
+      "display_name": "MiniMax Agent",
+      "provider": "minimax",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "MiniMax Agent desktop data directory not found; set TOKEN_USAGE_MINIMAX_AGENT_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/MiniMax Agent"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "qwen-code-cli",
+      "display_name": "Qwen Code CLI",
+      "provider": "qwen",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Qwen Code CLI runtime root not found; check TOKEN_USAGE_QWEN_CODE_ROOT or upstream QWEN_RUNTIME_DIR",
+      "candidate_paths": [
+        "/Users/runner/.qwen"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "kimi-cli",
+      "display_name": "Kimi CLI",
+      "provider": "moonshotai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Kimi CLI share root not found; check TOKEN_USAGE_KIMI_CLI_ROOT or upstream KIMI_SHARE_DIR",
+      "candidate_paths": [
+        "/Users/runner/.kimi"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "gemini-cli",
+      "display_name": "Gemini CLI",
+      "provider": "google",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Gemini CLI runtime root not found; check TOKEN_USAGE_GEMINI_CLI_ROOT",
+      "candidate_paths": [
+        "/Users/runner/.gemini"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "kimi-desktop",
+      "display_name": "Kimi Desktop",
+      "provider": "moonshotai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Kimi Desktop desktop data directory not found; set TOKEN_USAGE_KIMI_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Kimi",
+        "/Users/runner/Library/Application Support/Moonshot",
+        "/Users/runner/Library/Application Support/Moonshot AI"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "glm-desktop",
+      "display_name": "GLM Desktop",
+      "provider": "z-ai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "GLM Desktop desktop data directory not found; set TOKEN_USAGE_GLM_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/GLM",
+        "/Users/runner/Library/Application Support/Z.ai",
+        "/Users/runner/Library/Application Support/Zhipu AI"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "qwen-desktop",
+      "display_name": "Qwen Desktop",
+      "provider": "qwen",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Qwen Desktop desktop data directory not found; set TOKEN_USAGE_QWEN_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Qwen",
+        "/Users/runner/Library/Application Support/DashScope",
+        "/Users/runner/Library/Application Support/Tongyi"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "deepseek-desktop",
+      "display_name": "DeepSeek Desktop",
+      "provider": "deepseek",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "DeepSeek Desktop desktop data directory not found; set TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/DeepSeek",
+        "/Users/runner/Library/Application Support/DeepSeek App"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "doubao-desktop",
+      "display_name": "Doubao Desktop",
+      "provider": "bytedance",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Doubao Desktop desktop data directory not found; set TOKEN_USAGE_DOUBAO_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Doubao",
+        "/Users/runner/Library/Application Support/豆包"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "qianfan-desktop",
+      "display_name": "Qianfan Desktop",
+      "provider": "baidu",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Qianfan Desktop desktop data directory not found; set TOKEN_USAGE_QIANFAN_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Qianfan",
+        "/Users/runner/Library/Application Support/Wenxin",
+        "/Users/runner/Library/Application Support/Wenxiaoyan"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "yuanbao-desktop",
+      "display_name": "Yuanbao Desktop",
+      "provider": "tencent",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Yuanbao Desktop desktop data directory not found; set TOKEN_USAGE_YUANBAO_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Yuanbao",
+        "/Users/runner/Library/Application Support/Tencent Yuanbao",
+        "/Users/runner/Library/Application Support/元宝"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "perplexity-desktop",
+      "display_name": "Perplexity Desktop",
+      "provider": "perplexity",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Perplexity Desktop desktop data directory not found; set TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Perplexity",
+        "/Users/runner/Library/Application Support/Perplexity Desktop",
+        "/Users/runner/Library/Application Support/Comet"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "stepfun-desktop",
+      "display_name": "StepFun Desktop",
+      "provider": "stepfun",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "StepFun Desktop desktop data directory not found; set TOKEN_USAGE_STEPFUN_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/StepFun",
+        "/Users/runner/Library/Application Support/Step",
+        "/Users/runner/Library/Application Support/StepChat"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "sensenova-desktop",
+      "display_name": "SenseNova Desktop",
+      "provider": "sensenova",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "SenseNova Desktop desktop data directory not found; set TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/SenseNova",
+        "/Users/runner/Library/Application Support/SenseChat",
+        "/Users/runner/Library/Application Support/日日新"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "baichuan-desktop",
+      "display_name": "Baichuan Desktop",
+      "provider": "baichuan",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Baichuan Desktop desktop data directory not found; set TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Baichuan",
+        "/Users/runner/Library/Application Support/Baichuan AI",
+        "/Users/runner/Library/Application Support/百川"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "siliconflow-desktop",
+      "display_name": "SiliconFlow Desktop",
+      "provider": "siliconflow",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "SiliconFlow Desktop desktop data directory not found; set TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/SiliconFlow",
+        "/Users/runner/Library/Application Support/SiliconCloud"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "spark-desktop",
+      "display_name": "Spark Desktop",
+      "provider": "spark",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Spark Desktop desktop data directory not found; set TOKEN_USAGE_SPARK_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Spark",
+        "/Users/runner/Library/Application Support/Xinghuo",
+        "/Users/runner/Library/Application Support/星火"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "chatgpt-desktop",
+      "display_name": "ChatGPT Desktop",
+      "provider": "openai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "ChatGPT Desktop desktop data directory not found; set TOKEN_USAGE_CHATGPT_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/ChatGPT",
+        "/Users/runner/Library/Application Support/OpenAI"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "gemini-desktop",
+      "display_name": "Gemini Desktop",
+      "provider": "google",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Gemini Desktop desktop data directory not found; set TOKEN_USAGE_GEMINI_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Gemini",
+        "/Users/runner/Library/Application Support/Google Gemini"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "grok-desktop",
+      "display_name": "Grok Desktop",
+      "provider": "xai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Grok Desktop desktop data directory not found; set TOKEN_USAGE_GROK_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Grok",
+        "/Users/runner/Library/Application Support/xAI Grok"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "mistral-desktop",
+      "display_name": "Mistral Desktop",
+      "provider": "mistral",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "Mistral Desktop desktop data directory not found; set TOKEN_USAGE_MISTRAL_DESKTOP_ROOT if the app stores data elsewhere",
+      "candidate_paths": [
+        "/Users/runner/Library/Application Support/Mistral",
+        "/Users/runner/Library/Application Support/Le Chat",
+        "/Users/runner/Library/Application Support/Mistral Le Chat"
+      ],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "openai-api",
+      "display_name": "OpenAI API",
+      "provider": "openai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no OpenAI API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "anthropic-api",
+      "display_name": "Anthropic API",
+      "provider": "anthropic",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Anthropic API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "google-gemini-api",
+      "display_name": "Google Gemini API",
+      "provider": "google",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Google Gemini API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "moonshot-kimi-api",
+      "display_name": "Moonshot Kimi API",
+      "provider": "moonshotai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Moonshot Kimi API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "zhipu-glm-api",
+      "display_name": "Zhipu GLM API",
+      "provider": "z-ai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Zhipu GLM API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "qwen-api",
+      "display_name": "Qwen API",
+      "provider": "qwen",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Qwen API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "deepseek-api",
+      "display_name": "DeepSeek API",
+      "provider": "deepseek",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no DeepSeek API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "minimax-api",
+      "display_name": "MiniMax API",
+      "provider": "minimax",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no MiniMax API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "xai-grok-api",
+      "display_name": "xAI Grok API",
+      "provider": "xai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no xAI Grok API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "cohere-api",
+      "display_name": "Cohere API",
+      "provider": "cohere",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Cohere API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "mistral-api",
+      "display_name": "Mistral API",
+      "provider": "mistral",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Mistral API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "perplexity-api",
+      "display_name": "Perplexity API",
+      "provider": "perplexity",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Perplexity API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "openrouter-api",
+      "display_name": "OpenRouter API",
+      "provider": "openrouter",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no OpenRouter API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "togetherai-api",
+      "display_name": "Together AI API",
+      "provider": "togetherai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Together AI API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "fireworks-api",
+      "display_name": "Fireworks API",
+      "provider": "fireworks",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Fireworks API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "azure-openai-api",
+      "display_name": "Azure OpenAI API",
+      "provider": "azure-openai",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Azure OpenAI API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "baidu-qianfan-api",
+      "display_name": "Baidu Qianfan API",
+      "provider": "baidu",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Baidu Qianfan API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "tencent-hunyuan-api",
+      "display_name": "Tencent Hunyuan API",
+      "provider": "tencent",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Tencent Hunyuan API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "stepfun-api",
+      "display_name": "StepFun API",
+      "provider": "stepfun",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no StepFun API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "doubao-api",
+      "display_name": "Doubao API",
+      "provider": "bytedance",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Doubao API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "sensenova-api",
+      "display_name": "SenseNova API",
+      "provider": "sensenova",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no SenseNova API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "baichuan-api",
+      "display_name": "Baichuan API",
+      "provider": "baichuan",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Baichuan API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "siliconflow-api",
+      "display_name": "SiliconFlow API",
+      "provider": "siliconflow",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no SiliconFlow API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "spark-api",
+      "display_name": "Spark API",
+      "provider": "spark",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Spark API exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  },
+  {
+    "detection": {
+      "source_id": "generic-openai-compatible",
+      "display_name": "Generic API Compatible",
+      "provider": "api-compatible",
+      "accuracy_level": "exact",
+      "supported": true,
+      "available": false,
+      "status": "not-found",
+      "summary": "no Generic API Compatible exact logs found; set TOKEN_USAGE_GENERIC_LOG_GLOBS for exact files or TOKEN_USAGE_DISCOVERY_ROOTS for custom search roots",
+      "candidate_paths": [],
+      "details": []
+    },
+    "events": [],
+    "scanned_files": 0,
+    "verification_issues": [],
+    "skipped_reasons": []
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "gemini-cli",
+    "display_name": "Gemini CLI",
+    "provider": "google",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "Gemini CLI runtime root not found; check TOKEN_USAGE_GEMINI_CLI_ROOT",
+    "candidate_paths": [
+      "C:\\Users\\runneradmin\\.gemini"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "Gemini CLI runtime root not found; check TOKEN_USAGE_GEMINI_CLI_ROOT"
+  ]
+}

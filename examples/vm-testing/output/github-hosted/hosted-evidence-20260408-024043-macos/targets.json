@@ -1,0 +1,933 @@
+{
+  "scope": {
+    "frozen_by": "ecosystem/client-family",
+    "surfaces": [
+      "desktop",
+      "cli",
+      "ide"
+    ],
+    "capture_lanes": [
+      "native-client",
+      "provider-exact",
+      "ingress-capture"
+    ]
+  },
+  "summary": {
+    "total_ecosystems": 20,
+    "china_priority_ecosystems": 13,
+    "global_ecosystems": 7,
+    "total_surfaces": 60,
+    "provider_lane_maturity": {
+      "exact-ready": 20
+    },
+    "surface_maturity": {
+      "exact-ready": 60
+    },
+    "surface_primary_lanes": {
+      "native-client": 24,
+      "ingress-capture": 36
+    }
+  },
+  "ecosystems": [
+    {
+      "ecosystem_id": "qwen",
+      "display_name": "Qwen / DashScope / Qwen Code",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "qwen-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Qwen Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qwen-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Qwen Code CLI",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qwen-code-cli"
+          ],
+          "planned_source_ids": [],
+          "notes": "Official project-scoped session JSONL files now provide exact usageMetadata."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Qwen IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qwen-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official DashScope OpenAI-compatible profile; Coding Plan users can override the upstream base URL if they use the dedicated coding endpoint."
+        }
+      ],
+      "notes": "China-first priority because it spans provider API, desktop shells, and coding CLI surfaces."
+    },
+    {
+      "ecosystem_id": "kimi",
+      "display_name": "Kimi / Moonshot / Kimi CLI",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "moonshot-kimi-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Kimi Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "kimi-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Unified Chromium/Electron parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Kimi CLI",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "kimi-cli"
+          ],
+          "planned_source_ids": [],
+          "notes": "Official ~/.kimi/sessions wire.jsonl now provides exact StatusUpdate token_usage."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Kimi IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "kimi-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official Moonshot OpenAI-compatible profile for Continue and CLI-style tooling."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "glm",
+      "display_name": "GLM / BigModel / Z.ai",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "zhipu-glm-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "GLM Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "glm-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop root discovery now includes Z Code / ZCODE and exact parsing supports Cache_Data, IndexedDB, and Local Storage."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "GLM CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "glm-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides the official BigModel coding endpoint profile for GLM-compatible coding tools."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "GLM IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "glm-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for the official BigModel coding endpoint."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "minimax",
+      "display_name": "MiniMax / MiniMax Agent",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "minimax-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "MiniMax Agent",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "minimax-agent"
+          ],
+          "planned_source_ids": [],
+          "notes": ""
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "MiniMax CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "minimax-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official MiniMax OpenAI-compatible CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "MiniMax IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "minimax-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "deepseek",
+      "display_name": "DeepSeek",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "deepseek-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "DeepSeek Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "deepseek-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "DeepSeek CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "deepseek-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible CLI capture path via token_usage.py ingress bootstrap --profile deepseek."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "DeepSeek IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "deepseek-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "doubao",
+      "display_name": "Doubao / Volcengine Ark",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "doubao-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Doubao Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "doubao-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Doubao CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "doubao-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides the official Volcengine Ark OpenAI-compatible CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Doubao IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "doubao-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for the official Volcengine Ark endpoint."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "qianfan",
+      "display_name": "Baidu Qianfan / Wenxin",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "baidu-qianfan-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Qianfan Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qianfan-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Qianfan CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qianfan-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible Qianfan CLI capture path via token_usage.py ingress bootstrap --profile qianfan."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Qianfan IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "qianfan-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "hunyuan",
+      "display_name": "Tencent Hunyuan / Yuanbao",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "tencent-hunyuan-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Yuanbao Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "yuanbao-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now supports Cache_Data, IndexedDB, and Local Storage exact extraction."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Hunyuan CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "hunyuan-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible Hunyuan CLI capture path via token_usage.py ingress bootstrap --profile hunyuan."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Hunyuan IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "hunyuan-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "stepfun",
+      "display_name": "StepFun",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "stepfun-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "StepFun Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "stepfun-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "StepFun CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "stepfun-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official StepFun OpenAI-compatible CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "StepFun IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "stepfun-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "sensenova",
+      "display_name": "SenseNova",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "sensenova-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "SenseNova Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "sensenova-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "SenseNova CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "sensenova-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible SenseNova CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "SenseNova IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "sensenova-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": "Provider exact pack is live; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready."
+    },
+    {
+      "ecosystem_id": "baichuan",
+      "display_name": "Baichuan",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "baichuan-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Baichuan Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "baichuan-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Baichuan CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "baichuan-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides a manual-upstream OpenAI-compatible CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Baichuan IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "baichuan-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets; public docs still require manual upstream base_url input."
+        }
+      ],
+      "notes": "Provider exact pack is live; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready."
+    },
+    {
+      "ecosystem_id": "siliconflow",
+      "display_name": "SiliconFlow",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "siliconflow-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "SiliconFlow Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "siliconflow-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Local Storage."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "SiliconFlow CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "siliconflow-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible SiliconFlow CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "SiliconFlow IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "siliconflow-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": "Provider exact pack can match provider fields or request endpoint hints; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready."
+    },
+    {
+      "ecosystem_id": "spark",
+      "display_name": "讯飞星火 / Spark",
+      "priority_group": "china-priority",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "spark-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Spark Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "spark-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Spark CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "spark-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an OpenAI-compatible Spark CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Spark IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "spark-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": "Provider exact pack is live and recognizes Spark API endpoints; CLI / IDE share ingress bootstrap and desktop is now fixture-backed exact-ready."
+    },
+    {
+      "ecosystem_id": "openai",
+      "display_name": "OpenAI / Codex / ChatGPT Desktop",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "openai-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "ChatGPT Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "chatgpt-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Codex CLI",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "codex"
+          ],
+          "planned_source_ids": [],
+          "notes": ""
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "OpenAI IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "openai-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official OpenAI profile with embedded api.openai.com/v1 upstream and Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "anthropic",
+      "display_name": "Anthropic / Claude Code / Claude Desktop",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "anthropic-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Claude Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "claude-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": ""
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Claude Code",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "claude-code"
+          ],
+          "planned_source_ids": [],
+          "notes": ""
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Claude IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "anthropic-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official Anthropic profile with embedded api.anthropic.com upstream and Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "gemini",
+      "display_name": "Google Gemini / Gemini CLI",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "google-gemini-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Gemini Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "gemini-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Local Storage."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Gemini CLI",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "gemini-cli"
+          ],
+          "planned_source_ids": [],
+          "notes": "Official ~/.gemini/tmp/*/chats/session-*.json files now provide exact Gemini message token records."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Gemini IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "gemini-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official Gemini OpenAI-compatibility profile and Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "openrouter",
+      "display_name": "OpenRouter",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "openrouter-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "OpenRouter Desktop Shell",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "openrouter-desktop-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Provider-first family; desktop support is now captured through the shared OpenRouter ingress bootstrap rather than native app parsing."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "OpenRouter CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "openrouter-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official OpenRouter CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "OpenRouter IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "openrouter-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "perplexity",
+      "display_name": "Perplexity",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "perplexity-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Perplexity Desktop",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "perplexity-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop root discovery now includes Comet and exact parsing supports Cache_Data, IndexedDB, and Local Storage."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Perplexity CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "perplexity-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides a Perplexity Sonar-compatible CLI capture path on the root base URL."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Perplexity IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "perplexity-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains on the root base URL."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "xai",
+      "display_name": "xAI / Grok",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "xai-grok-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Grok Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "grok-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium IndexedDB."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Grok CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "grok-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official xAI CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Grok IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "grok-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "ecosystem_id": "mistral",
+      "display_name": "Mistral",
+      "priority_group": "global",
+      "provider_lane_maturity": "exact-ready",
+      "provider_source_ids": [
+        "mistral-api"
+      ],
+      "surfaces": [
+        {
+          "surface_type": "desktop",
+          "display_name": "Mistral Desktop Shell",
+          "primary_lane": "native-client",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "mistral-desktop"
+          ],
+          "planned_source_ids": [],
+          "notes": "Desktop parser now has fixture-backed exact extraction from Chromium Cache_Data."
+        },
+        {
+          "surface_type": "cli",
+          "display_name": "Mistral CLI",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "mistral-cli-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides an official Mistral CLI capture path."
+        },
+        {
+          "surface_type": "ide",
+          "display_name": "Mistral IDE",
+          "primary_lane": "ingress-capture",
+          "maturity": "exact-ready",
+          "implemented_source_ids": [
+            "mistral-ide-proxy"
+          ],
+          "planned_source_ids": [],
+          "notes": "Shared ingress bootstrap now provides Continue snippets for VS Code and JetBrains."
+        }
+      ],
+      "notes": ""
+    }
+  ]
+}

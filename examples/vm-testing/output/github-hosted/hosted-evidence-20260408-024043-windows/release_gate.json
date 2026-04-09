@@ -1,0 +1,678 @@
+{
+  "summary": {
+    "status": "pass",
+    "passed_gates": 7,
+    "failed_gates": 0,
+    "total_gates": 7,
+    "evidence_scope": "registry + health + runtime-duplicate-probe + root-aware-source-matrix"
+  },
+  "metrics": {
+    "coverage_ratio": 1.0,
+    "china_priority_ratio": 1.0,
+    "exact_surface_ratio": 1.0,
+    "default_duplicate_event_ratio": 0.0,
+    "diagnose_explainability_ratio": 1.0,
+    "macos_root_coverage_ratio": 1.0,
+    "windows_root_coverage_ratio": 1.0
+  },
+  "gates": [
+    {
+      "gate_id": "top20-coverage",
+      "label": "Top20 覆盖率 >= 90%",
+      "status": "pass",
+      "actual": "20/20 (100.0%)",
+      "threshold": ">= 90.0%",
+      "evidence": "Registry 已冻结 20/20 个生态。"
+    },
+    {
+      "gate_id": "china-priority-coverage",
+      "label": "中国优先 13 覆盖率 = 100%",
+      "status": "pass",
+      "actual": "13/13 (100.0%)",
+      "threshold": "= 100.0%",
+      "evidence": "中国优先生态已全部入表。"
+    },
+    {
+      "gate_id": "exact-surface-coverage",
+      "label": "exact 覆盖率 >= 80%",
+      "status": "pass",
+      "actual": "60/60 (100.0%)",
+      "threshold": ">= 80.0%",
+      "evidence": "当前 60/60 surface 已是 exact-ready。"
+    },
+    {
+      "gate_id": "false-ready-claims",
+      "label": "结构性误报 ready = 0",
+      "status": "pass",
+      "actual": "0 missing adapter-backed claims",
+      "threshold": "= 0",
+      "evidence": "provider/native-client 这两类 claim 都要求存在真实 adapter 背书。"
+    },
+    {
+      "gate_id": "default-report-duplicate-rate",
+      "label": "默认 report 重复计数率 <= 0.5%",
+      "status": "pass",
+      "actual": "2 events / 0.0% duplicates",
+      "threshold": "<= 0.5%",
+      "evidence": "使用临时 exact log 同时命中 provider family 与 generic fallback，验证默认 report 路径不会重复统计。"
+    },
+    {
+      "gate_id": "diagnose-explainability",
+      "label": "diagnose 可解释率 >= 95%",
+      "status": "pass",
+      "actual": "50/50 (100.0%)",
+      "threshold": ">= 95.0%",
+      "evidence": "以 health 返回的 supported source summary 是否可读作为 explainability 代理指标。"
+    },
+    {
+      "gate_id": "windows-macos-root-matrix",
+      "label": "Windows + macOS root matrix = 100%",
+      "status": "pass",
+      "actual": "macOS 25/25 windows 25/25",
+      "threshold": "both 100%",
+      "evidence": "当前自动验证所有 root-aware source 的双平台默认根路径矩阵。"
+    }
+  ],
+  "registry_summary": {
+    "total_ecosystems": 20,
+    "china_priority_ecosystems": 13,
+    "global_ecosystems": 7,
+    "total_surfaces": 60,
+    "provider_lane_maturity": {
+      "exact-ready": 20
+    },
+    "surface_maturity": {
+      "exact-ready": 60
+    },
+    "surface_primary_lanes": {
+      "native-client": 24,
+      "ingress-capture": 36
+    }
+  },
+  "platform_matrix": {
+    "macos": {
+      "supported": true,
+      "covered_sources": 25,
+      "total_sources": 25,
+      "coverage_ratio": 1.0,
+      "evidence_scope": "root-aware-source-matrix",
+      "sources": {
+        "codex": {
+          "paths": [
+            "\\Users\\example\\.codex\\sessions"
+          ],
+          "ok": true
+        },
+        "claude-code": {
+          "paths": [
+            "\\Users\\example\\.claude\\transcripts",
+            "\\Users\\example\\Library\\Application Support\\Claude\\local-agent-mode-sessions"
+          ],
+          "ok": true
+        },
+        "opencode": {
+          "paths": [
+            "\\Users\\example\\.config\\opencode",
+            "\\Users\\example\\.local\\state\\opencode",
+            "\\Users\\example\\.local\\share\\opencode",
+            "\\Users\\example\\.opencode",
+            "\\Users\\example\\Library\\Application Support\\OpenCode",
+            "\\Users\\example\\Library\\Application Support\\ai.opencode.desktop"
+          ],
+          "ok": true
+        },
+        "qwen-code-cli": {
+          "paths": [
+            "\\Users\\example\\.qwen"
+          ],
+          "ok": true
+        },
+        "kimi-cli": {
+          "paths": [
+            "\\Users\\example\\.kimi"
+          ],
+          "ok": true
+        },
+        "gemini-cli": {
+          "paths": [
+            "\\Users\\example\\.gemini"
+          ],
+          "ok": true
+        },
+        "claude-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Claude"
+          ],
+          "ok": true
+        },
+        "minimax-agent": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\MiniMax Agent"
+          ],
+          "ok": true
+        },
+        "kimi-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Kimi",
+            "\\Users\\example\\Library\\Application Support\\Moonshot",
+            "\\Users\\example\\Library\\Application Support\\Moonshot AI"
+          ],
+          "ok": true
+        },
+        "glm-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\GLM",
+            "\\Users\\example\\Library\\Application Support\\Z.ai",
+            "\\Users\\example\\Library\\Application Support\\Zhipu AI",
+            "\\Users\\example\\Library\\Application Support\\BigModel",
+            "\\Users\\example\\Library\\Application Support\\Z Code",
+            "\\Users\\example\\Library\\Application Support\\ZCODE"
+          ],
+          "ok": true
+        },
+        "qwen-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Qwen",
+            "\\Users\\example\\Library\\Application Support\\DashScope",
+            "\\Users\\example\\Library\\Application Support\\Tongyi"
+          ],
+          "ok": true
+        },
+        "deepseek-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\DeepSeek",
+            "\\Users\\example\\Library\\Application Support\\DeepSeek App"
+          ],
+          "ok": true
+        },
+        "doubao-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Doubao",
+            "\\Users\\example\\Library\\Application Support\\豆包"
+          ],
+          "ok": true
+        },
+        "qianfan-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Qianfan",
+            "\\Users\\example\\Library\\Application Support\\Wenxin",
+            "\\Users\\example\\Library\\Application Support\\Wenxiaoyan",
+            "\\Users\\example\\Library\\Application Support\\文小言",
+            "\\Users\\example\\Library\\Application Support\\文心"
+          ],
+          "ok": true
+        },
+        "yuanbao-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Yuanbao",
+            "\\Users\\example\\Library\\Application Support\\Tencent Yuanbao",
+            "\\Users\\example\\Library\\Application Support\\元宝",
+            "\\Users\\example\\Library\\Application Support\\腾讯元宝"
+          ],
+          "ok": true
+        },
+        "perplexity-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Perplexity",
+            "\\Users\\example\\Library\\Application Support\\Perplexity Desktop",
+            "\\Users\\example\\Library\\Application Support\\Comet"
+          ],
+          "ok": true
+        },
+        "stepfun-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\StepFun",
+            "\\Users\\example\\Library\\Application Support\\Step",
+            "\\Users\\example\\Library\\Application Support\\StepChat",
+            "\\Users\\example\\Library\\Application Support\\跃问"
+          ],
+          "ok": true
+        },
+        "sensenova-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\SenseNova",
+            "\\Users\\example\\Library\\Application Support\\SenseChat",
+            "\\Users\\example\\Library\\Application Support\\日日新"
+          ],
+          "ok": true
+        },
+        "baichuan-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Baichuan",
+            "\\Users\\example\\Library\\Application Support\\Baichuan AI",
+            "\\Users\\example\\Library\\Application Support\\百川"
+          ],
+          "ok": true
+        },
+        "siliconflow-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\SiliconFlow",
+            "\\Users\\example\\Library\\Application Support\\SiliconCloud"
+          ],
+          "ok": true
+        },
+        "spark-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Spark",
+            "\\Users\\example\\Library\\Application Support\\Xinghuo",
+            "\\Users\\example\\Library\\Application Support\\星火"
+          ],
+          "ok": true
+        },
+        "chatgpt-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\ChatGPT",
+            "\\Users\\example\\Library\\Application Support\\OpenAI"
+          ],
+          "ok": true
+        },
+        "gemini-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Gemini",
+            "\\Users\\example\\Library\\Application Support\\Google Gemini"
+          ],
+          "ok": true
+        },
+        "grok-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Grok",
+            "\\Users\\example\\Library\\Application Support\\xAI Grok"
+          ],
+          "ok": true
+        },
+        "mistral-desktop": {
+          "paths": [
+            "\\Users\\example\\Library\\Application Support\\Mistral",
+            "\\Users\\example\\Library\\Application Support\\Le Chat",
+            "\\Users\\example\\Library\\Application Support\\Mistral Le Chat"
+          ],
+          "ok": true
+        }
+      }
+    },
+    "windows": {
+      "supported": true,
+      "covered_sources": 25,
+      "total_sources": 25,
+      "coverage_ratio": 1.0,
+      "evidence_scope": "root-aware-source-matrix",
+      "sources": {
+        "codex": {
+          "paths": [
+            "C:\\Users\\example\\.codex\\sessions"
+          ],
+          "ok": true
+        },
+        "claude-code": {
+          "paths": [
+            "C:\\Users\\example\\.claude\\transcripts",
+            "C:\\Users\\example\\AppData\\Roaming\\Claude\\local-agent-mode-sessions"
+          ],
+          "ok": true
+        },
+        "opencode": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\OpenCode",
+            "C:\\Users\\example\\AppData\\Roaming\\ai.opencode.desktop",
+            "C:\\Users\\example\\AppData\\Roaming\\opencode",
+            "C:\\Users\\example\\AppData\\Local\\OpenCode",
+            "C:\\Users\\example\\AppData\\Local\\ai.opencode.desktop",
+            "C:\\Users\\example\\AppData\\Local\\opencode"
+          ],
+          "ok": true
+        },
+        "qwen-code-cli": {
+          "paths": [
+            "C:\\Users\\example\\.qwen"
+          ],
+          "ok": true
+        },
+        "kimi-cli": {
+          "paths": [
+            "C:\\Users\\example\\.kimi"
+          ],
+          "ok": true
+        },
+        "gemini-cli": {
+          "paths": [
+            "C:\\Users\\example\\.gemini"
+          ],
+          "ok": true
+        },
+        "claude-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Claude",
+            "C:\\Users\\example\\AppData\\Local\\Claude"
+          ],
+          "ok": true
+        },
+        "minimax-agent": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\MiniMax Agent"
+          ],
+          "ok": true
+        },
+        "kimi-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Kimi",
+            "C:\\Users\\example\\AppData\\Local\\Kimi",
+            "C:\\Users\\example\\AppData\\Roaming\\Moonshot",
+            "C:\\Users\\example\\AppData\\Local\\Moonshot",
+            "C:\\Users\\example\\AppData\\Roaming\\Moonshot AI",
+            "C:\\Users\\example\\AppData\\Local\\Moonshot AI"
+          ],
+          "ok": true
+        },
+        "glm-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\GLM",
+            "C:\\Users\\example\\AppData\\Local\\GLM",
+            "C:\\Users\\example\\AppData\\Roaming\\Z.ai",
+            "C:\\Users\\example\\AppData\\Local\\Z.ai",
+            "C:\\Users\\example\\AppData\\Roaming\\Zhipu AI",
+            "C:\\Users\\example\\AppData\\Local\\Zhipu AI",
+            "C:\\Users\\example\\AppData\\Roaming\\BigModel",
+            "C:\\Users\\example\\AppData\\Local\\BigModel",
+            "C:\\Users\\example\\AppData\\Roaming\\Z Code",
+            "C:\\Users\\example\\AppData\\Local\\Z Code",
+            "C:\\Users\\example\\AppData\\Roaming\\ZCODE",
+            "C:\\Users\\example\\AppData\\Local\\ZCODE"
+          ],
+          "ok": true
+        },
+        "qwen-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Qwen",
+            "C:\\Users\\example\\AppData\\Local\\Qwen",
+            "C:\\Users\\example\\AppData\\Roaming\\DashScope",
+            "C:\\Users\\example\\AppData\\Local\\DashScope",
+            "C:\\Users\\example\\AppData\\Roaming\\Tongyi",
+            "C:\\Users\\example\\AppData\\Local\\Tongyi"
+          ],
+          "ok": true
+        },
+        "deepseek-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\DeepSeek",
+            "C:\\Users\\example\\AppData\\Local\\DeepSeek",
+            "C:\\Users\\example\\AppData\\Roaming\\DeepSeek App",
+            "C:\\Users\\example\\AppData\\Local\\DeepSeek App"
+          ],
+          "ok": true
+        },
+        "doubao-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Doubao",
+            "C:\\Users\\example\\AppData\\Local\\Doubao",
+            "C:\\Users\\example\\AppData\\Roaming\\豆包",
+            "C:\\Users\\example\\AppData\\Local\\豆包"
+          ],
+          "ok": true
+        },
+        "qianfan-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Qianfan",
+            "C:\\Users\\example\\AppData\\Local\\Qianfan",
+            "C:\\Users\\example\\AppData\\Roaming\\Wenxin",
+            "C:\\Users\\example\\AppData\\Local\\Wenxin",
+            "C:\\Users\\example\\AppData\\Roaming\\Wenxiaoyan",
+            "C:\\Users\\example\\AppData\\Local\\Wenxiaoyan",
+            "C:\\Users\\example\\AppData\\Roaming\\文小言",
+            "C:\\Users\\example\\AppData\\Local\\文小言",
+            "C:\\Users\\example\\AppData\\Roaming\\文心",
+            "C:\\Users\\example\\AppData\\Local\\文心"
+          ],
+          "ok": true
+        },
+        "yuanbao-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Yuanbao",
+            "C:\\Users\\example\\AppData\\Local\\Yuanbao",
+            "C:\\Users\\example\\AppData\\Roaming\\Tencent Yuanbao",
+            "C:\\Users\\example\\AppData\\Local\\Tencent Yuanbao",
+            "C:\\Users\\example\\AppData\\Roaming\\元宝",
+            "C:\\Users\\example\\AppData\\Local\\元宝",
+            "C:\\Users\\example\\AppData\\Roaming\\腾讯元宝",
+            "C:\\Users\\example\\AppData\\Local\\腾讯元宝"
+          ],
+          "ok": true
+        },
+        "perplexity-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Perplexity",
+            "C:\\Users\\example\\AppData\\Local\\Perplexity",
+            "C:\\Users\\example\\AppData\\Roaming\\Perplexity Desktop",
+            "C:\\Users\\example\\AppData\\Local\\Perplexity Desktop",
+            "C:\\Users\\example\\AppData\\Roaming\\Comet",
+            "C:\\Users\\example\\AppData\\Local\\Comet"
+          ],
+          "ok": true
+        },
+        "stepfun-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\StepFun",
+            "C:\\Users\\example\\AppData\\Local\\StepFun",
+            "C:\\Users\\example\\AppData\\Roaming\\Step",
+            "C:\\Users\\example\\AppData\\Local\\Step",
+            "C:\\Users\\example\\AppData\\Roaming\\StepChat",
+            "C:\\Users\\example\\AppData\\Local\\StepChat",
+            "C:\\Users\\example\\AppData\\Roaming\\跃问",
+            "C:\\Users\\example\\AppData\\Local\\跃问"
+          ],
+          "ok": true
+        },
+        "sensenova-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\SenseNova",
+            "C:\\Users\\example\\AppData\\Local\\SenseNova",
+            "C:\\Users\\example\\AppData\\Roaming\\SenseChat",
+            "C:\\Users\\example\\AppData\\Local\\SenseChat",
+            "C:\\Users\\example\\AppData\\Roaming\\日日新",
+            "C:\\Users\\example\\AppData\\Local\\日日新"
+          ],
+          "ok": true
+        },
+        "baichuan-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Baichuan",
+            "C:\\Users\\example\\AppData\\Local\\Baichuan",
+            "C:\\Users\\example\\AppData\\Roaming\\Baichuan AI",
+            "C:\\Users\\example\\AppData\\Local\\Baichuan AI",
+            "C:\\Users\\example\\AppData\\Roaming\\百川",
+            "C:\\Users\\example\\AppData\\Local\\百川"
+          ],
+          "ok": true
+        },
+        "siliconflow-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\SiliconFlow",
+            "C:\\Users\\example\\AppData\\Local\\SiliconFlow",
+            "C:\\Users\\example\\AppData\\Roaming\\SiliconCloud",
+            "C:\\Users\\example\\AppData\\Local\\SiliconCloud"
+          ],
+          "ok": true
+        },
+        "spark-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Spark",
+            "C:\\Users\\example\\AppData\\Local\\Spark",
+            "C:\\Users\\example\\AppData\\Roaming\\Xinghuo",
+            "C:\\Users\\example\\AppData\\Local\\Xinghuo",
+            "C:\\Users\\example\\AppData\\Roaming\\星火",
+            "C:\\Users\\example\\AppData\\Local\\星火"
+          ],
+          "ok": true
+        },
+        "chatgpt-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\ChatGPT",
+            "C:\\Users\\example\\AppData\\Local\\ChatGPT",
+            "C:\\Users\\example\\AppData\\Roaming\\OpenAI",
+            "C:\\Users\\example\\AppData\\Local\\OpenAI"
+          ],
+          "ok": true
+        },
+        "gemini-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Gemini",
+            "C:\\Users\\example\\AppData\\Local\\Gemini",
+            "C:\\Users\\example\\AppData\\Roaming\\Google Gemini",
+            "C:\\Users\\example\\AppData\\Local\\Google Gemini"
+          ],
+          "ok": true
+        },
+        "grok-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Grok",
+            "C:\\Users\\example\\AppData\\Local\\Grok",
+            "C:\\Users\\example\\AppData\\Roaming\\xAI Grok",
+            "C:\\Users\\example\\AppData\\Local\\xAI Grok"
+          ],
+          "ok": true
+        },
+        "mistral-desktop": {
+          "paths": [
+            "C:\\Users\\example\\AppData\\Roaming\\Mistral",
+            "C:\\Users\\example\\AppData\\Local\\Mistral",
+            "C:\\Users\\example\\AppData\\Roaming\\Le Chat",
+            "C:\\Users\\example\\AppData\\Local\\Le Chat",
+            "C:\\Users\\example\\AppData\\Roaming\\Mistral Le Chat",
+            "C:\\Users\\example\\AppData\\Local\\Mistral Le Chat"
+          ],
+          "ok": true
+        }
+      }
+    }
+  },
+  "duplicate_probe": {
+    "default_selected_source_ids": [
+      "openai-api",
+      "anthropic-api",
+      "google-gemini-api",
+      "moonshot-kimi-api",
+      "zhipu-glm-api",
+      "qwen-api",
+      "deepseek-api",
+      "minimax-api",
+      "xai-grok-api",
+      "cohere-api",
+      "mistral-api",
+      "perplexity-api",
+      "openrouter-api",
+      "togetherai-api",
+      "fireworks-api",
+      "azure-openai-api",
+      "baidu-qianfan-api",
+      "tencent-hunyuan-api",
+      "stepfun-api",
+      "doubao-api",
+      "sensenova-api",
+      "baichuan-api",
+      "siliconflow-api",
+      "spark-api"
+    ],
+    "manual_only_source_ids": [
+      "generic-openai-compatible"
+    ],
+    "default_total_events": 2,
+    "explicit_total_events": 5,
+    "default_duplicate_event_ratio": 0.0,
+    "explicit_duplicate_event_ratio": 0.4,
+    "default_sessions": [
+      "ms-1",
+      "oa-1"
+    ],
+    "explicit_sessions": [
+      "lab-1",
+      "ms-1",
+      "oa-1"
+    ]
+  },
+  "missing_backing_source_ids": [],
+  "all_claimed_source_ids": [
+    "qwen-api",
+    "qwen-desktop",
+    "qwen-code-cli",
+    "qwen-ide-proxy",
+    "moonshot-kimi-api",
+    "kimi-desktop",
+    "kimi-cli",
+    "kimi-ide-proxy",
+    "zhipu-glm-api",
+    "glm-desktop",
+    "glm-cli-proxy",
+    "glm-ide-proxy",
+    "minimax-api",
+    "minimax-agent",
+    "minimax-cli-proxy",
+    "minimax-ide-proxy",
+    "deepseek-api",
+    "deepseek-desktop",
+    "deepseek-cli-proxy",
+    "deepseek-ide-proxy",
+    "doubao-api",
+    "doubao-desktop",
+    "doubao-cli-proxy",
+    "doubao-ide-proxy",
+    "baidu-qianfan-api",
+    "qianfan-desktop",
+    "qianfan-cli-proxy",
+    "qianfan-ide-proxy",
+    "tencent-hunyuan-api",
+    "yuanbao-desktop",
+    "hunyuan-cli-proxy",
+    "hunyuan-ide-proxy",
+    "stepfun-api",
+    "stepfun-desktop",
+    "stepfun-cli-proxy",
+    "stepfun-ide-proxy",
+    "sensenova-api",
+    "sensenova-desktop",
+    "sensenova-cli-proxy",
+    "sensenova-ide-proxy",
+    "baichuan-api",
+    "baichuan-desktop",
+    "baichuan-cli-proxy",
+    "baichuan-ide-proxy",
+    "siliconflow-api",
+    "siliconflow-desktop",
+    "siliconflow-cli-proxy",
+    "siliconflow-ide-proxy",
+    "spark-api",
+    "spark-desktop",
+    "spark-cli-proxy",
+    "spark-ide-proxy",
+    "openai-api",
+    "chatgpt-desktop",
+    "codex",
+    "openai-ide-proxy",
+    "anthropic-api",
+    "claude-desktop",
+    "claude-code",
+    "anthropic-ide-proxy",
+    "google-gemini-api",
+    "gemini-desktop",
+    "gemini-cli",
+    "gemini-ide-proxy",
+    "openrouter-api",
+    "openrouter-desktop-proxy",
+    "openrouter-cli-proxy",
+    "openrouter-ide-proxy",
+    "perplexity-api",
+    "perplexity-desktop",
+    "perplexity-cli-proxy",
+    "perplexity-ide-proxy",
+    "xai-grok-api",
+    "grok-desktop",
+    "grok-cli-proxy",
+    "grok-ide-proxy",
+    "mistral-api",
+    "mistral-desktop",
+    "mistral-cli-proxy",
+    "mistral-ide-proxy"
+  ],
+  "notes": [
+    "release-gate 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的双平台默认根路径矩阵。",
+    "真实双机 app-data 命中与大样本重复计数实测仍建议在正式对外发布前补跑。"
+  ]
+}

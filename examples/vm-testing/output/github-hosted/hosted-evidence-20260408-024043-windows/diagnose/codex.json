@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "codex",
+    "display_name": "Codex",
+    "provider": "openai",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "session directory not found; set TOKEN_USAGE_CODEX_ROOT if logs live elsewhere",
+    "candidate_paths": [
+      "C:\\Users\\runneradmin\\.codex\\sessions"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "session directory not found; set TOKEN_USAGE_CODEX_ROOT if logs live elsewhere"
+  ]
+}

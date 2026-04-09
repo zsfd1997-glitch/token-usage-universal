@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "minimax-agent",
+    "display_name": "MiniMax Agent",
+    "provider": "minimax",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "MiniMax Agent desktop data directory not found; set TOKEN_USAGE_MINIMAX_AGENT_ROOT if the app stores data elsewhere",
+    "candidate_paths": [
+      "C:\\Users\\runneradmin\\AppData\\Roaming\\MiniMax Agent"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "MiniMax Agent desktop data directory not found; set TOKEN_USAGE_MINIMAX_AGENT_ROOT if the app stores data elsewhere"
+  ]
+}

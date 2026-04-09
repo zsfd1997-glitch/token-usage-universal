@@ -1,0 +1,22 @@
+{
+  "detection": {
+    "source_id": "claude-desktop",
+    "display_name": "Claude Desktop",
+    "provider": "anthropic",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "Claude Desktop desktop data directory not found; set TOKEN_USAGE_CLAUDE_DESKTOP_ROOT if the app stores data elsewhere",
+    "candidate_paths": [
+      "/Users/runner/Library/Application Support/Claude"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "Claude Desktop desktop data directory not found; set TOKEN_USAGE_CLAUDE_DESKTOP_ROOT if the app stores data elsewhere"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "detection": {
+    "source_id": "claude-code",
+    "display_name": "Claude Code",
+    "provider": "anthropic",
+    "accuracy_level": "exact",
+    "supported": true,
+    "available": false,
+    "status": "not-found",
+    "summary": "Claude local traces not found; check TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT / TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT",
+    "candidate_paths": [
+      "/Users/runner/.claude/transcripts",
+      "/Users/runner/.claude/projects",
+      "/Users/runner/Library/Application Support/Claude/local-agent-mode-sessions"
+    ],
+    "details": []
+  },
+  "events": [],
+  "scanned_files": 0,
+  "verification_issues": [],
+  "skipped_reasons": [
+    "Claude local traces not found; check TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT / TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT"
+  ]
+}
