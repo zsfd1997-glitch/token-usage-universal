@@ -58,9 +58,12 @@
   - 全量回归已到 `158` 个测试通过
   - 当前机器 `ready_sources` 已从 `2` 提升到 `3`
   - 本机 `opencode` 已从“只有痕迹”推进到 `ready`
+  - 已修复 Chromium cache URL 边界误吞压缩帧首字节的问题；Claude Desktop 的 zstd 缓存 URL 不再带尾随 `(` / `{` / `[`
+  - 本机 `claude-desktop` 诊断已从 `60` 条可解码 Cache JSON 提升到 `99` 条，说明真实桌面缓存解码更完整了
 - not done:
   - 真实 `Windows + macOS` 双机 E2E 仍未补跑，当前通过的是 GitHub-hosted runner 上的 hosted evidence + 全部 root-aware source 默认路径矩阵 gate
   - `重复计数率 <= 0.5%` 当前已补默认 report runtime probe，但仍未补大样本实测
+  - `claude-desktop` 当前仍未在本机命中 exact token-bearing payload；这次修复只解决了解码边界，不等于 Claude Desktop 已 ready
 - next step:
   - 下一步开始真实客户端测试，把 release gate 从“hosted runner + 结构通过”推进到“真机平台实测通过”
   - 然后继续补更多真机样本，验证 `claude-desktop / minimax-agent` 等 desktop source 的真实命中表现
@@ -115,3 +118,6 @@
 - [2026-04-08 02:32 PDT] EXECUTE: 将 `test_cli_integration.py` 统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，并在失败时直接回显 stdout/stderr，消除 Windows hosted runner 的平台差异假阳性。
 - [2026-04-08 02:40 PDT] VERIFY: `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，当前 `158` tests；`python3 scripts/token_usage.py release-gate --format json` 仍为 `7/7 gates passed`。
 - [2026-04-08 02:41 PDT] VERIFY: GitHub-hosted `hostless-evidence` 第三轮 run `24128775284` 已双平台通过；`windows-latest` job `70399851410` 与 `macos-latest` job `70399851412` 均成功上传 evidence artifact，并已下载到本地输出目录。
+- [2026-04-08 22:25 PDT] DISCOVER: 对本机 `claude-desktop` 做真实缓存根因排查，确认 `chat_conversations?...consistency=eventual(` 里的尾随 `(` 实际是 zstd 帧头首字节被 URL 提取误吞。
+- [2026-04-08 22:25 PDT] EXECUTE: 修复 [chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/chromium_cache.py) 的 URL 边界裁剪，并在 [test_chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_cache.py) 新增“无分隔符 zstd 帧”回归测试。
+- [2026-04-08 22:25 PDT] VERIFY: `python3 -m unittest scripts.test_chromium_cache scripts.test_chromium_desktop_adapters` 通过，`25` tests；`python3 scripts/token_usage.py diagnose --source claude-desktop --today --format json` 仍为 `not-found`，但可解码 Cache JSON 已从 `60` 提升到 `99`。

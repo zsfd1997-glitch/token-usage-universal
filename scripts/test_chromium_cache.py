@@ -43,6 +43,7 @@ def _cache_blob(
     zstd_body: bool = False,
     brotli_body: bool = False,
     plain_prefix: bytes = b"",
+    separator: bytes | None = None,
 ) -> bytes:
     body = json.dumps(payload).encode("utf-8")
     if gzip_body:
@@ -55,9 +56,11 @@ def _cache_blob(
     blob = (b"\x00" * 28) + f"1/0/{url}".encode("utf-8")
     if plain_prefix:
         blob += b"\x00" + plain_prefix
+    if separator is None:
+        separator = b"\x00\x00"
     if brotli_body:
         return blob + b"\x00" + body + b"\x00content-encoding:br\x00\x00"
-    return blob + b"\x00\x00" + body
+    return blob + separator + body
 
 
 class ChromiumCacheTests(unittest.TestCase):
@@ -98,6 +101,26 @@ class ChromiumCacheTests(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0].body_encoding, "zstd")
         self.assertEqual(entries[0].payload["id"], "conv-1")
+
+    def test_iter_json_entries_trims_trailing_frame_byte_from_url_before_zstd_decode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp)
+            cache_file = cache_dir / "c10def00_0"
+            cache_file.write_bytes(
+                _cache_blob(
+                    "https://claude.ai/api/organizations/org/chat_conversations/conv-2?consistency=eventual",
+                    {"id": "conv-2", "usage": {"input_tokens": 120, "output_tokens": 30, "total_tokens": 150}},
+                    zstd_body=True,
+                    separator=b"",
+                )
+            )
+
+            entries = list(iter_json_entries(cache_dir, url_keywords=("claude.ai/api/",)))
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].url, "https://claude.ai/api/organizations/org/chat_conversations/conv-2?consistency=eventual")
+        self.assertEqual(entries[0].body_encoding, "zstd")
+        self.assertEqual(entries[0].payload["usage"]["total_tokens"], 150)
 
     def test_iter_json_entries_decodes_brotli_payloads(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

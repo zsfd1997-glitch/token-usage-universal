@@ -77,6 +77,7 @@
   - `MiniMax CLI / IDE`
   以上都已通过共享 ingress bootstrap 升到 `exact-ready`。
 - `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 的桌面端现在都已补齐 fixture-backed exact 证据，并升为 `exact-ready`。
+- 已修复 Chromium cache URL 边界误吞压缩帧首字节的问题：Claude Desktop 这类 zstd 响应不再把尾随 `(` / `{` / `[` 混进 URL，修复位于 [chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/chromium_cache.py)，专项回归见 [test_chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_cache.py)。
 - 已补齐费用估算基线：
   - `ERNIE 4.5 Turbo / ERNIE X1 Turbo`
   - `Hunyuan TurboS / Hunyuan T1 / Tencent HY 2.0`
@@ -149,6 +150,9 @@
   - `hostless-evidence` workflow 现已避免在 `EVIDENCE_DIR` 缺失时继续触发 artifact `path` 报错
   - Windows CLI 子进程在 legacy stdout codec 下输出中文 JSON 时，会在 hosted runner 上触发 `UnicodeEncodeError`；CLI 现已在 [token_usage.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/token_usage.py) 启动时统一强制 `stdout/stderr` 使用 UTF-8
   - [test_cli_integration.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_cli_integration.py) 现已统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，并在失败时直接回显 stdout/stderr，避免 Windows hosted runner 上再出现 `result.stdout is None` 这类假阳性
+  - `python3 -m unittest scripts.test_chromium_cache scripts.test_chromium_desktop_adapters` 当前通过，`25` 个测试通过
+  - `python3 scripts/token_usage.py diagnose --source claude-desktop --today --format json` 当前仍为 `not-found`，但 `decoded API JSON response(s) from Chromium Cache_Data` 已从 `60` 提升到 `99`
+  - 当前已确认 Claude Desktop 某些 `chat_conversations?...consistency=eventual` 缓存文件此前会把 zstd 帧头首字节误吞进 URL 末尾；修复后 sample endpoint 已恢复为不带尾随 `(` 的真实地址
   - GitHub Actions `hostless-evidence` 第三轮 run `24128775284` 已双平台通过：
     - `windows-latest` job `70399851410` 成功完成单测、`release-gate --output-dir ...` 与 artifact 上传
     - `macos-latest` job `70399851412` 成功完成单测、`release-gate --output-dir ...` 与 artifact 上传

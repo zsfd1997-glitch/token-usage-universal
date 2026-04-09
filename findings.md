@@ -23,6 +23,7 @@
 - `Claude Code` 现已扩展到新布局 `~/.claude/projects/**/*.jsonl`：会直接从 assistant `message.usage` 提取 `input / cache / output / total token`，实现位于 [claude_code.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/adapters/claude_code.py)，测试见 [test_claude_code.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_claude_code.py)。
 - `Qwen / Kimi` 两条 CLI surface 已在 [ecosystem_registry.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/ecosystem_registry.py) 升级为 `exact-ready`。
 - Chromium/Electron 桌面端 exact 底座已升级为同时读取 `Cache_Data / IndexedDB / Local Storage`，核心实现在 [chromium_desktop.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/adapters/chromium_desktop.py) 和 [chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/chromium_cache.py)。
+- Chromium cache URL 边界现在会裁掉误吞进 URL 末尾的压缩帧首字节（如 Claude zstd 响应里的尾随 `(` / `{` / `[`），避免把解压起点错后移一位；修复位于 [chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/chromium_cache.py)，回归测试见 [test_chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_cache.py)。
 - `GLM / Doubao / Perplexity` 三条桌面端原生适配已落地在 [chromium_desktop_family.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/adapters/chromium_desktop_family.py)，专项测试见 [test_chromium_desktop_adapters.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_desktop_adapters.py) 和 [test_chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_cache.py)。
 - `GLM / Doubao / Perplexity` 三条桌面端 surface 已在 [ecosystem_registry.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/ecosystem_registry.py) 升级为 `exact-ready`。
 - `DeepSeek / Qianfan / Yuanbao` 三条桌面端原生适配已落地在 [chromium_desktop_family.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/adapters/chromium_desktop_family.py)，专项测试同样覆盖在 [test_chromium_desktop_adapters.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_desktop_adapters.py)。
@@ -76,6 +77,9 @@
 - `StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral` 的桌面端 source skeleton 已落地在 [chromium_desktop_family.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/adapters/chromium_desktop_family.py)，并在 [ecosystem_registry.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/ecosystem_registry.py) 升级为 `detect-ready`。
 - 价格库已在 [pricing_db.json](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/pricing_db.json) 补齐 `ERNIE / Hunyuan / SenseNova / Baichuan / Spark / Doubao aliases`；回归测试见 [test_pricing.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_pricing.py)。
 - 最新验证：
+  - `python3 -m unittest scripts.test_chromium_cache scripts.test_chromium_desktop_adapters` 当前通过，`25` 个测试通过
+  - `python3 scripts/token_usage.py diagnose --source claude-desktop --today --format json` 当前仍为 `not-found`，但 `decoded API JSON response(s) from Chromium Cache_Data` 已从 `60` 提升到 `99`
+  - 当前已确认 Claude Desktop 某些 `chat_conversations?...consistency=eventual` 缓存文件会把 zstd 帧头首字节误吞进 URL 末尾；修复后 URL 已恢复为不带尾随 `(` 的真实地址
   - `python3 -m unittest scripts.test_claude_code scripts.test_reporting scripts.test_chromium_desktop_adapters` 当前通过
   - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，`158` tests
   - `Claude Code` project JSONL fixture 已成功输出 `total_tokens = 30848`、`input_tokens = 30109`、`cached_input_tokens = 123`、`output_tokens = 616`

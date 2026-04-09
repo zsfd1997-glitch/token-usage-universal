@@ -39,6 +39,7 @@ _MAX_MARKERS_PER_FILE = 32
 _MAX_OBJECTS_PER_FILE = 8
 _ZSTD_CLI = shutil.which("zstd")
 _BROTLI_CLI = shutil.which("brotli")
+_URL_TRAILING_FRAME_BYTES = "([{"
 
 
 @dataclass(frozen=True)
@@ -81,9 +82,10 @@ def _extract_url(data: bytes) -> str | None:
             break
         cursor += 1
     try:
-        return data[best_index:cursor].decode("utf-8")
+        url = data[best_index:cursor].decode("utf-8")
     except UnicodeDecodeError:
         return None
+    return url.rstrip(_URL_TRAILING_FRAME_BYTES)
 
 
 def _find_url_end(data: bytes, url: str) -> int:
