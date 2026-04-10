@@ -4,102 +4,84 @@
 
 把散落在本机各个 AI 客户端、CLI 和 API 日志里的 token 使用量，汇总成一份能直接看懂的本地面板。
 
-## 简介
+## What It Is
 
-这个项目解决的是一个很具体的问题：
+- 产品本体：`独立 Python CLI`
+- 自然语言入口：仓库附带一个 `Codex skill` 包装层
+- 真正干活的入口：`scripts/token_usage.py`
+
+它做三件事：
+
+- 汇总本机 token 用量
+- 拆出模型 / 项目 / 来源 / 当前会话
+- 解释为什么某个来源没有被统计到
+
+它不是云账单页的皮肤，也不是只支持单一模型厂商的小脚本。
+
+## Why Use It
+
+用它是为了回答这几类问题：
 
 - 今天到底用了多少 token
 - 哪个模型、项目、来源最费
 - 哪些 token 是缓存命中，哪些更接近真实消耗
 - 为什么 `Claude / Codex / MiniMax Agent / 桌面客户端 / API 日志` 里有的看到了，有的没被统计到
 
-它不是云端账单页的二次包装，也不是只能看某一家模型的单点脚本。
-它更像一个本地 token 记账器和排障器，专门把机器上已经存在的真源日志、缓存和 session 文件整理成统一结果。
+## Quickstart
 
-## 它到底是什么
-
-- 核心产品：`独立 Python CLI`
-- 仓库内附带：`Codex skill` 包装层，方便直接通过自然语言触发
-- 真正干活的入口：`scripts/token_usage.py`
-
-这个仓库既可以当成单独命令行工具来跑，也可以挂进 skill / agent / launcher 里复用。
-
-`Task Master` 不是运行时依赖。
-就算完全不装它，这个产品也能正常完成健康检查、统计、诊断和证据导出。
-
-## 用途
-
-- 看今天、本周、最近 30 天的 token 用量
-- 看哪个模型、项目、来源最消耗
-- 看当前会话用了多少
-- 看缓存命中和去缓存后的真实消耗
-- 查为什么某个客户端明明在用，却没有被统计到
-- 给本地 AI 工作流做一份可验证、可交接的 usage 面板
-
-## 使用方法
-
-1. clone 仓库并进入目录。
-2. 先跑 `health`，确认本机哪些来源已经 ready。
-3. 再跑 `report --today` 看今天总览。
-4. 如果某个来源没进统计，再跑 `diagnose --source <source_id>` 查原因。
+第一次上手，先跑这三步：
 
 ```bash
 git clone https://github.com/zsfd1997-glitch/token-usage-universal.git
 cd token-usage-universal
 python3 scripts/token_usage.py health
 python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py diagnose --source codex --today
 ```
 
-## 使用示例
+`health` 用来看本机哪些来源已经 ready。  
+`report --today` 用来看今天总览。  
+`diagnose` 用来查“为什么没统计到”。  
 
-### 1. 看今天总览
+## Common Tasks
+
+### 看今天总览
 
 ```bash
 python3 scripts/token_usage.py report --today
 ```
 
-能回答：
+会直接看到：
 
-- 我今天 AI 一共用了多少 token
-- 当前会话大概用了多少
-- 哪个模型和项目最费
+- 总 token
+- 去缓存后 token
+- 当前会话
+- 按模型
+- 按项目
+- 最近趋势
+- 月历热力图
 
-### 2. 看最近趋势
+### 看最近趋势
 
 ```bash
 python3 scripts/token_usage.py report --trend 7d
 python3 scripts/token_usage.py report --calendar month
 ```
 
-能回答：
-
-- 最近 7 天是不是明显用多了
-- 这个月哪几天是高峰
-
-### 3. 查某个来源为什么没统计到
+### 查某个来源为什么没统计到
 
 ```bash
 python3 scripts/token_usage.py diagnose --source claude-desktop --today
 python3 scripts/token_usage.py diagnose --source minimax-agent --today
 ```
 
-能回答：
-
-- 为什么 Claude Desktop 没进总量
-- MiniMax Agent 到底是没日志、没 parser，还是缓存里根本没有 token 真源
-
-### 4. 只看当前会话
+### 只看当前会话
 
 ```bash
 python3 scripts/token_usage.py report --current-session
 ```
 
-能回答：
-
-- 我眼前这一轮对话用了多少
-- 当前项目是不是已经很费 token
-
-### 5. 通过 skill 自然语言触发
+### 用自然语言触发
 
 把仓库里的 [SKILL.md](/Users/guokeyu/AI/codex/token-usage-universal/SKILL.md) 挂进 Codex skill 体系后，用户不需要记命令，直接说下面这些话就行：
 
@@ -108,6 +90,14 @@ python3 scripts/token_usage.py report --current-session
 - `帮我看今天 token 用量`
 - `帮我按模型看看今天哪个最消耗 token`
 - `为什么 Claude 没统计到`
+
+## What You Get
+
+- 本地优先，不依赖云端账单页
+- `exact-first`，没有真源就明确说没有
+- 可以按来源、项目、模型、会话拆分
+- 可以诊断“为什么没统计到”
+- 可以导出证据包，方便交接和留档
 
 ## GitHub 交付契约
 
