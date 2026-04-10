@@ -85,7 +85,7 @@ export TOKEN_USAGE_TART_VM="your-macos-tart-image"
 
 - 当前分支已经 push 到 GitHub
 - `gh auth status` 已登录
-- 仓库里已经包含 [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
+- 仓库里已经包含 [hostless-evidence.yml](../../.github/workflows/hostless-evidence.yml)
 
 ### 2. 执行
 
@@ -120,8 +120,8 @@ artifact 默认会落到：
 ## 注意
 
 - 这套脚手架是 PoC，不替代最终企业级编排。
-- 统一 runbook 见 [VM_RUNBOOK.md](/Users/guokeyu/AI/codex/token-usage-universal/docs/VM_RUNBOOK.md)。
-- 模拟实机方案总览见 [SIMULATED_MACHINE_TESTING.md](/Users/guokeyu/AI/codex/token-usage-universal/docs/SIMULATED_MACHINE_TESTING.md)。
+- 统一 runbook 见 [VM_RUNBOOK.md](../../docs/VM_RUNBOOK.md)。
+- 模拟实机方案总览见 [SIMULATED_MACHINE_TESTING.md](../../docs/SIMULATED_MACHINE_TESTING.md)。
 - 这里不内置 box 名称，因为不同团队的 Windows box 来源、license 和镜像策略通常不同。
 - 这里也不内置 Tart 镜像名，因为不同团队的 macOS guest 来源和镜像策略通常不同。
 - `run-hostless-evidence.sh` 不会替您自动 push 分支；这是故意的，避免替您做外发动作。

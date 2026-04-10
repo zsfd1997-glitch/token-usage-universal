@@ -7,7 +7,7 @@ Use the following channels based on the kind of help you need:
 - usage question or setup help: open a GitHub issue with the support or question template
 - bug report: open a GitHub issue with the bug template
 - feature request: open a GitHub issue with the feature template
-- security issue: follow [SECURITY.md](/Users/guokeyu/AI/codex/token-usage-universal/SECURITY.md) and do not file a public issue
+- security issue: follow [SECURITY.md](./SECURITY.md) and do not file a public issue
 
 ## Before Opening an Issue
 

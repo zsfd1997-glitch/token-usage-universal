@@ -38,8 +38,8 @@ python3 scripts/token_usage.py release-gate \
 
 - 主线：`GitHub-hosted runners`
 - workflow：
-  - [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
-  - [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
+  - [hostless-evidence.yml](../.github/workflows/hostless-evidence.yml)
+  - [run-hostless-evidence.sh](../examples/vm-testing/run-hostless-evidence.sh)
 - 适合场景：
   - 本地没有 `Windows/macOS/Linux` host
   - 先拿平台级 `health / targets / release-gate / diagnose` 证据
@@ -50,16 +50,16 @@ python3 scripts/token_usage.py release-gate \
 - 主线：`Vagrant + Hyper-V`
 - fallback：`Vagrant + VirtualBox`
 - 仓库脚手架：
-  - [examples/vm-testing/Vagrantfile](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/Vagrantfile)
-  - [examples/vm-testing/provision-windows.ps1](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/provision-windows.ps1)
-  - [examples/vm-testing/collect-evidence.ps1](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/collect-evidence.ps1)
+  - [examples/vm-testing/Vagrantfile](../examples/vm-testing/Vagrantfile)
+  - [examples/vm-testing/provision-windows.ps1](../examples/vm-testing/provision-windows.ps1)
+  - [examples/vm-testing/collect-evidence.ps1](../examples/vm-testing/collect-evidence.ps1)
 
 ### macOS guest
 
 - 主线：`Tart`
 - 仓库脚手架：
-  - [examples/vm-testing/tart-run-macos.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/tart-run-macos.sh)
-  - [examples/vm-testing/collect-evidence-macos.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/collect-evidence-macos.sh)
+  - [examples/vm-testing/tart-run-macos.sh](../examples/vm-testing/tart-run-macos.sh)
+  - [examples/vm-testing/collect-evidence-macos.sh](../examples/vm-testing/collect-evidence-macos.sh)
 
 ## Windows Runbook
 

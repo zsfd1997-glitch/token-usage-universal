@@ -63,7 +63,7 @@ reported to the community leaders responsible for enforcement at
 `opensource@zsfd.dev`.
 
 Security vulnerabilities should not be reported through public issues. Follow
-[SECURITY.md](/Users/guokeyu/AI/codex/token-usage-universal/SECURITY.md).
+[SECURITY.md](./SECURITY.md).
 
 All complaints will be reviewed and investigated promptly and fairly.
 

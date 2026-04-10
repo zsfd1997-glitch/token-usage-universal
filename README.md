@@ -1,9 +1,63 @@
+---
+team: 用户流量策略科
+type: skill
+name: token-usage-universal
+contributor: 郭珂宇
+created: 2026-03-25
+version: 1.0
+status: 已整理
+tags: [自建skill, token使用监控, 本地优先, exact-first, 多来源适配, 跨平台, 中文版]
+usage_count: 0
+effect: 把散落在本机各 AI 客户端、CLI 工具和 API 日志中的 token 消耗，自动汇总成可直接决策的本地面板
+---
+
 # Token Usage Universal
 
 [![CI](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml)
 
-**一站式本地 Token 使用监控工具**  
-把散落在本机各个 AI 客户端、CLI 工具和 API 日志中的 token 消耗记录，自动汇总成清晰、直观的本地面板。
+## 简介
+
+一站式本地 token 使用监控工具。把散落在本机各个 AI 客户端、CLI 工具和 API 日志中的 token 消耗记录，自动汇总成清晰、直观的本地面板。不依赖云端账单页，exact-first，没有真源就明确说没有。
+
+## 用途
+
+- 面向人类阅读、复盘对齐与成本评审讨论。
+- 适用于"今天 token 用了多少 / 哪个模型最费 / 为什么某个客户端没统计到"等日常查询、趋势复盘和来源排障场景。
+- 作为可复用 skill 资产沉淀，便于后续统一维护和接入其他 agent / launcher。
+
+## 使用方法
+
+1. 阅读当前目录下的 `README.md`，快速理解本 skill 的定位和上手顺序。
+2. 打开 `SKILL.md` 查看完整触发词、默认动作和面板协议。
+3. 按场景调用该 skill，并根据实际结果持续更新文档。
+
+## 适用版本
+
+- 当前版本：`中文版 + 独立 Python CLI`
+- 核心入口：`scripts/token_usage.py`
+- 自然语言触发层：`SKILL.md`
+- 补充说明：在日常查询或排障前先跑 `python3 scripts/token_usage.py health` 确认本机哪些来源已 ready。
+- 补充说明：需要查看完整触发词和面板协议时，打开 `SKILL.md`。
+- 补充说明：如需接入其他 agent / launcher，直接调用 `scripts/token_usage.py`，不要求宿主存在 `~/.codex/skills`。
+
+## 效果
+
+- 通过标准化目录与说明文档，降低查找和复用成本。
+- 让 token 使用监控从"每次手动查"升级为"有说明、有入口、可维护、可诊断"的 skill 资产。
+
+## 使用记录
+
+| 日期 | 使用者 | 场景 | 效果 |
+|------|--------|------|------|
+|      |        |      |      |
+
+## 更新日志
+
+| 版本 | 日期 | 更新内容 |
+|------|------|----------|
+| 1.0 | 2026-03-25 | 初始版本，覆盖 codex / claude-code / claude-desktop / opencode / minimax-agent / qwen-code-cli / kimi-cli / gemini-cli + chromium-desktop-family + provider-api-family + generic |
+
+---
 
 ## 核心价值
 

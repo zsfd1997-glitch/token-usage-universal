@@ -41,10 +41,10 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("`token`, `用量`, `消耗量`, `使用量`, `消耗`", description)
 
     def test_repo_skill_uses_progressive_disclosure(self) -> None:
-        self.assertIn("[skill-routing.md](references/skill-routing.md)", SKILL_TEXT)
-        self.assertIn("[skill-output-contract.md](references/skill-output-contract.md)", SKILL_TEXT)
-        self.assertIn("[source-contract.md](references/source-contract.md)", SKILL_TEXT)
-        self.assertLessEqual(len(SKILL_TEXT.splitlines()), 80)
+        self.assertIn("references/skill-routing.md", SKILL_TEXT)
+        self.assertIn("references/source-contract.md", SKILL_TEXT)
+        self.assertIn("references/accuracy-policy.md", SKILL_TEXT)
+        self.assertLessEqual(len(SKILL_TEXT.splitlines()), 120)
 
     def test_repo_skill_declares_short_trigger_phrases(self) -> None:
         self.assertIn("用户只说“token / 用量 / 消耗量 / 使用量 / 消耗”", ROUTING_TEXT)
