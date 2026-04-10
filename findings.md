@@ -34,8 +34,19 @@
 - `ingress bootstrap` 与 profile catalog 已落地在 [ingress_bootstrap.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/ingress_bootstrap.py)，CLI 入口同样在 [token_usage.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/token_usage.py)，专项测试见 [test_ingress_bootstrap.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_ingress_bootstrap.py)。
 - `release-gate` 自动门禁已落地在 [release_gate.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/release_gate.py)，CLI 入口同样在 [token_usage.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/token_usage.py)，专项测试见 [test_release_gate.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_release_gate.py)。
 - `release-gate` 现在会实跑默认 report 的重复计数 probe：同一份临时 exact log 同时命中 provider family 与 `generic-openai-compatible` 时，默认 report 仍保持 `0.0%` duplicate，而显式把 generic 拉进来时 probe 会看到重复。
-- `release-gate` 现在也会验证全部 `25/25` root-aware source 的 `Windows + macOS` 默认根路径矩阵，而不再只看少数代表来源。
+- `release-gate` 现在也会验证全部 `25/25` root-aware source 的 `Windows + macOS + Linux` 默认根路径矩阵，而不再只看少数代表来源。
 - `release-gate --output-dir ...` 现在会导出真实机器证据包，包含 `release_gate.json / health.json / sources.json / targets.json / report_today.json / report_recent_30d.json / diagnose/*.json / SUMMARY.md`。
+- `release-gate --baseline <prev_bundle_dir>` 现已支持 source state 趋势 diff：输出 `source_states / source_state_summary / baseline.diff`，证据包会额外落出 `diff.json`。
+- provider family fixture 已补齐到 [scripts/fixtures/provider](/Users/guokeyu/AI/codex/token-usage-universal/scripts/fixtures/provider) 全量目录；每个 provider source 都有 `exact.jsonl` 和 `diagnose.jsonl`，回归见 [test_provider_family_fixtures.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_provider_family_fixtures.py)。
+- desktop fixture 已补齐到 [scripts/fixtures/desktop](/Users/guokeyu/AI/codex/token-usage-universal/scripts/fixtures/desktop)，覆盖 chromium desktop family 与 `claude-desktop / minimax-agent` native desktop，回归见 [test_chromium_desktop_fixtures.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_desktop_fixtures.py) 和 [test_native_desktop_fixtures.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_native_desktop_fixtures.py)。
+- skill/source/env/generated-doc 契约已固化到：
+  - [test_skill_guidance_contract.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_skill_guidance_contract.py)
+  - [test_sources_contract.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_sources_contract.py)
+  - [test_env_registry_contract.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_env_registry_contract.py)
+  - [test_generated_docs_contract.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_generated_docs_contract.py)
+- `pricing_db.json` 现已增加 `verified_at`，并由 [test_pricing.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_pricing.py) 校验超过 `90` 天未核验就警告。
+- `file_cache` 现已增加 `1000 session` 性能回归基线，基线文件位于 [file_cache_baseline.json](/Users/guokeyu/AI/codex/token-usage-universal/scripts/fixtures/performance/file_cache_baseline.json)，回归见 [test_file_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_file_cache.py)。
+- `COVERAGE.md` 与 `ENV.md` 不再手写维护，已由 [build_coverage_doc.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/build_coverage_doc.py) 和 [build_env_doc.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/build_env_doc.py) 自动生成，并接入 CI `--check`。
 - 发布导出脚本已接入 `--validate` 自动门禁，实现在 [build_release.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/build_release.py)。
 - “无 host 环境”的替代链路已落地在 [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)，会在 `windows-latest + macos-latest` 上跑单测和 `release-gate --output-dir ...`，然后上传 artifact。
 - 本地触发/回收脚本已落地在 [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)，会用 `gh` 触发 workflow、等待 run 完成，并把 artifact 下载到本地目录。
@@ -82,6 +93,7 @@
   - 当前已确认 Claude Desktop 某些 `chat_conversations?...consistency=eventual` 缓存文件会把 zstd 帧头首字节误吞进 URL 末尾；修复后 URL 已恢复为不带尾随 `(` 的真实地址
   - `python3 -m unittest scripts.test_claude_code scripts.test_reporting scripts.test_chromium_desktop_adapters` 当前通过
   - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，`158` tests
+  - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 当前最新再次通过，`189` tests
   - `Claude Code` project JSONL fixture 已成功输出 `total_tokens = 30848`、`input_tokens = 30109`、`cached_input_tokens = 123`、`output_tokens = 616`
   - report 当前已能把 `claude-sonnet-4-6` 归到“已观测模型（未计入 token）”，不会误算进 exact 总量
   - report 当前已能把 `minimax-agent` 归到“已观测来源（未计入 token）”，不会因为只有痕迹就静默消失
@@ -102,12 +114,18 @@
   - `python3 scripts/token_usage.py ingress bootstrap --profile anthropic --editor jetbrains --format json` 成功输出官方 Anthropic profile 的 root-base companion 样板
   - `python3 scripts/token_usage.py ingress bootstrap --profile anthropic-compatible --editor jetbrains --upstream-base-url https://api.anthropic.example --format json` 成功输出 Anthropic-compatible JetBrains 样板
   - 当前机器 `health` 仍显示 `deepseek-desktop / qianfan-desktop / yuanbao-desktop = not-found`，原因是本机没有对应 app-data 根目录，不是代码未实现
-  - `python3 scripts/token_usage.py release-gate --format json` 当前返回 `7/7 gates passed`，其中 `Top20 coverage / China priority / exact surface / false-ready claims / default report duplicate rate / diagnose explainability / windows-macos-root-matrix` 全部通过
+  - `python3 scripts/token_usage.py release-gate --format json` 当前返回 `7/7 gates passed`，其中 `Top20 coverage / China priority / exact surface / false-ready claims / default report duplicate rate / diagnose explainability / windows-macos-linux-root-matrix` 全部通过
   - `python3 scripts/token_usage.py release-gate --format json --output-dir /tmp/token-usage-universal-evidence` 当前已实跑成功，证据包目录可直接用于后续真机交接
+  - `python3 scripts/token_usage.py release-gate --format json --baseline /tmp/token-usage-baseline.542hFH --output-dir /tmp/token-usage-current.422X4d` 当前已实跑成功，`baseline diff = 50 unchanged / 0 regressed / 0 improved / 0 new / 0 removed`，且证据包内已真实落出 `diff.json`
   - `python3 scripts/build_release.py --output-dir /tmp/token-usage-universal-release-gate --validate --force` 当前已实跑成功，说明发布导出链路会先过单测与 `release-gate`
   - `git remote -v` 当前显示 `origin = https://github.com/zsfd1997-glitch/token-usage-universal.git`
   - `gh auth status` 当前显示账号 `zsfd1997-glitch` 已登录，且 token scope 包含 `repo` 和 `workflow`
   - `python3 -m unittest scripts.test_skill_contract` 当前通过，说明仓库内 `SKILL.md` 和 `README.md` 已共同约束 `token` 默认触发与 `ascii-hifi` 默认输出
+  - 仓库 `SKILL.md` 当前已瘦身为 `45` 行门面；详细自然语言路由与输出协议已拆到 [skill-routing.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-routing.md) 和 [skill-output-contract.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-output-contract.md)
+  - `python3 -m unittest scripts.test_skill_contract scripts.test_skill_guidance_contract` 当前通过，`9` tests
+  - `python3 -m unittest scripts.test_env_registry_contract scripts.test_generated_docs_contract` 当前通过，`5` tests
+  - `python3 /Users/guokeyu/.codex/skills/.system/skill-creator/scripts/quick_validate.py /Users/guokeyu/AI/codex/token-usage-universal` 当前返回 `Skill is valid!`
+  - `python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 当前再次通过，`191` tests
   - `gh api repos/zsfd1997-glitch/token-usage-universal/community/profile` 当前仍返回 `health_percentage = 57`，且 `code_of_conduct / issue_template / pull_request_template = null`；这是远端默认分支尚未包含本地新文件，不是本地仓库缺失
   - `python3 -m unittest scripts.test_github_repo_contract scripts.test_skill_contract` 当前通过
 

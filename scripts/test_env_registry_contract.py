@@ -8,11 +8,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 README_TEXT = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+ENV_DOC_TEXT = (REPO_ROOT / "docs" / "ENV.md").read_text(encoding="utf-8")
 CONFIG_TEXT = (REPO_ROOT / "scripts" / "core" / "config.py").read_text(encoding="utf-8")
 
 
-def _readme_env_keys() -> set[str]:
-    return set(re.findall(r"`(TOKEN_USAGE_[A-Z_]+)`", README_TEXT))
+def _env_doc_keys() -> set[str]:
+    return set(re.findall(r"`(TOKEN_USAGE_[A-Z_]+)`", ENV_DOC_TEXT))
 
 
 def _config_env_keys() -> set[str]:
@@ -30,18 +31,21 @@ def _config_env_keys() -> set[str]:
 
 
 class EnvRegistryContractTests(unittest.TestCase):
-    def test_readme_lists_every_env_key_used_in_code(self) -> None:
-        missing = _config_env_keys() - _readme_env_keys()
+    def test_readme_points_to_generated_env_doc(self) -> None:
+        self.assertIn("./docs/ENV.md", README_TEXT)
+
+    def test_env_doc_lists_every_env_key_used_in_code(self) -> None:
+        missing = _config_env_keys() - _env_doc_keys()
         self.assertFalse(
             missing,
-            f"README 漏掉了 core/config.py 里在用的 env：{sorted(missing)}",
+            f"docs/ENV.md 漏掉了 core/config.py 里在用的 env：{sorted(missing)}",
         )
 
-    def test_readme_does_not_list_dead_env_keys(self) -> None:
-        dead = _readme_env_keys() - _config_env_keys()
+    def test_env_doc_does_not_list_dead_env_keys(self) -> None:
+        dead = _env_doc_keys() - _config_env_keys()
         self.assertFalse(
             dead,
-            f"README 里挂了已经失效的 env：{sorted(dead)}",
+            f"docs/ENV.md 里挂了已经失效的 env：{sorted(dead)}",
         )
 
 

@@ -127,6 +127,7 @@ python3 scripts/token_usage.py report --current-session
 - 短触发词 `token / 用量 / 消耗量 / 使用量 / 消耗` 默认都视为“先看今天总览”
 - 默认成品不是一句话摘要，而是 `ascii-hifi` 终端面板
 - 只要底层 CLI 已返回 `ascii-hifi` 面板，聊天输出就应先原样贴面板，再补 1 到 3 句高信号结论
+- 详细触发映射和输出协议拆在 [skill-routing.md](./references/skill-routing.md) 与 [skill-output-contract.md](./references/skill-output-contract.md)，根目录 `SKILL.md` 只保留轻量门面
 
 如果后面有人改了这套契约，仓库内测试会直接报错，避免 GitHub 版和某台开发机的私有配置漂移。
 
@@ -173,7 +174,22 @@ python3 scripts/token_usage.py release-gate \
 - `diagnose/*.json`
 - `SUMMARY.md`
 
-如果本地没有 `Windows/macOS` host，也可以直接走 GitHub 托管 runner：
+如果要和上一次证据包做趋势对比，可以再加 `--baseline`：
+
+```bash
+python3 scripts/token_usage.py release-gate \
+  --format json \
+  --baseline /path/to/prev-bundle \
+  --output-dir /tmp/token-usage-universal-evidence
+```
+
+这时会额外产出：
+
+- `diff.json`
+- `release_gate.json` 里的 `baseline.diff`
+- `SUMMARY.md` 顶部的状态对比摘要
+
+如果本地没有 `Windows/macOS/Linux` host，也可以直接走 GitHub 托管 runner：
 
 - workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
 - 行为：在 `ubuntu-latest`、`windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
@@ -181,80 +197,18 @@ python3 scripts/token_usage.py release-gate \
 
 ## Coverage
 
-当前覆盖面分成五类：
+覆盖面不再手写维护，详细 source matrix 统一看自动生成文档：
 
-### Native Clients
+- [COVERAGE.md](./docs/COVERAGE.md)
+- [Top20 Execution Plan](./docs/TOP20_EXECUTION_PLAN.md)
+- [Top20 Surface Matrix](./docs/TOP20_SURFACE_MATRIX.md)
 
-- `codex`
-- `claude-code`
-- `claude-desktop`
-- `opencode`
-- `minimax-agent`
+这里保留一条总规则：
 
-### Coding CLI
+- `generic-openai-compatible` 只做 fallback / diagnose 补漏，默认不参与总览，避免和已拆分 provider family 重复计数。
 
-- `qwen-code-cli`
-- `kimi-cli`
-- `gemini-cli`
+配套文档：
 
-### Desktop Clients
-
-- `kimi-desktop`
-- `glm-desktop`
-- `qwen-desktop`
-- `deepseek-desktop`
-- `doubao-desktop`
-- `qianfan-desktop`
-- `yuanbao-desktop`
-- `perplexity-desktop`
-- `stepfun-desktop`
-- `sensenova-desktop`
-- `baichuan-desktop`
-- `siliconflow-desktop`
-- `spark-desktop`
-- `chatgpt-desktop`
-- `gemini-desktop`
-- `grok-desktop`
-- `mistral-desktop`
-
-### Provider / API Families
-
-- `openai-api`
-- `anthropic-api`
-- `google-gemini-api`
-- `moonshot-kimi-api`
-- `zhipu-glm-api`
-- `qwen-api`
-- `deepseek-api`
-- `minimax-api`
-- `xai-grok-api`
-- `cohere-api`
-- `mistral-api`
-- `perplexity-api`
-- `openrouter-api`
-- `togetherai-api`
-- `fireworks-api`
-- `azure-openai-api`
-- `baidu-qianfan-api`
-- `tencent-hunyuan-api`
-- `stepfun-api`
-- `doubao-api`
-- `sensenova-api`
-- `baichuan-api`
-- `siliconflow-api`
-- `spark-api`
-
-### Fallback and Ingress
-
-- `generic-openai-compatible`
-- `ingress companion`
-
-`generic-openai-compatible` 保留给手动 diagnose / 补漏，不再默认参与总览，避免和已拆分的 provider family 重复计数。
-
-Top20 执行主线文档：
-
-- [Top20 Execution Plan](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_EXECUTION_PLAN.md)
-- [Top20 Surface Matrix](/Users/guokeyu/AI/codex/token-usage-universal/docs/TOP20_SURFACE_MATRIX.md)
 - [Simulated Machine Testing](/Users/guokeyu/AI/codex/token-usage-universal/docs/SIMULATED_MACHINE_TESTING.md)
 - [VM Runbook](/Users/guokeyu/AI/codex/token-usage-universal/docs/VM_RUNBOOK.md)
 
@@ -324,38 +278,17 @@ Top20 执行主线文档：
 
 ## 环境变量
 
-| Variable | Purpose |
-|---|---|
-| `TOKEN_USAGE_CODEX_ROOT` | 覆写 Codex session 根目录 |
-| `TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT` | 覆写 Claude transcript 目录 |
-| `TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT` | 覆写 Claude local-agent-mode-sessions 目录 |
-| `TOKEN_USAGE_CLAUDE_DESKTOP_ROOT` | 覆写 Claude Desktop app-data 目录 |
-| `TOKEN_USAGE_MINIMAX_AGENT_ROOT` | 覆写 MiniMax Agent 桌面端数据目录 |
-| `TOKEN_USAGE_KIMI_DESKTOP_ROOT` | 覆写 Kimi Desktop app-data 目录 |
-| `TOKEN_USAGE_GLM_DESKTOP_ROOT` | 覆写 GLM Desktop app-data 目录 |
-| `TOKEN_USAGE_QWEN_DESKTOP_ROOT` | 覆写 Qwen / DashScope app-data 目录 |
-| `TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT` | 覆写 DeepSeek Desktop app-data 目录 |
-| `TOKEN_USAGE_DOUBAO_DESKTOP_ROOT` | 覆写 Doubao Desktop app-data 目录 |
-| `TOKEN_USAGE_QIANFAN_DESKTOP_ROOT` | 覆写 Qianfan / 文心 / 文小言 app-data 目录 |
-| `TOKEN_USAGE_YUANBAO_DESKTOP_ROOT` | 覆写 Yuanbao / Hunyuan app-data 目录 |
-| `TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT` | 覆写 Perplexity Desktop app-data 目录 |
-| `TOKEN_USAGE_STEPFUN_DESKTOP_ROOT` | 覆写 StepFun Desktop app-data 目录 |
-| `TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT` | 覆写 SenseNova Desktop app-data 目录 |
-| `TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT` | 覆写 Baichuan Desktop app-data 目录 |
-| `TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT` | 覆写 SiliconFlow Desktop app-data 目录 |
-| `TOKEN_USAGE_SPARK_DESKTOP_ROOT` | 覆写 Spark / Xinghuo Desktop app-data 目录 |
-| `TOKEN_USAGE_CHATGPT_DESKTOP_ROOT` | 覆写 ChatGPT Desktop app-data 目录 |
-| `TOKEN_USAGE_GEMINI_DESKTOP_ROOT` | 覆写 Gemini Desktop app-data 目录 |
-| `TOKEN_USAGE_GROK_DESKTOP_ROOT` | 覆写 Grok Desktop app-data 目录 |
-| `TOKEN_USAGE_MISTRAL_DESKTOP_ROOT` | 覆写 Mistral / Le Chat Desktop app-data 目录 |
-| `TOKEN_USAGE_QWEN_CODE_ROOT` | 覆写 Qwen Code CLI runtime root |
-| `TOKEN_USAGE_KIMI_CLI_ROOT` | 覆写 Kimi CLI share root |
-| `TOKEN_USAGE_GEMINI_CLI_ROOT` | 覆写 Gemini CLI runtime root |
-| `TOKEN_USAGE_OPENCODE_BIN` | 覆写 OpenCode CLI 可执行文件路径 |
-| `TOKEN_USAGE_OPENCODE_ROOTS` | 覆写 OpenCode 本地 roots 列表 |
-| `TOKEN_USAGE_GENERIC_LOG_GLOBS` | 配置兼容 API exact log 的逗号分隔 glob |
-| `TOKEN_USAGE_DISCOVERY_ROOTS` | 覆写兼容 API 日志自动发现根目录 |
-| `TOKEN_USAGE_CACHE_ROOT` | 覆写本地增量缓存目录 |
+完整环境变量表不再手写维护，统一看自动生成文档：
+
+- [ENV.md](./docs/ENV.md)
+
+机器相关的默认路径不要看文档猜，直接运行：
+
+```bash
+python3 scripts/token_usage.py health --format json
+```
+
+它会返回当前机器解析后的默认值、是否已配置 override，以及下一步建议。
 
 示例：
 

@@ -61,11 +61,11 @@ git branch -M main
 说明：
 
 - `build_release.py --validate` 会先跑全量单测，再跑一次 `release-gate`。
-- `release-gate` 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的双平台默认根路径矩阵。
-- `release-gate --output-dir ...` 可以把当前机器的 `health / sources / targets / report / diagnose / gate` 一次性落盘，适合做 Windows/macOS 真机交接证据。
-- 如果本地没有 `Windows/macOS` host，可直接使用 [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml) 在 GitHub-hosted runners 上导出双平台 evidence artifact。
+- `release-gate` 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的 `Windows + macOS + Linux` 默认根路径矩阵。
+- `release-gate --output-dir ...` 可以把当前机器的 `health / sources / targets / report / diagnose / gate` 一次性落盘；配合 `--baseline <prev_bundle_dir>` 还能额外产出 `diff.json`，适合做趋势化交接证据。
+- 如果本地没有 `Windows/macOS/Linux` host，可直接使用 [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml) 在 GitHub-hosted runners 上导出三平台 evidence artifact。
 - 如果您已经把当前分支 push 到 GitHub，可直接运行 [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh) 自动触发 workflow、等待完成并把 artifact 拉回本地。
-- 真实双机 E2E 与大样本重复计数实测仍建议在正式对外发布前补跑。
+- 真实多机 E2E 与大样本重复计数实测仍建议在正式对外发布前补跑。
 
 ## Task Master 说明
 

@@ -159,6 +159,9 @@
   - 最新 hosted evidence artifact 已下载到 [github-hosted](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/output/github-hosted)
   - 全量单测已从 `153` 提升到 `158` 个通过
   - 本地 `release-gate` 仍保持 `7/7 gates passed`
+  - 仓库 `SKILL.md` 现已从 `442` 行单文件瘦身到 `45` 行门面；详细自然语言路由与输出协议拆到 [skill-routing.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-routing.md) 与 [skill-output-contract.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-output-contract.md)
+  - repo skill 结构已通过 `python3 /Users/guokeyu/.codex/skills/.system/skill-creator/scripts/quick_validate.py /Users/guokeyu/AI/codex/token-usage-universal`
+  - 全量单测已进一步提升到 `191` 个通过
 
 ## Not Completed
 - 当前机器上 `claude-desktop / minimax-agent` 仍只有本地痕迹，没有 exact token-bearing 真源，所以 `sonnet / minimax` 还不能被本机最终计入。

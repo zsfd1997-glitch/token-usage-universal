@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +17,13 @@ if str(SCRIPT_DIR) not in sys.path:
 from core.file_cache import FileEventCache
 from core.models import UsageEvent
 from test_time import PACIFIC_TZ
+
+
+BASELINE = json.loads(
+    (
+        Path(__file__).resolve().parent / "fixtures" / "performance" / "file_cache_baseline.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def _sample_event(source_path: str) -> UsageEvent:
@@ -80,6 +89,52 @@ class FileEventCacheTests(unittest.TestCase):
             self.assertEqual(issues, [])
             self.assertEqual(len(events), 1)
             self.assertEqual(events[0].total_tokens, 125)
+
+    def test_file_cache_1000_session_performance_stays_within_baseline(self) -> None:
+        session_count = int(BASELINE["session_count"])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source_dir = root / "sessions"
+            source_dir.mkdir(parents=True)
+            source_files = []
+            for index in range(session_count):
+                source_file = source_dir / f"rollout-{index:04d}.jsonl"
+                source_file.write_text('{"type":"token_count"}\n', encoding="utf-8")
+                source_files.append(source_file)
+
+            cache = FileEventCache(root / "cache")
+
+            save_start = time.perf_counter()
+            for source_file in source_files:
+                cache.save(
+                    source_id="codex",
+                    parser_version="codex-v1",
+                    path=source_file,
+                    events=[_sample_event(str(source_file))],
+                    verification_issues=[],
+                )
+            save_seconds = time.perf_counter() - save_start
+
+            load_start = time.perf_counter()
+            for source_file in source_files:
+                loaded = cache.load(
+                    source_id="codex",
+                    parser_version="codex-v1",
+                    path=source_file,
+                )
+                self.assertIsNotNone(loaded)
+            load_seconds = time.perf_counter() - load_start
+
+        self.assertLessEqual(
+            save_seconds,
+            float(BASELINE["max_save_seconds"]),
+            f"1000 session save regression: {save_seconds:.3f}s > baseline {BASELINE['max_save_seconds']}s",
+        )
+        self.assertLessEqual(
+            load_seconds,
+            float(BASELINE["max_load_seconds"]),
+            f"1000 session load regression: {load_seconds:.3f}s > baseline {BASELINE['max_load_seconds']}s",
+        )
 
 
 if __name__ == "__main__":

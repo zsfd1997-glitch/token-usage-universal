@@ -60,7 +60,7 @@ SKILL.md
 - `session_detail`
 - `charts.trend_7d / charts.trend_30d / charts.calendar_month`
 - `targets`（冻结的 Top20 ecosystem/client-family registry）
-- `release-gate`（自动化校验 Top20 覆盖率、exact 覆盖率、结构性误报、默认 report 重复计数 probe 与双平台 root matrix）
+- `release-gate`（自动化校验 Top20 覆盖率、exact 覆盖率、结构性误报、默认 report 重复计数 probe、`Windows + macOS + Linux` root matrix 与 baseline diff）
 
 ### 3. Rendering Layer
 

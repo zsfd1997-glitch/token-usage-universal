@@ -36,6 +36,12 @@
 - [x] `Gemini CLI` 原生 exact 适配完成
 - [x] Top20 全生态 exact 适配完成
 - [x] Phase 6 自动化 release gate 落地
+- [x] Phase 1 契约测试加固完成
+- [x] Phase 2 fixture 真源/diagnose 证据补齐完成
+- [x] Phase 3 Linux 默认路径与 hostless ubuntu 链路落地
+- [x] Phase 4 趋势化 evidence、价格核验时效、file cache 性能基线落地
+- [x] Phase 5 COVERAGE / ENV 自动生成与 CI 漂移门禁落地
+- [x] Part B skill 渐进披露重构完成
 
 ## 阶段链路
 - DISCOVER: 已确认当前项目已有多 source 基础，但缺少 Top20 生态真源与统一执行主线。
@@ -63,5 +69,13 @@
 - EXECUTE: 已修复 Windows hosted runner 上 CLI 子进程中文 JSON 输出的 legacy codec 问题，并新增 `cp1252` 回归测试。
 - EXECUTE: 已把 `test_cli_integration.py` 统一改成显式 `stdout/stderr PIPE + encoding='utf-8'`，消除 Windows hosted runner 的平台差异假阳性。
 - VERIFY: 已再次跑全量单测与 `release-gate`，最新为 `158` tests passing，`7/7 gates passed`。
+- EXECUTE: 已新增 `test_skill_guidance_contract / test_sources_contract / test_env_registry_contract / test_generated_docs_contract / test_release_gate_baseline`，并把默认面板骨架、退出词、周/月引导、source/source_id 契约、生成文档漂移与 baseline diff 固定成测试。
+- EXECUTE: 已补齐 `scripts/fixtures/provider/*` 的全量 provider family `exact + diagnose` fixtures，以及 `scripts/fixtures/desktop/*` 的 chromium/native desktop fixtures。
+- EXECUTE: 已把 `release-gate` 升级为输出 `source_states / source_state_summary / baseline diff`，证据包新增 `diff.json`，`SUMMARY.md` 固定展示 `exact / diagnose / unsupported` 计数。
+- EXECUTE: 已给 `pricing_db.json` 增加 `verified_at`，给 `file_cache` 增加 `1000 session` 性能基线，并新增 `docs/COVERAGE.md / docs/ENV.md` 自动生成脚本与 CI `--check` 门禁。
+- VERIFY: 已再次跑 `python3 -m unittest discover -s scripts -t . -p 'test_*.py'`，最新为 `189` tests passing。
+- VERIFY: 已实跑 `python3 scripts/token_usage.py health --format json`、`sources --format json`、`release-gate --format json` 与 `release-gate --baseline <bundle> --output-dir <bundle>`；当前 `supported_sources = 50`、`ready_sources = 4`、`7/7 gates passed`、baseline diff 为 `50 unchanged / 0 regressed`。
+- EXECUTE: 已把 repo `SKILL.md` 重构为轻量门面，并拆出 `references/skill-routing.md` / `references/skill-output-contract.md`；README 同步指向新的渐进披露结构。
+- VERIFY: 已跑 `python3 -m unittest scripts.test_skill_contract scripts.test_skill_guidance_contract`、`python3 -m unittest scripts.test_env_registry_contract scripts.test_generated_docs_contract`、skill `quick_validate` 与全量 `191` tests passing。
 - SHIP: 当前为仓库内阶段性交付，不做远端发布。
-- HANDOFF: `hostless-evidence` 第三轮 run `24128775284` 已成功拿到修复后的双平台 artifact；下一步直接进入真实双机 E2E 与重复计数率大样本实测。
+- HANDOFF: Phase 1-5 与 Part B skill refactor 当前已在仓库内完成；后续主线只剩真实多机 E2E 和更多桌面 token-bearing 样本采集。

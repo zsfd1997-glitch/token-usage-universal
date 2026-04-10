@@ -428,6 +428,46 @@ class CliIntegrationTests(unittest.TestCase):
             release_payload = json.loads((output_dir / "release_gate.json").read_text(encoding="utf-8"))
             self.assertEqual(release_payload["summary"]["status"], "pass")
 
+    def test_release_gate_can_diff_against_baseline_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            baseline_dir = tmp_path / "baseline"
+            baseline_dir.mkdir(parents=True)
+            output_dir = tmp_path / "release-evidence"
+            (baseline_dir / "sources.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "source_id": "synthetic-source",
+                            "state": "exact",
+                        }
+                    ],
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = self._run_cli(
+                [
+                    "release-gate",
+                    "--format",
+                    "json",
+                    "--baseline",
+                    str(baseline_dir),
+                    "--output-dir",
+                    str(output_dir),
+                ],
+                env=os.environ.copy(),
+            )
+
+            payload = json.loads(result.stdout)
+            self.assertIn("baseline", payload)
+            self.assertEqual(payload["baseline"]["diff"]["counts"]["removed_sources"], 1)
+            self.assertIn("synthetic-source", payload["baseline"]["diff"]["removed_sources"])
+            self.assertTrue((output_dir / "diff.json").exists())
+
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
         result = self._run_cli(
             [

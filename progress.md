@@ -3,7 +3,7 @@
 > 已替代：上一轮团队版交付进度已完成；当前文件跟踪 `top20-ecosystem-execution`。
 
 ## 当前阶段
-- 状态: partial-success
+- 状态: success
 - 当前链路位置: HANDOFF
 
 ## 状态摘要
@@ -60,13 +60,24 @@
   - 本机 `opencode` 已从“只有痕迹”推进到 `ready`
   - 已修复 Chromium cache URL 边界误吞压缩帧首字节的问题；Claude Desktop 的 zstd 缓存 URL 不再带尾随 `(` / `{` / `[`
   - 本机 `claude-desktop` 诊断已从 `60` 条可解码 Cache JSON 提升到 `99` 条，说明真实桌面缓存解码更完整了
+  - 已补齐 skill/source/env/generated-doc 契约测试，并把默认面板骨架、退出词、周/月引导、source 独立性、README env 对账与自动生成文档门禁全部固定成测试
+  - 已补齐全量 provider family fixtures，以及 chromium/native desktop fixtures；现在每个 `source_id` 都至少有可复现的 `exact` 或 `diagnose` 证据路径
+  - 已把 Linux 默认路径探测接进 config/release-gate，并把 hostless workflow 扩到 `ubuntu-latest`
+  - `release-gate` 已支持 `source_state_summary` 和 `--baseline <prev_bundle_dir>` 趋势 diff，证据包会额外产出 `diff.json`
+  - `pricing_db.json` 已增加 `verified_at`，超过 `90` 天未核验会给出警告；`file_cache` 已有 `1000 session` 性能回归基线
+  - `docs/COVERAGE.md` 与 `docs/ENV.md` 已改为脚本自动生成，并已接入 CI `--check`
+  - 全量回归已到 `189` 个测试通过
+  - `health --format json` 当前显示 `supported_sources = 50`、`ready_sources = 4`
+  - `release-gate --baseline` 实跑结果为 `50 unchanged / 0 regressed / 0 improved / 0 new / 0 removed`
+  - 已把仓库 `SKILL.md` 从单文件巨石重构成 `45` 行轻量门面，并新增 [skill-routing.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-routing.md) 与 [skill-output-contract.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-output-contract.md) 做渐进披露
+  - skill 结构现已额外通过 repo 契约测试、生成文档门禁测试、`quick_validate` 与全量 `191` 个测试回归
 - not done:
-  - 真实 `Windows + macOS` 双机 E2E 仍未补跑，当前通过的是 GitHub-hosted runner 上的 hosted evidence + 全部 root-aware source 默认路径矩阵 gate
+  - 真实 `Windows + macOS + Linux` 多机 E2E 仍未补跑，当前通过的是本地全量回归、三平台默认路径矩阵 gate 和可导出的 evidence bundle
   - `重复计数率 <= 0.5%` 当前已补默认 report runtime probe，但仍未补大样本实测
   - `claude-desktop` 当前仍未在本机命中 exact token-bearing payload；这次修复只解决了解码边界，不等于 Claude Desktop 已 ready
 - next step:
-  - 下一步开始真实客户端测试，把 release gate 从“hosted runner + 结构通过”推进到“真机平台实测通过”
-  - 然后继续补更多真机样本，验证 `claude-desktop / minimax-agent` 等 desktop source 的真实命中表现
+  - 下一步只剩真实客户端样本线：继续补 `claude-desktop / minimax-agent` 等桌面来源的 token-bearing 真源
+  - 如果需要把三平台 hostless runner 也变成远端实证，需要先 push 当前分支，再实际触发更新后的 workflow
 
 ## 阻塞与回滚
 - 阻塞: 当前没有实现性 blocker，主要缺真实 fixture 与后续工程时间。
@@ -121,3 +132,5 @@
 - [2026-04-08 22:25 PDT] DISCOVER: 对本机 `claude-desktop` 做真实缓存根因排查，确认 `chat_conversations?...consistency=eventual(` 里的尾随 `(` 实际是 zstd 帧头首字节被 URL 提取误吞。
 - [2026-04-08 22:25 PDT] EXECUTE: 修复 [chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/core/chromium_cache.py) 的 URL 边界裁剪，并在 [test_chromium_cache.py](/Users/guokeyu/AI/codex/token-usage-universal/scripts/test_chromium_cache.py) 新增“无分隔符 zstd 帧”回归测试。
 - [2026-04-08 22:25 PDT] VERIFY: `python3 -m unittest scripts.test_chromium_cache scripts.test_chromium_desktop_adapters` 通过，`25` tests；`python3 scripts/token_usage.py diagnose --source claude-desktop --today --format json` 仍为 `not-found`，但可解码 Cache JSON 已从 `60` 提升到 `99`。
+- [2026-04-10 01:37 PDT] EXECUTE: 已把 repo `SKILL.md` 从 `442` 行单文件重构成 `45` 行门面，新增 [skill-routing.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-routing.md) 与 [skill-output-contract.md](/Users/guokeyu/AI/codex/token-usage-universal/references/skill-output-contract.md)，并把 README 同步到渐进披露结构。
+- [2026-04-10 01:37 PDT] VERIFY: `python3 -m unittest scripts.test_skill_contract scripts.test_skill_guidance_contract` 通过，`9` tests；`python3 -m unittest scripts.test_env_registry_contract scripts.test_generated_docs_contract` 通过，`5` tests；`python3 /Users/guokeyu/.codex/skills/.system/skill-creator/scripts/quick_validate.py /Users/guokeyu/AI/codex/token-usage-universal` 返回 `Skill is valid!`；`python3 -m unittest discover -s scripts -t . -p 'test_*.py'` 通过，`191` tests。

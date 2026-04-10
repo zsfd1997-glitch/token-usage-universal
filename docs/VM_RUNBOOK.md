@@ -6,6 +6,7 @@
 
 - `Windows guest`
 - `macOS guest`
+- `Linux hostless runner`
 - 证据包导出
 - host 回收与归档
 
@@ -40,9 +41,9 @@ python3 scripts/token_usage.py release-gate \
   - [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
   - [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
 - 适合场景：
-  - 本地没有 `Windows/macOS` host
+  - 本地没有 `Windows/macOS/Linux` host
   - 先拿平台级 `health / targets / release-gate / diagnose` 证据
-  - 先验证 workflow、artifact 和双平台 runner 路径
+  - 先验证 workflow、artifact 和三平台 runner 路径
 
 ### Windows guest
 
@@ -111,7 +112,8 @@ host 侧证据目录：
 
 ### 1. 适用前提
 
-- 没有本地 `Windows/macOS` host
+- 没有本地 `Windows/macOS/Linux` host
+- 没有本地 `Linux` host 也没关系，hostless workflow 会补齐 `ubuntu-latest`
 - 仓库在 GitHub 上
 - 可以使用 GitHub Actions 托管 runner
 
@@ -134,6 +136,7 @@ cd examples/vm-testing
 
 workflow 会在：
 
+- `ubuntu-latest`
 - `windows-latest`
 - `macos-latest`
 
@@ -154,6 +157,7 @@ python scripts/token_usage.py release-gate --format json --output-dir <runner te
 
 每个平台会产出一个 artifact：
 
+- `<artifact-prefix>-ubuntu`
 - `<artifact-prefix>-windows`
 - `<artifact-prefix>-macos`
 

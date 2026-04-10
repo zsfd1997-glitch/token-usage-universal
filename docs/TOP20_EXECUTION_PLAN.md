@@ -241,14 +241,15 @@
 
 目标：
 
-- Win/mac matrix + release gate
+- Win/macOS/Linux matrix + release gate + baseline diff
 
 当前进度：
 
 - `token_usage.py release-gate` 已落地：自动计算 Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 重复计数率、diagnose 可解释率
 - `token_usage.py release-gate --output-dir ...` 已可直接导出真实机器证据包：`health / sources / targets / report / diagnose / gate`
 - `build_release.py --validate` 已接入自动门禁：先跑全量单测，再跑 `release-gate`
-- `Windows + macOS` 当前已扩到全部 root-aware source 的默认路径矩阵 gate；真实双机 E2E 仍保留为后续补强项
+- `Windows + macOS + Linux` 当前已扩到全部 root-aware source 的默认路径矩阵 gate；真实多机 E2E 仍保留为后续补强项
+- `release-gate --baseline <prev_bundle_dir>` 已可输出 source state 趋势 diff，用来识别 `exact -> diagnose` 退化
 
 验收：
 
@@ -262,7 +263,7 @@
 - `误报 ready = 0`
 - `重复计数率 <= 0.5%`
 - `diagnose 可解释率 >= 95%`
-- `Windows + macOS` 双平台通过
+- `Windows + macOS + Linux` 三平台通过
 
 ## Rollback
 

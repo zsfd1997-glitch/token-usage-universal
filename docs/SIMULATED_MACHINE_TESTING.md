@@ -4,7 +4,7 @@
 
 给 `token-usage-universal` 建一条“模拟实机测试”路线，用来补齐当前还缺的：
 
-- `Windows + macOS` 双平台真机证据
+- `Windows + macOS + Linux` 平台级证据
 - `claude-desktop / minimax-agent` 等桌面来源的真实 app-data 命中
 - 大样本重复计数率实测
 
@@ -21,6 +21,7 @@
 - 需要同时覆盖：
   - `macOS guest` 验证链路
   - `Windows guest` 验证链路
+  - `Linux hostless` 验证链路
   - 尽量自动化，但允许手动调试工具作为辅助手段
 
 ## Awesome 检索摘要
@@ -31,6 +32,7 @@
 - 检索范围：
   - Apple Silicon 上的 macOS VM 自动化
   - Windows/macOS 本地 VM 管理
+  - Linux hostless runner 证据采集
   - provider/provisioning 工具
   - CI/automation 友好型 VM 方案
 - 官方资料范围：
