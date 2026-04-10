@@ -4,7 +4,12 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:docs.claude.com)",
-      "WebSearch"
+      "WebSearch",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/guokeyu/.claude"
     ]
   }
 }

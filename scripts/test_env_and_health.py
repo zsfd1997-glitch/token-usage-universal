@@ -34,6 +34,7 @@ from core.config import (
     default_claude_local_agent_root,
     default_cache_root,
     default_desktop_app_roots,
+    default_discovery_roots,
     default_minimax_agent_root,
     default_opencode_roots,
     safe_home_path,
@@ -121,6 +122,15 @@ class EnvironmentOverrideTests(unittest.TestCase):
 
         self.assertEqual(path, Path("C:/Users/tester/AppData/Roaming/Claude/local-agent-mode-sessions"))
 
+    def test_linux_default_claude_local_agent_root_uses_config(self) -> None:
+        path = default_claude_local_agent_root(
+            os_name="posix",
+            home=Path("/home/tester"),
+            platform_name="linux",
+        )
+
+        self.assertEqual(path, Path("/home/tester/.config/Claude/local-agent-mode-sessions"))
+
     def test_default_cache_root_is_not_tied_to_codex(self) -> None:
         path = default_cache_root(
             os_name="nt",
@@ -159,6 +169,17 @@ class EnvironmentOverrideTests(unittest.TestCase):
         self.assertIn(Path("C:/Users/tester/AppData/Roaming/Perplexity"), windows_roots)
         self.assertIn(Path("C:/Users/tester/AppData/Local/Perplexity"), windows_roots)
 
+    def test_default_desktop_app_roots_cover_linux(self) -> None:
+        linux_roots = default_desktop_app_roots(
+            ("Claude",),
+            os_name="posix",
+            home=Path("/home/tester"),
+            platform_name="linux",
+        )
+
+        self.assertIn(Path("/home/tester/.config/Claude"), linux_roots)
+        self.assertIn(Path("/home/tester/.local/share/Claude"), linux_roots)
+
     def test_windows_default_opencode_roots_include_roaming_and_local(self) -> None:
         roots = default_opencode_roots(
             os_name="nt",
@@ -169,6 +190,34 @@ class EnvironmentOverrideTests(unittest.TestCase):
 
         self.assertIn(Path("C:/Users/tester/AppData/Roaming/OpenCode"), roots)
         self.assertIn(Path("C:/Users/tester/AppData/Local/opencode"), roots)
+
+    def test_linux_default_opencode_roots_include_config_state_share(self) -> None:
+        roots = default_opencode_roots(
+            os_name="posix",
+            home=Path("/home/tester"),
+            platform_name="linux",
+        )
+
+        self.assertIn(Path("/home/tester/.config/opencode"), roots)
+        self.assertIn(Path("/home/tester/.local/state/opencode"), roots)
+        self.assertIn(Path("/home/tester/.local/share/opencode"), roots)
+        self.assertIn(Path("/home/tester/.opencode"), roots)
+
+    def test_linux_default_discovery_roots_include_config_state_share(self) -> None:
+        roots = default_discovery_roots(
+            os_name="posix",
+            home=Path("/home/tester"),
+            platform_name="linux",
+        )
+
+        self.assertEqual(
+            roots,
+            [
+                Path("/home/tester/.config"),
+                Path("/home/tester/.local/state"),
+                Path("/home/tester/.local/share"),
+            ],
+        )
 
     def test_safe_home_path_falls_back_to_userprofile(self) -> None:
         with patch("pathlib.Path.home", side_effect=RuntimeError("missing home")):

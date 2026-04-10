@@ -68,6 +68,7 @@ def default_claude_local_agent_root(
     os_name: str | None = None,
     home: Path | None = None,
     appdata: str | None = None,
+    platform_name: str | None = None,
 ) -> Path:
     target_os = os_name or os.name
     home_path = home or safe_home_path()
@@ -75,10 +76,17 @@ def default_claude_local_agent_root(
         appdata_text = (appdata if appdata is not None else os.environ.get("APPDATA", "")).strip()
         base = Path(appdata_text) if appdata_text else home_path / "AppData" / "Roaming"
         return base / "Claude" / "local-agent-mode-sessions"
+    if (platform_name or sys.platform) == "darwin":
+        return (
+            home_path
+            / "Library"
+            / "Application Support"
+            / "Claude"
+            / "local-agent-mode-sessions"
+        )
     return (
         home_path
-        / "Library"
-        / "Application Support"
+        / ".config"
         / "Claude"
         / "local-agent-mode-sessions"
     )
@@ -234,6 +242,7 @@ def default_discovery_roots(
     home: Path | None = None,
     appdata: str | None = None,
     localappdata: str | None = None,
+    platform_name: str | None = None,
 ) -> list[Path]:
     target_os = os_name or os.name
     home_path = home or safe_home_path()
@@ -258,7 +267,7 @@ def default_discovery_roots(
         home_path / ".local" / "state",
         home_path / ".local" / "share",
     ]
-    if sys.platform == "darwin":
+    if (platform_name or sys.platform) == "darwin":
         roots.append(home_path / "Library" / "Application Support")
     return roots
 

@@ -28,6 +28,9 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("这个 skill 的默认成品不是一句话摘要，而是一个带相关上下文的 `ascii-hifi` 面板。", skill_text)
         self.assertIn("只要底层 CLI 已返回 `ascii-hifi` 面板，最终回复必须先原样贴出面板，再补简短结论", skill_text)
         self.assertIn("1. 先输出 `ascii-hifi` 面板", skill_text)
+        self.assertIn("默认把面板放进 fenced code block", skill_text)
+        self.assertIn("不要把 ASCII 面板“翻译”为另一套表述后冒充等价输出", skill_text)
+        self.assertIn("`费用` 默认按“去缓存后 token”估算，不把缓存 token 算进费用里", skill_text)
 
     def test_readme_declares_repo_local_github_contract(self) -> None:
         readme_text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")

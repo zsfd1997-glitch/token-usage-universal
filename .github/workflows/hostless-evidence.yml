@@ -7,13 +7,20 @@ on:
         description: "Artifact name prefix"
         required: false
         default: "hosted-evidence"
+      platform:
+        description: "all | ubuntu | macos | windows"
+        required: false
+        default: "all"
 
 jobs:
   collect-evidence:
+    if: ${{ inputs.platform == 'all' || inputs.platform == matrix.artifact_suffix }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: ubuntu-latest
+            artifact_suffix: ubuntu
           - os: windows-latest
             artifact_suffix: windows
           - os: macos-latest

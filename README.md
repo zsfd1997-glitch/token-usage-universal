@@ -176,7 +176,7 @@ python3 scripts/token_usage.py release-gate \
 如果本地没有 `Windows/macOS` host，也可以直接走 GitHub 托管 runner：
 
 - workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
-- 行为：在 `windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
+- 行为：在 `ubuntu-latest`、`windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
 - 本地触发脚本: [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
 
 ## Coverage

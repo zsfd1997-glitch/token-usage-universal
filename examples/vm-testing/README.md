@@ -91,7 +91,15 @@ export TOKEN_USAGE_TART_VM="your-macos-tart-image"
 
 ```bash
 cd examples/vm-testing
-./run-hostless-evidence.sh
+./run-hostless-evidence.sh --platform all
+```
+
+只跑单个平台时：
+
+```bash
+./run-hostless-evidence.sh --platform ubuntu
+./run-hostless-evidence.sh --platform macos
+./run-hostless-evidence.sh --platform windows
 ```
 
 可选环境变量：
@@ -100,6 +108,7 @@ cd examples/vm-testing
 export TOKEN_USAGE_ARTIFACT_PREFIX="hosted-evidence"
 export TOKEN_USAGE_HOSTLESS_OUTPUT_DIR="$PWD/output/github-hosted"
 export TOKEN_USAGE_HOSTLESS_BRANCH="main"
+export TOKEN_USAGE_HOSTLESS_PLATFORM="ubuntu"
 ```
 
 ### 3. 下载结果

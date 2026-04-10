@@ -1,0 +1,1 @@
+{"created_at":"2026-03-25T10:20:00-07:00","provider":"zhipu","model":"glm-4.5","session_id":"fixture-zhipu-1","project_path":"/tmp/provider-zhipu","usage":{"prompt_tokens":110,"completion_tokens":40,"total_tokens":150}}

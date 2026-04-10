@@ -326,6 +326,15 @@ python3 scripts/token_usage.py diagnose --source codex --today
 - `claude-desktop / minimax-agent / kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop` 也都按 Windows 常见 app-data 路径做了默认探测；如果安装位置不同，再用各自 env override。
 - 结论：Windows 环境不要求联网，也不要求访问百度；只要本地日志可读、Python 可运行，就可以使用。
 
+## Linux 支持
+
+- 现在默认会探测 Linux 常见根目录，不再只写 macOS / Windows 两套路径。
+- `claude-code` 的 local-agent-mode-sessions 默认根目录是 `~/.config/Claude/local-agent-mode-sessions`。
+- `claude-desktop / kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop / 其他 Chromium/Electron 桌面端` 默认会探测 `~/.config/<App>` 和 `~/.local/share/<App>`。
+- `minimax-agent` 默认根目录是 `~/.config/MiniMax Agent`。
+- `opencode` 默认会探测 `~/.config/opencode`、`~/.local/state/opencode`、`~/.local/share/opencode` 和 `~/.opencode`。
+- `generic-openai-compatible` 默认自动发现根目录是 `~/.config`、`~/.local/state`、`~/.local/share`；日志不在这些地方时，再用 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 或 `TOKEN_USAGE_DISCOVERY_ROOTS` 覆写。
+
 ## 当前可复用性结论
 
 - 别人现在可以直接复用 `codex` 路径能力，只要本机也使用标准 `~/.codex/sessions`。

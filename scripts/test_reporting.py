@@ -109,6 +109,30 @@ class ReportingTests(unittest.TestCase):
         self.assertNotIn("等级评定", rendered)
         self.assertNotIn("诊断", rendered)
 
+    def test_today_dashboard_contains_default_panel_skeleton(self) -> None:
+        chart_results = [_make_result(12_000_000)]
+        report = build_report(
+            chart_results,
+            window=_make_window(),
+            group_by=None,
+            limit=5,
+            dashboard_mode="today",
+            chart_results=chart_results,
+        )
+        rendered = render_report(report, show_estimated_cost=True)
+
+        for section in [
+            "总 token",
+            "去缓存后",
+            "当前会话",
+            "按模型（去缓存后）",
+            "按项目（去缓存后）",
+            "最近 7 天（去缓存后）",
+            "本月分布 2026-03（去缓存后）",
+        ]:
+            with self.subTest(section=section):
+                self.assertIn(section, rendered)
+
     def test_company_realm_thresholds(self) -> None:
         cases = [
             (9_999_999, "练气"),

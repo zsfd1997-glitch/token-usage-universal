@@ -156,6 +156,26 @@ def _json_default(value):
     raise TypeError(f"Object of type {type(value)!r} is not JSON serializable")
 
 
+def _source_status_payload(adapter) -> dict[str, object]:
+    result = SourceCollectResult(detection=adapter.detect())
+    payload = result.as_dict()
+    detection = payload["detection"]
+    payload.update(
+        {
+            "source_id": detection["source_id"],
+            "display_name": detection["display_name"],
+            "provider": detection["provider"],
+            "accuracy_level": detection["accuracy_level"],
+            "supported": detection["supported"],
+            "available": detection["available"],
+            "status": detection["status"],
+            "in_default_rollup": getattr(adapter, "default_selected", True),
+        }
+    )
+    detection["in_default_rollup"] = payload["in_default_rollup"]
+    return payload
+
+
 def _dashboard_mode_from_args(args) -> str | None:
     if args.dashboard and args.dashboard != "auto":
         return args.dashboard
@@ -234,7 +254,7 @@ def command_sources(args) -> int:
     registry = _build_adapters()
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     if args.format == "json":
-        print(json.dumps([item.as_dict() for item in results], ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps([_source_status_payload(adapter) for adapter in registry.values()], ensure_ascii=False, indent=2, default=_json_default))
     else:
         print(render_sources(results))
     return 0

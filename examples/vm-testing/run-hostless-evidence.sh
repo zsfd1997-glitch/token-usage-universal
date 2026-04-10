@@ -9,8 +9,43 @@ WORKFLOW_FILE="${TOKEN_USAGE_HOSTLESS_WORKFLOW:-hostless-evidence.yml}"
 ARTIFACT_PREFIX="${TOKEN_USAGE_ARTIFACT_PREFIX:-hosted-evidence-$(date +%Y%m%d-%H%M%S)}"
 OUTPUT_DIR="${TOKEN_USAGE_HOSTLESS_OUTPUT_DIR:-${SCRIPT_DIR}/output/github-hosted}"
 BRANCH_NAME="${TOKEN_USAGE_HOSTLESS_BRANCH:-$(git -C "${REPO_ROOT}" branch --show-current)}"
+PLATFORM="${TOKEN_USAGE_HOSTLESS_PLATFORM:-all}"
 HEAD_SHA="$(git -C "${REPO_ROOT}" rev-parse HEAD)"
 DISPATCHED_AFTER="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+usage() {
+  cat <<'EOF'
+Usage: ./run-hostless-evidence.sh [--platform all|ubuntu|macos|windows]
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --platform)
+      [[ $# -ge 2 ]] || { echo "Missing value for --platform" >&2; exit 1; }
+      PLATFORM="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "${PLATFORM}" in
+  all|ubuntu|macos|windows) ;;
+  *)
+    echo "Unsupported platform: ${PLATFORM}" >&2
+    usage >&2
+    exit 1
+    ;;
+esac
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -38,7 +73,8 @@ fi
 echo "Dispatching ${WORKFLOW_FILE} on branch ${BRANCH_NAME}..."
 gh workflow run "${WORKFLOW_FILE}" \
   --ref "${BRANCH_NAME}" \
-  -f "artifact-prefix=${ARTIFACT_PREFIX}"
+  -f "artifact-prefix=${ARTIFACT_PREFIX}" \
+  -f "platform=${PLATFORM}"
 
 echo "Waiting for the workflow run to appear..."
 RUN_ID=""
@@ -69,4 +105,5 @@ gh run download "${RUN_ID}" --dir "${OUTPUT_DIR}"
 
 echo "Done."
 echo "Run ID: ${RUN_ID}"
+echo "Platform: ${PLATFORM}"
 echo "Artifacts: ${OUTPUT_DIR}"
