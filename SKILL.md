@@ -5,16 +5,40 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 # Token Usage Universal
 
-一个本地优先、准确优先、来源优先的通用 token usage skill。
+这是仓库附带的 `skill` 包装层，不是产品的唯一形态。
+
+真正负责统计和诊断的是 `scripts/token_usage.py` 这个独立 Python CLI；这个 `skill` 的作用，是把用户说的人话自动翻译成正确的 CLI 调用，再把结果按约定的聊天格式回出来。
+
+## 简介
+
+这个 skill 解决的是“用户想看 token，用人话来问，但不想自己记命令”的问题。
+
+它主要帮用户回答：
+
+- 今天一共用了多少 token
+- 哪个模型、项目、来源最费
+- 当前会话用了多少
+- 为什么 `Claude / Codex / MiniMax Agent / 其他桌面端` 没被统计到
+
+它适合当一个本地优先的 token 查询入口，不适合拿来冒充云账单页，也不应该在没有本地真源时瞎猜数字。
 
 ## 成品形态
 
-- 对外成品: `独立 Python CLI`，也可被 skill / agent / launcher 复用
-- 内部实现: `scripts/token_usage.py` 这个 deterministic CLI core
-- `Codex skill` 只是可选包装层，不是唯一运行方式
-- `Task Master` 关系: 仅是可选规划工具，不是运行时依赖，也不是发布门槛
+- 产品本体：`独立 Python CLI`
+- skill 形态：面向聊天入口的自然语言包装层
+- 内部命令入口：`scripts/token_usage.py`
 
-## 何时使用
+这个仓库本质上是一个可以独立运行的本地 token 统计工具；`SKILL.md` 只是让用户更自然地触发它。
+
+## 用途
+
+- 面向“今天 token 用了多少”这类日常查询
+- 面向“最近一周 / 一个月趋势怎么样”这类复盘
+- 面向“哪个模型 / 项目 / 来源最费”这类拆分
+- 面向“为什么没统计到某个客户端”这类排障
+- 面向 skill / agent / launcher 的复用，而不是只给一个人本机私用
+
+## 什么时候触发
 
 - 用户问“今天 token 用量多少”
 - 用户问“最近 7 天 token 用量”
@@ -24,130 +48,112 @@ description: "Use when the user asks to view local token usage, summarize today'
 - 用户要求一个极简、可推广、基于本地日志真源的 usage 统计能力
 - 用户只说“token / 用量 / 消耗量 / 使用量 / 消耗”
 
-## 更丰富的触发说法
+## 短触发词
 
-除了上面的直白问法，下面这些自然语言也应该触发这个 skill。
-
-最好按“同类问题 -> 一组说法”来识别，而不是只盯某一个固定句子。
-
-### 1. 看今天 / 当前总量
+用户只说“token / 用量 / 消耗量 / 使用量 / 消耗”，默认就应该触发这个 skill。
 
 - “token”
 - “用量”
 - “消耗量”
 - “使用量”
 - “消耗”
+
+这些短词默认理解成“先看今天总览”，而不是回一句解释性废话。
+
+## 常见说法
+
+### 1. 看今天 / 当前总量
+
 - “今日 token”
 - “今天的 token”
 - “token 用量”
-- “token 消耗量”
 - “AI 用量”
-- “AI 消耗量”
 - “我今天 AI 用了多少”
-- “今天 token 用了多少”
 - “今天一共消耗了多少 token”
 - “帮我看看今天 token 用量”
 - “帮我看今天总量”
-- “今天 AI 使用情况怎么样”
-- “今天大概用了多少”
-- “帮我看一下今天的用量概览”
 
 ### 2. 看最近趋势
 
 - “本周 token”
 - “这周 token”
 - “最近 token”
-- “最近是不是消耗了很多 token”
-- “这几天趋势怎么样”
 - “最近几天用量怎么样”
 - “最近 7 天 token 走势”
 - “最近 30 天 token 趋势”
-- “帮我复盘一下最近 token 使用情况”
-- “最近 AI 使用情况怎么样”
 - “最近是不是用得很多”
 
-### 3. 看哪个模型最消耗 token
+### 3. 看哪个模型或项目最费
 
 - “哪个模型最消耗 token”
-- “今天哪个模型用量最高”
 - “帮我按模型看看今天哪个最消耗 token”
-- “按模型看看谁用得最多”
-- “哪个模型 token 最多”
-- “最近哪个模型最常用”
-- “模型维度帮我看一下”
-- “按模型拆一下 token 用量”
-
-### 4. 看哪个项目最消耗 token
-
 - “哪个项目 token 用量最高”
-- “按项目看看最近 7 天”
-- “最近哪个项目最消耗 token”
-- “项目维度帮我看一下”
 - “帮我按项目拆一下”
-- “哪个项目用得最多”
-- “最近 AI 火力主要花在哪个项目”
 - “看看项目分布”
 
-### 5. 看当前会话 / 这一轮
-
-- “我现在这个会话用了多少”
-- “帮我看当前这个会话用了多少”
-- “这一轮怎么样”
-- “当前会话 token 用量”
-- “这次对话用了多少”
-- “这一轮 AI 消耗怎么样”
-- “看看眼前这个会话”
-- “帮我看当前会话概览”
-
-### 6. 看来源 / 看谁没统计到
+### 4. 查为什么没统计到
 
 - “为什么这次没有统计到”
 - “Claude 怎么没算进去”
-- “Codex 有没有被统计”
 - “为什么没统计到 Claude”
-- “为什么没统计到 Codex”
 - “哪个来源没被算进去”
 - “帮我查一下为什么没有数据”
-- “为什么今天看起来不对”
 
-### 7. 看简单版 / 不要复杂图
+### 5. 要简单版
 
 - “给我一个最简单的用量概览”
-- “先给我最简单版本”
 - “别太复杂”
 - “看不懂图，直接说结论”
 - “不用图，直接告诉我结果”
 - “先给我纯文字版本”
-- “简单说一下最近用量”
-- “先看个概览就行”
 
-## 普通用户怎么用
+## 使用示例
 
-这是一个 `skill`，所以普通用户不需要输入代码，也不需要记命令。
+### 示例 1
 
-普通用户只需要直接说人话，例如：
+用户说：
 
-- “帮我看今天 token 用量”
 - “token”
-- “用量”
-- “消耗量”
-- “本周 token”
-- “帮我看最近 7 天趋势”
+
+skill 默认动作：
+
+- 先给今天总览
+- 再带上当前会话、按模型、按项目、最近 7 天趋势和月历热力图
+
+### 示例 2
+
+用户说：
+
 - “帮我按模型看看今天哪个最消耗 token”
-- “帮我看当前这个会话用了多少”
-- “帮我按项目看看最近 7 天”
+
+skill 默认动作：
+
+- 优先走 `report --today --by model`
+- 结果里重点解释哪个模型最高、是否有缓存命中、费用大概多少
+
+### 示例 3
+
+用户说：
+
 - “为什么 Claude 没统计到”
-- “如果终端图形不兼容，就用最简单的纯文字版本”
 
-也就是说：
+skill 默认动作：
 
-- 用户输入的是“需求”
-- skill 内部再决定要不要调用 `report / sources / diagnose / explore`
-- 下面的命令只是给维护者、开发者、调试者看的，不是给普通用户背的
+- 优先走 `diagnose --source claude-code` 或 `diagnose --source claude-desktop`
+- 如果只是“看到了客户端痕迹，但没有 exact token 真源”，要明确说人话说明白
+
+### 示例 4
+
+用户说：
+
+- “看不懂图，直接告诉我结果”
+
+skill 默认动作：
+
+- 可以降级成简版结论
+- 但如果底层已经有完整面板，默认还是先面板后总结，除非用户明确要求不要图
 
 ## 用户说不清时，怎么引导
-
-普通用户经常不知道自己真正想看哪一层，所以这个 skill 不能只会“等用户说完整需求”，还要会适当引导。
 
 默认引导规则：
 
@@ -176,9 +182,9 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 - 先把默认 `ascii-hifi` 面板打出来，再补 2 到 4 句高信号结论
 - 除非用户明确说“简单说”“不要图”，否则不要把默认结果压缩成纯口语摘要
-- 优先先给一个默认答案，再补一句“如果您要，我也可以继续展开看模型 / 项目 / 当前会话”
+- 优先先给一个默认答案，再补一句“要继续的话，我可以再展开看模型 / 项目 / 当前会话”
 - 不要一上来反问一长串
-- 不要让普通用户自己决定 `--trend / --calendar / --session`
+- 不要让用户自己决定 `--trend / --calendar / --session`
 - 用户没说清时，先替他走最常见的一步，而不是把选择题全部丢回去
 
 ## 默认面板协议
@@ -235,13 +241,13 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 1. 先输出 `ascii-hifi` 面板
 2. 再补 1 到 3 句高信号结论
-3. 最后补一句可选展开方向，例如“如果您要，我再拆模型 / 项目 / 当前会话”
+3. 最后补一句可选展开方向，例如“要继续的话，我再拆模型 / 项目 / 当前会话”
 
 推荐的收口式引导：
 
-- “我先给您看今天总览和最近 7 天趋势；如果您要，我再继续拆到模型或项目。”
-- “我先查为什么没统计到；如果是路径或真源问题，我会直接告诉您下一步要不要处理。”
-- “我先给您最简单版本，不上复杂图表；如果您要更细，我再展开。”
+- “先看今天总览和最近 7 天趋势；要继续的话，再拆到模型或项目。”
+- “先查为什么没统计到；如果是路径或真源问题，直接给下一步。”
+- “先给最简单版本，不上复杂图表；要更细再展开。”
 
 ## 原则
 
@@ -268,7 +274,7 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 这一节是给维护者 / 开发者 / 调试者看的。
 
-普通用户不需要输入这些命令；用户只要直接提需求即可。
+用户不需要输入这些命令；直接提需求即可。
 
 ```bash
 python3 scripts/token_usage.py report --today
@@ -322,7 +328,7 @@ python3 scripts/token_usage.py diagnose --source codex --today
 - 现在已按跨平台路径处理，不再只按 `/` 解析项目路径，Windows 的 `C:\...` 项目名也能正确显示成最后一级目录。
 - `codex` 默认根目录仍是用户主目录下的 `.codex/sessions`，Windows 下也可直接用 `%USERPROFILE%/.codex/sessions` 这类写法。
 - `generic-openai-compatible` 现在支持 `%USERPROFILE%`、`%APPDATA%` 这类 Windows 风格环境变量占位，也支持自定义自动发现根目录。
-- `claude-code` 默认会优先适配 Windows 常见路径 `%APPDATA%\Claude\local-agent-mode-sessions`；如果您的安装位置不同，仍然建议用 env override 指明。
+- `claude-code` 默认会优先适配 Windows 常见路径 `%APPDATA%\Claude\local-agent-mode-sessions`；如果安装位置不同，仍然建议用 env override 指明。
 - `claude-desktop / minimax-agent / kimi-desktop / glm-desktop / qwen-desktop / doubao-desktop / perplexity-desktop` 也都按 Windows 常见 app-data 路径做了默认探测；如果安装位置不同，再用各自 env override。
 - 结论：Windows 环境不要求联网，也不要求访问百度；只要本地日志可读、Python 可运行，就可以使用。
 
@@ -393,8 +399,8 @@ python .\scripts\token_usage.py health
 
 边界要明确：
 
-- 不应该要求普通用户自己输入 `python3 ...`
-- 不应该要求普通用户自己拼 `--trend / --calendar / --session`
+- 不应该要求用户自己输入 `python3 ...`
+- 不应该要求用户自己拼 `--trend / --calendar / --session`
 - 这些都属于 skill 内部实现细节
 
 ## 退出与停止
@@ -412,7 +418,7 @@ python .\scripts\token_usage.py health
 退出时的处理规则：
 
 - 用 1 到 3 句收口总结当前已经确认的结果
-- 如果还有明显下一步，只补一句“如果您要，我下一步可以继续看 xxx”
+- 如果还有明显下一步，只补一句“要继续的话，我下一步可以看 xxx”
 - 不要在用户已经表示停止后继续追问细节
 - 不要强推更多图表或更深层分析
 

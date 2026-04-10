@@ -2,42 +2,112 @@
 
 [![CI](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml)
 
-一个面向本地 AI 工作流的 `token usage CLI / skill runtime`。
+把散落在本机各个 AI 客户端、CLI 和 API 日志里的 token 使用量，汇总成一份能直接看懂的本地面板。
 
-它回答的不是“账单页上写了什么”，而是：
+## 简介
+
+这个项目解决的是一个很具体的问题：
 
 - 今天到底用了多少 token
-- 哪个来源 / 项目 / 模型最消耗
+- 哪个模型、项目、来源最费
 - 哪些 token 是缓存命中，哪些更接近真实消耗
-- 为什么某个本地 AI 客户端没有被统计到
+- 为什么 `Claude / Codex / MiniMax Agent / 桌面客户端 / API 日志` 里有的看到了，有的没被统计到
 
-## 成品定位
+它不是云端账单页的二次包装，也不是只能看某一家模型的单点脚本。
+它更像一个本地 token 记账器和排障器，专门把机器上已经存在的真源日志、缓存和 session 文件整理成统一结果。
 
-- 对外成品：`独立 Python CLI`，可被不同 agent / skill / launcher 复用
-- 兼容形态：`Codex skill` 只是可选包装层，不是唯一运行方式
-- 内部运行时：`Python CLI core`
+## 它到底是什么
 
-`Task Master` 不是本 skill 的运行时依赖。
-它最多只是可选的内部规划工具，用来把 PRD 拆成任务；即使完全不装 `Task Master`，这个 skill 也可以安装、健康检查、统计和诊断。
+- 核心产品：`独立 Python CLI`
+- 仓库内附带：`Codex skill` 包装层，方便直接通过自然语言触发
+- 真正干活的入口：`scripts/token_usage.py`
 
-## 适用场景
+这个仓库既可以当成单独命令行工具来跑，也可以挂进 skill / agent / launcher 里复用。
 
-- 查看今天或最近几天的本地 token 用量
-- 对比 `codex / claude-code / claude-desktop / minimax-agent / desktop clients / provider API logs` 等来源
-- 统计经由 `MiniMax / Kimi / GLM / Qwen / OpenAI / Anthropic` 等 provider 返回的 exact usage
-- 按项目、模型、会话做 usage 归因
-- 诊断为什么某个本地客户端或日志来源当前没有被统计到
+`Task Master` 不是运行时依赖。
+就算完全不装它，这个产品也能正常完成健康检查、统计、诊断和证据导出。
 
-## 快速安装
+## 用途
 
-推荐直接把仓库 clone 到任意工作目录：
+- 看今天、本周、最近 30 天的 token 用量
+- 看哪个模型、项目、来源最消耗
+- 看当前会话用了多少
+- 看缓存命中和去缓存后的真实消耗
+- 查为什么某个客户端明明在用，却没有被统计到
+- 给本地 AI 工作流做一份可验证、可交接的 usage 面板
+
+## 使用方法
+
+1. clone 仓库并进入目录。
+2. 先跑 `health`，确认本机哪些来源已经 ready。
+3. 再跑 `report --today` 看今天总览。
+4. 如果某个来源没进统计，再跑 `diagnose --source <source_id>` 查原因。
 
 ```bash
 git clone https://github.com/zsfd1997-glitch/token-usage-universal.git
 cd token-usage-universal
+python3 scripts/token_usage.py health
+python3 scripts/token_usage.py report --today
 ```
 
-如果您确实要把它挂进 Codex skills，也可以额外复制一份过去，但这不是必需步骤。
+## 使用示例
+
+### 1. 看今天总览
+
+```bash
+python3 scripts/token_usage.py report --today
+```
+
+能回答：
+
+- 我今天 AI 一共用了多少 token
+- 当前会话大概用了多少
+- 哪个模型和项目最费
+
+### 2. 看最近趋势
+
+```bash
+python3 scripts/token_usage.py report --trend 7d
+python3 scripts/token_usage.py report --calendar month
+```
+
+能回答：
+
+- 最近 7 天是不是明显用多了
+- 这个月哪几天是高峰
+
+### 3. 查某个来源为什么没统计到
+
+```bash
+python3 scripts/token_usage.py diagnose --source claude-desktop --today
+python3 scripts/token_usage.py diagnose --source minimax-agent --today
+```
+
+能回答：
+
+- 为什么 Claude Desktop 没进总量
+- MiniMax Agent 到底是没日志、没 parser，还是缓存里根本没有 token 真源
+
+### 4. 只看当前会话
+
+```bash
+python3 scripts/token_usage.py report --current-session
+```
+
+能回答：
+
+- 我眼前这一轮对话用了多少
+- 当前项目是不是已经很费 token
+
+### 5. 通过 skill 自然语言触发
+
+把仓库里的 [SKILL.md](/Users/guokeyu/AI/codex/token-usage-universal/SKILL.md) 挂进 Codex skill 体系后，用户不需要记命令，直接说下面这些话就行：
+
+- `token`
+- `用量`
+- `帮我看今天 token 用量`
+- `帮我按模型看看今天哪个最消耗 token`
+- `为什么 Claude 没统计到`
 
 ## GitHub 交付契约
 
@@ -57,7 +127,7 @@ cd token-usage-universal
 
 如果后面有人改了这套契约，仓库内测试会直接报错，避免 GitHub 版和某台开发机的私有配置漂移。
 
-## 快速开始
+## 更多命令
 
 默认从仓库根目录运行：
 
@@ -73,19 +143,19 @@ python3 scripts/token_usage.py report --current-session
 python3 scripts/token_usage.py diagnose --source codex --today
 ```
 
-如果您是通过别的 agent / skill / launcher 调用，只需要让对方执行这个脚本即可：
+如果是通过别的 agent / skill / launcher 调用，直接执行这个脚本即可：
 
 ```bash
 python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 ```
 
-建议第一次先跑 `health`，它会告诉您：
+第一次先跑 `health`，它会告诉你：
 
 - 哪些来源已经 ready
 - 哪些来源还需要路径配置
 - 哪些来源缺的是真源，而不是命令本身有问题
 
-如果您在推进 Top20 主线交付，建议再跑一次：
+如果在推进 Top20 主线交付，再跑一次：
 
 ```bash
 python3 scripts/token_usage.py release-gate --format json
@@ -93,13 +163,13 @@ python3 scripts/token_usage.py release-gate --format json
 
 它会直接给出当前自动化门禁结果：Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 的重复计数 probe，以及全部 root-aware source 的 `Windows + macOS` 路径矩阵。
 
-如果您本地没有 `Windows/macOS` host，现在也可以直接走 GitHub 托管 runner：
+如果本地没有 `Windows/macOS` host，现在也可以直接走 GitHub 托管 runner：
 
 - workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
 - 行为：在 `windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
 - 本地触发脚本: [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
 
-如果您要在真实机器上留存可交接证据，可以直接导出证据包：
+如果要在真实机器上留存可交接证据，可以直接导出证据包：
 
 ```bash
 python3 scripts/token_usage.py release-gate \
@@ -235,7 +305,7 @@ Top20 provider family 的适配规则是统一的：
 - 每个 provider family 都是独立 `source_id`
 - 它们共用同一套 exact log 发现机制：`TOKEN_USAGE_GENERIC_LOG_GLOBS` + `TOKEN_USAGE_DISCOVERY_ROOTS`
 - 解析时按 `provider` 字段优先，其次按 `model` 名回退识别
-- `generic-openai-compatible` 只在您显式点名时才参与，避免默认 report 把同一批 API log 重复算两遍
+- `generic-openai-compatible` 只在显式点名时才参与，避免默认 report 把同一批 API log 重复算两遍
 
 闭源桌面端这条线现在不是“拍脑袋猜目录”，而是：
 
@@ -243,7 +313,7 @@ Top20 provider family 的适配规则是统一的：
 - 再走客户端对应的原生真源路径
 - Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
 - Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
-- 拿不到 exact 时明确告诉您是“没 parser”还是“当前缓存里确实没有 token 真源”
+- 拿不到 exact 时明确说明是“没 parser”还是“当前缓存里确实没有 token 真源”
 - report 现在会把“已观测到客户端/模型痕迹，但当前没有 exact token payload”的来源单列出来，避免看起来像被静默漏记
 
 ## Claude Code 真源矩阵
@@ -354,7 +424,7 @@ python3 scripts/token_usage.py ingress bootstrap \
 - CLI shell env 示例
 - companion 的 JSONL log 根目录
 
-如果您要手动控制 provider / base URL，也可以继续直接用 `ingress config`：
+如果要手动控制 provider / base URL，也可以继续直接用 `ingress config`：
 
 ```bash
 python3 scripts/token_usage.py ingress config \
@@ -476,13 +546,13 @@ token-usage-universal/
 
 - https://github.com/zsfd1997-glitch/token-usage-universal
 
-如果您想先理解结构和后续怎么维护，也可以看：
+如果想先理解结构和后续怎么维护，也可以看：
 
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Contributing](./CONTRIBUTING.md)
 - [Changelog](./CHANGELOG.md)
 
-如果您想从当前本机 skill 目录导出一个干净的 GitHub 发布目录，可以运行：
+如果想从当前本机 skill 目录导出一个干净的 GitHub 发布目录，可以运行：
 
 ```bash
 python3 scripts/build_release.py --output-dir /path/to/token-usage-universal --validate --force
