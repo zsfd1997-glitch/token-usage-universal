@@ -5,7 +5,7 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 # Token Usage Universal
 
-这是仓库附带的自然语言包装层。
+这是仓库附带的自然语言触发层，用来把“我想看 token”这类人话请求，直接翻成正确的 CLI 调用。
 
 真正负责统计和诊断的是 `scripts/token_usage.py` 这个独立 Python CLI；这个 skill 的工作，是把用户说的人话翻成正确命令，再把结果按固定协议回出来。
 
@@ -17,19 +17,20 @@ description: "Use when the user asks to view local token usage, summarize today'
 
 ## 这个 skill 解决什么问题
 
-- 想看今天 token 用量，但不想记命令
-- 想看最近趋势、模型、项目、当前会话
+- 想看今天、本周或本月一共用了多少 token，但不想记命令
+- 想知道哪个模型、哪个项目、哪个来源最费
+- 想看缓存命中和真实消耗的区别
 - 想查为什么 `Claude / Codex / MiniMax Agent / 其他桌面端` 没被统计到
 
-这个 skill 适合当一个本地优先的 token 查询入口，不适合冒充云账单页，也不应该在没有本地真源时瞎猜数字。
+它适合当一个本地优先的 token 查询入口，不适合冒充云账单页，也不应该在没有本地真源时瞎猜数字。
 
 ## 用途
 
 - 面向“今天 token 用了多少”这类日常查询
-- 面向“最近一周 / 一个月趋势怎么样”这类复盘
+- 面向“最近趋势怎么样”这类复盘
 - 面向“哪个模型 / 项目 / 来源最费”这类拆分
 - 面向“为什么没统计到某个客户端”这类排障
-- 面向 skill / agent / launcher 的复用，而不是只给一个人本机私用
+- 面向 skill / agent / launcher 的复用
 
 ## 什么时候触发
 

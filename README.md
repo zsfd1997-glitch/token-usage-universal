@@ -2,40 +2,53 @@
 
 [![CI](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml)
 
-把散落在本机各个 AI 客户端、CLI 和 API 日志里的 token 使用量，汇总成一份能直接看懂的本地面板。
+**一站式本地 Token 使用监控工具**  
+把散落在本机各个 AI 客户端、CLI 工具和 API 日志中的 token 消耗记录，自动汇总成清晰、直观的本地面板。
 
-## What It Is
+## 核心价值
 
-- 产品本体：`独立 Python CLI`
-- 自然语言入口：仓库附带一个 `Codex skill` 包装层
-- 真正干活的入口：`scripts/token_usage.py`
+再也不用在不同客户端之间来回切换、手动统计。  
+这个工具帮你快速回答以下关键问题：
 
-它做三件事：
+- 今天、本周或本月一共消耗了多少 token
+- 哪个模型、哪个项目或哪个来源最费 token
+- 哪些消耗来自真实请求，哪些是缓存命中
+- 为什么某些客户端明明在使用，却没有出现在统计里
 
-- 汇总本机 token 用量
-- 拆出模型 / 项目 / 来源 / 当前会话
-- 解释为什么某个来源没有被统计到
+它完全在本地运行，不依赖任何云端账单页面，专注于把机器上已有的真实日志、缓存和会话数据整理成统一、可验证的结果。
 
-它不是云账单页的皮肤，也不是只支持单一模型厂商的小脚本。
+## 这是一个什么工具
 
-## Why Use It
+- **核心**：独立、轻量的 Python 命令行工具
+- **入口脚本**：`scripts/token_usage.py`
+- **额外支持**：自带自然语言触发层（Codex skill 包装）
 
-用它是为了回答这几类问题：
+可以单独使用它，也可以把它集成到自己的 AI 工作流、skill 或 launcher 中。
 
-- 今天到底用了多少 token
-- 哪个模型、项目、来源最费
-- 哪些 token 是缓存命中，哪些更接近真实消耗
-- 为什么 `Claude / Codex / MiniMax Agent / 桌面客户端 / API 日志` 里有的看到了，有的没被统计到
+## 主要功能
 
-## Quickstart
+- 查看今天、本周、最近 30 天或任意时段的 token 用量
+- 按模型、项目、来源、会话维度进行分组统计
+- 显示缓存命中情况与真实消耗对比
+- 智能诊断：快速定位某个客户端或来源未被统计的原因
+- 生成清晰的终端面板，支持趋势图和日历视图
+- 为团队交接或个人复盘提供可追溯的 usage 报告
 
-第一次上手，先跑这三步：
+## 快速开始
+
+第一次上手，先跑下面这几步：
 
 ```bash
 git clone https://github.com/zsfd1997-glitch/token-usage-universal.git
 cd token-usage-universal
+
+# 第一步：检查本机支持情况
 python3 scripts/token_usage.py health
+
+# 第二步：查看今天使用概览
 python3 scripts/token_usage.py report --today
+
+# 第三步：如果某个来源没统计到，直接诊断
 python3 scripts/token_usage.py diagnose --source codex --today
 ```
 
@@ -43,7 +56,7 @@ python3 scripts/token_usage.py diagnose --source codex --today
 `report --today` 用来看今天总览。  
 `diagnose` 用来查“为什么没统计到”。  
 
-## Common Tasks
+## 常见用法
 
 ### 看今天总览
 
@@ -91,7 +104,7 @@ python3 scripts/token_usage.py report --current-session
 - `帮我按模型看看今天哪个最消耗 token`
 - `为什么 Claude 没统计到`
 
-## What You Get
+## 你会得到什么
 
 - 本地优先，不依赖云端账单页
 - `exact-first`，没有真源就明确说没有
@@ -117,47 +130,29 @@ python3 scripts/token_usage.py report --current-session
 
 如果后面有人改了这套契约，仓库内测试会直接报错，避免 GitHub 版和某台开发机的私有配置漂移。
 
-## 更多命令
+## Start Here
 
-默认从仓库根目录运行：
+如果只想开始用，先记住这几条：
 
 ```bash
 python3 scripts/token_usage.py health
-python3 scripts/token_usage.py sources
-python3 scripts/token_usage.py targets
-python3 scripts/token_usage.py release-gate
 python3 scripts/token_usage.py report --today
-python3 scripts/token_usage.py report --trend 7d
-python3 scripts/token_usage.py report --calendar month
-python3 scripts/token_usage.py report --current-session
+python3 scripts/token_usage.py sources
 python3 scripts/token_usage.py diagnose --source codex --today
+python3 scripts/token_usage.py release-gate --format json
 ```
+
+- `health`：看本机哪些来源已经 ready
+- `report --today`：看今天总览
+- `sources`：看所有来源当前状态
+- `diagnose`：查为什么没统计到
+- `release-gate`：看当前仓库是否达到发布门槛
 
 如果是通过别的 agent / skill / launcher 调用，直接执行这个脚本即可：
 
 ```bash
 python3 /absolute/path/to/token-usage-universal/scripts/token_usage.py health
 ```
-
-第一次先跑 `health`，它会告诉你：
-
-- 哪些来源已经 ready
-- 哪些来源还需要路径配置
-- 哪些来源缺的是真源，而不是命令本身有问题
-
-如果在推进 Top20 主线交付，再跑一次：
-
-```bash
-python3 scripts/token_usage.py release-gate --format json
-```
-
-它会直接给出当前自动化门禁结果：Top20 覆盖率、中国优先覆盖率、`exact-ready` surface 覆盖率、结构性误报 ready、默认 report 的重复计数 probe，以及全部 root-aware source 的 `Windows + macOS` 路径矩阵。
-
-如果本地没有 `Windows/macOS` host，现在也可以直接走 GitHub 托管 runner：
-
-- workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
-- 行为：在 `windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
-- 本地触发脚本: [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
 
 如果要在真实机器上留存可交接证据，可以直接导出证据包：
 
@@ -167,7 +162,7 @@ python3 scripts/token_usage.py release-gate \
   --output-dir /tmp/token-usage-universal-evidence
 ```
 
-它会落出：
+证据包会包含：
 
 - `release_gate.json`
 - `health.json`
@@ -178,7 +173,83 @@ python3 scripts/token_usage.py release-gate \
 - `diagnose/*.json`
 - `SUMMARY.md`
 
-## 当前支持来源
+如果本地没有 `Windows/macOS` host，也可以直接走 GitHub 托管 runner：
+
+- workflow: [hostless-evidence.yml](/Users/guokeyu/AI/codex/token-usage-universal/.github/workflows/hostless-evidence.yml)
+- 行为：在 `windows-latest` 和 `macos-latest` 上分别跑全量单测、导出 release evidence bundle，并上传 artifact
+- 本地触发脚本: [run-hostless-evidence.sh](/Users/guokeyu/AI/codex/token-usage-universal/examples/vm-testing/run-hostless-evidence.sh)
+
+## Coverage
+
+当前覆盖面分成五类：
+
+### Native Clients
+
+- `codex`
+- `claude-code`
+- `claude-desktop`
+- `opencode`
+- `minimax-agent`
+
+### Coding CLI
+
+- `qwen-code-cli`
+- `kimi-cli`
+- `gemini-cli`
+
+### Desktop Clients
+
+- `kimi-desktop`
+- `glm-desktop`
+- `qwen-desktop`
+- `deepseek-desktop`
+- `doubao-desktop`
+- `qianfan-desktop`
+- `yuanbao-desktop`
+- `perplexity-desktop`
+- `stepfun-desktop`
+- `sensenova-desktop`
+- `baichuan-desktop`
+- `siliconflow-desktop`
+- `spark-desktop`
+- `chatgpt-desktop`
+- `gemini-desktop`
+- `grok-desktop`
+- `mistral-desktop`
+
+### Provider / API Families
+
+- `openai-api`
+- `anthropic-api`
+- `google-gemini-api`
+- `moonshot-kimi-api`
+- `zhipu-glm-api`
+- `qwen-api`
+- `deepseek-api`
+- `minimax-api`
+- `xai-grok-api`
+- `cohere-api`
+- `mistral-api`
+- `perplexity-api`
+- `openrouter-api`
+- `togetherai-api`
+- `fireworks-api`
+- `azure-openai-api`
+- `baidu-qianfan-api`
+- `tencent-hunyuan-api`
+- `stepfun-api`
+- `doubao-api`
+- `sensenova-api`
+- `baichuan-api`
+- `siliconflow-api`
+- `spark-api`
+
+### Fallback and Ingress
+
+- `generic-openai-compatible`
+- `ingress companion`
+
+`generic-openai-compatible` 保留给手动 diagnose / 补漏，不再默认参与总览，避免和已拆分的 provider family 重复计数。
 
 Top20 执行主线文档：
 
@@ -187,53 +258,9 @@ Top20 执行主线文档：
 - [Simulated Machine Testing](/Users/guokeyu/AI/codex/token-usage-universal/docs/SIMULATED_MACHINE_TESTING.md)
 - [VM Runbook](/Users/guokeyu/AI/codex/token-usage-universal/docs/VM_RUNBOOK.md)
 
-- `native clients`
-  - `codex`
-  - `claude-code`
-  - `claude-desktop`
-  - `opencode`
-  - `minimax-agent`
-- `official coding CLI`
-  - `qwen-code-cli`
-  - `kimi-cli`
-  - `gemini-cli`
-- `desktop-native closed clients`
-  - `kimi-desktop`
-  - `glm-desktop`
-  - `qwen-desktop`
-  - `deepseek-desktop`
-  - `doubao-desktop`
-  - `qianfan-desktop`
-  - `yuanbao-desktop`
-  - `perplexity-desktop`
-- `top provider families`
-  - `openai-api`
-  - `anthropic-api`
-  - `google-gemini-api`
-  - `moonshot-kimi-api`
-  - `zhipu-glm-api`
-  - `qwen-api`
-  - `deepseek-api`
-  - `minimax-api`
-  - `xai-grok-api`
-  - `cohere-api`
-  - `mistral-api`
-  - `perplexity-api`
-  - `openrouter-api`
-  - `togetherai-api`
-  - `fireworks-api`
-  - `azure-openai-api`
-  - `baidu-qianfan-api`
-  - `tencent-hunyuan-api`
-  - `stepfun-api`
-  - `doubao-api`
-  - `sensenova-api`
-  - `baichuan-api`
-  - `siliconflow-api`
-  - `spark-api`
-- `generic fallback`
-  - `generic-openai-compatible`
-  - 保留给手动 diagnose / 补漏，不再默认参与总览，避免和已拆分的 provider family 重复计数
+## Source Notes
+
+如果只想理解“这个项目怎么判断某个来源能不能被记进去”，先看这几个重点：
 
 - `codex`
   - 默认读取 `~/.codex/sessions/**/*.jsonl`
@@ -241,70 +268,50 @@ Top20 执行主线文档：
 - `claude-code`
   - transcript 默认路径：`~/.claude/transcripts`
   - project exact usage 默认路径：`~/.claude/projects/**/*.jsonl`
-  - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`（Windows 常见等价目录是 `%APPDATA%\Claude\local-agent-mode-sessions`）
-  - 现在优先读取 project JSONL 里的 assistant `message.usage`；旧版 `timing.json` / local-agent exact JSON 仍继续兼容
-  - exact 文件支持旧版 `timing.json`，也支持任何同时带 `total_tokens + executor_end/grader_end` 的 Claude JSON
+  - exact total 默认根目录：`~/Library/Application Support/Claude/local-agent-mode-sessions`
   - 支持 env override：`TOKEN_USAGE_CLAUDE_TRANSCRIPT_ROOT`、`TOKEN_USAGE_CLAUDE_LOCAL_AGENT_ROOT`
 - `claude-desktop`
   - 原生解析桌面端 `Chromium Cache_Data / IndexedDB` 痕迹
   - 当前 exact 依赖 Claude Desktop 是否把 token-bearing API 响应缓存到本地
-  - mac 默认根目录：`~/Library/Application Support/Claude`
-  - Windows 常见根目录：`%APPDATA%\Claude`
   - 支持 env override：`TOKEN_USAGE_CLAUDE_DESKTOP_ROOT`
 - `opencode`
-  - 现在优先直读本地 `storage/session` + `storage/message` 的 assistant token JSON
+  - 优先直读本地 `storage/session` + `storage/message`
   - 官方 `opencode session list` + `opencode export [sessionID]` 仍保留为 fallback
-  - 本地会同时扫描 `~/.config/opencode`、`~/.local/share/opencode`、`~/.local/state/opencode`、桌面端 app data，用于判断“有没有会话/有没有真源/CLI 是否缺失”
   - 支持 env override：`TOKEN_USAGE_OPENCODE_BIN`、`TOKEN_USAGE_OPENCODE_ROOTS`
 - `qwen-code-cli`
   - 原生读取官方 project-scoped session JSONL
-  - 当前布局优先扫 `~/.qwen/projects/*/chats/*.jsonl`，兼容旧布局 `~/.qwen/tmp/*/chats/*.jsonl`
-  - 如果上游设了 `QWEN_RUNTIME_DIR`，默认也会跟随该目录；我们自己的 override 是 `TOKEN_USAGE_QWEN_CODE_ROOT`
+  - 默认优先扫 `~/.qwen/projects/*/chats/*.jsonl`
+  - override：`TOKEN_USAGE_QWEN_CODE_ROOT`
 - `kimi-cli`
   - 原生读取官方 `~/.kimi/sessions/*/*/wire.jsonl`
   - exact token 来自 `StatusUpdate.token_usage`
-  - 如果上游设了 `KIMI_SHARE_DIR`，默认也会跟随该目录；我们自己的 override 是 `TOKEN_USAGE_KIMI_CLI_ROOT`
+  - override：`TOKEN_USAGE_KIMI_CLI_ROOT`
 - `gemini-cli`
   - 原生读取官方 `~/.gemini/tmp/*/chats/session-*.json`
-  - exact token 来自每条 Gemini assistant message 的 `tokens`
-  - 默认根目录是 `~/.gemini`；我们自己的 override 是 `TOKEN_USAGE_GEMINI_CLI_ROOT`
+  - exact token 来自 assistant message 的 `tokens`
+  - override：`TOKEN_USAGE_GEMINI_CLI_ROOT`
 - `minimax-agent`
-  - 原生解析桌面端 `Chromium Cache_Data` 里的 MiniMax Agent HTTP JSON 响应
-  - 当前 exact 依赖客户端是否把 token-bearing chat/completion 响应缓存到本地
-  - mac 默认根目录：`~/Library/Application Support/MiniMax Agent`
-  - Windows 常见根目录：`%APPDATA%\MiniMax Agent`
-  - 支持 env override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
-- `kimi-desktop / glm-desktop / qwen-desktop / deepseek-desktop / doubao-desktop / qianfan-desktop / yuanbao-desktop / perplexity-desktop / stepfun-desktop / sensenova-desktop / baichuan-desktop / siliconflow-desktop / spark-desktop / chatgpt-desktop / gemini-desktop / grok-desktop / mistral-desktop`
-  - 现在已经是独立 `source_id`，不再混进 generic fallback
-  - 统一走原生 `Chromium / Electron` 桌面适配框架：现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
-  - 这一整批桌面 source 现在都已经有 fixture-backed 的 exact-native 覆盖，不再停留在 `detect-ready`
-  - 支持 env override：`TOKEN_USAGE_KIMI_DESKTOP_ROOT`、`TOKEN_USAGE_GLM_DESKTOP_ROOT`、`TOKEN_USAGE_QWEN_DESKTOP_ROOT`、`TOKEN_USAGE_DEEPSEEK_DESKTOP_ROOT`、`TOKEN_USAGE_DOUBAO_DESKTOP_ROOT`、`TOKEN_USAGE_QIANFAN_DESKTOP_ROOT`、`TOKEN_USAGE_YUANBAO_DESKTOP_ROOT`、`TOKEN_USAGE_PERPLEXITY_DESKTOP_ROOT`、`TOKEN_USAGE_STEPFUN_DESKTOP_ROOT`、`TOKEN_USAGE_SENSENOVA_DESKTOP_ROOT`、`TOKEN_USAGE_BAICHUAN_DESKTOP_ROOT`、`TOKEN_USAGE_SILICONFLOW_DESKTOP_ROOT`、`TOKEN_USAGE_SPARK_DESKTOP_ROOT`、`TOKEN_USAGE_CHATGPT_DESKTOP_ROOT`、`TOKEN_USAGE_GEMINI_DESKTOP_ROOT`、`TOKEN_USAGE_GROK_DESKTOP_ROOT`、`TOKEN_USAGE_MISTRAL_DESKTOP_ROOT`
+  - 原生解析桌面端 `Chromium Cache_Data`
+  - exact 依赖客户端是否把 token-bearing 响应缓存到本地
+  - override：`TOKEN_USAGE_MINIMAX_AGENT_ROOT`
+- `desktop-*`
+  - 已拆成独立 `source_id`
+  - 统一走 `Chromium / Electron` 桌面适配框架
+  - 现在会同时读取 `Cache_Data / IndexedDB / Local Storage`
 - `generic-openai-compatible`
-  - 当前显示名是 `Generic API Compatible`
   - 兼容 OpenAI-compatible / Anthropic-compatible exact usage 结构
-  - 可自动扫描常见目录，也可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置 JSON / JSONL 日志 glob
-  - 当日志不在标准位置时，可设置 `TOKEN_USAGE_DISCOVERY_ROOTS`
+  - 可自动扫描常见目录，也可通过 `TOKEN_USAGE_GENERIC_LOG_GLOBS` 显式配置
 - `ingress companion`
-  - 面向 `IDE / 内网 launcher / 自定义 base_url` 的本地 companion
-  - 当前已经支持 `openai / anthropic / generic` 三种协议模式
-  - 它会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
-  - 当前已经内置 bootstrap profiles：`openai / anthropic / gemini / openrouter / perplexity / xai / mistral / stepfun / qwen / kimi / glm / doubao / minimax / openai-compatible / anthropic-compatible / deepseek / qianfan / hunyuan / sensenova / baichuan / siliconflow / spark`
+  - 面向 `IDE / 内网 launcher / 自定义 base_url`
+  - 会把 exact usage 响应落成 JSONL，供 provider family 和 generic adapter 自动发现
 
-Top20 provider family 的适配规则是统一的：
+统一规则：
 
 - 每个 provider family 都是独立 `source_id`
 - 它们共用同一套 exact log 发现机制：`TOKEN_USAGE_GENERIC_LOG_GLOBS` + `TOKEN_USAGE_DISCOVERY_ROOTS`
 - 解析时按 `provider` 字段优先，其次按 `model` 名回退识别
-- `generic-openai-compatible` 只在显式点名时才参与，避免默认 report 把同一批 API log 重复算两遍
-
-闭源桌面端这条线现在不是“拍脑袋猜目录”，而是：
-
-- 先识别客户端本地真实数据目录
-- 再走客户端对应的原生真源路径
-- Electron/Chromium 类桌面端优先解析本地 HTTP cache JSON
-- Claude / MiniMax / Kimi / GLM / Qwen / Doubao / Perplexity / StepFun / SenseNova / Baichuan / SiliconFlow / Spark / ChatGPT / Gemini / Grok / Mistral 这类桌面端现在都是独立 source，不再只靠 generic log 兜底
-- 拿不到 exact 时明确说明是“没 parser”还是“当前缓存里确实没有 token 真源”
-- report 现在会把“已观测到客户端/模型痕迹，但当前没有 exact token payload”的来源单列出来，避免看起来像被静默漏记
+- 拿不到 exact 时，会明确说明是“没 parser”还是“当前缓存里确实没有 token 真源”
+- report 会把“已观测到客户端/模型痕迹，但当前没有 exact token payload”的来源单列出来
 
 ## Claude Code 真源矩阵
 
