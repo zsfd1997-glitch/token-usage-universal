@@ -18,6 +18,10 @@ class PricingTests(unittest.TestCase):
         second = PricingDatabase()
         self.assertIs(first, second)
 
+    def test_pricing_db_exposes_verified_at(self) -> None:
+        pricing = PricingDatabase()
+        self.assertEqual(pricing.verified_at, "2026-03-25")
+
     def test_alias_resolution_hits_known_model(self) -> None:
         pricing = PricingDatabase()
         resolved = pricing.resolve("openai/gpt-5.4", "openai")
@@ -113,6 +117,14 @@ class PricingTests(unittest.TestCase):
         self.assertEqual(baichuan["provider"], "baichuan")
         self.assertIsNotNone(spark)
         self.assertEqual(spark["provider"], "spark")
+
+    def test_pricing_db_warns_when_verification_is_older_than_90_days(self) -> None:
+        pricing = PricingDatabase()
+        self.assertIsNone(pricing.verification_warning(reference_date="2026-06-01", max_age_days=90))
+        warning = pricing.verification_warning(reference_date="2026-07-15", max_age_days=90)
+        self.assertIsNotNone(warning)
+        self.assertIn("2026-03-25", warning or "")
+        self.assertIn("未核验", warning or "")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1 @@
+{"created_at":"2026-03-25T10:40:00-07:00","provider":"xai","model":"grok-4","session_id":"fixture-xai-1","project_path":"/tmp/provider-xai","usage":{"input_tokens":140,"output_tokens":40,"total_tokens":180}}

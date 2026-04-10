@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import date, datetime
 from pathlib import Path
 
 
@@ -27,6 +28,7 @@ class PricingDatabase:
         self.db_path = resolved
         self.models: dict[str, dict[str, float | str]] = {}
         self.aliases: dict[str, str] = {}
+        self.verified_at: str | None = None
         self._cache: dict[str, dict[str, float | str] | None] = {}
         self._load()
         self._initialized = True
@@ -35,11 +37,44 @@ class PricingDatabase:
         if not self.db_path.exists():
             return
         payload = json.loads(self.db_path.read_text(encoding="utf-8"))
+        self.verified_at = str(payload.get("verified_at")).strip() or None if payload.get("verified_at") else None
         self.models = {str(key): value for key, value in payload.get("models", {}).items()}
         self.aliases = {
             self._normalize_alias_key(str(key)): str(value)
             for key, value in payload.get("aliases", {}).items()
         }
+
+    @staticmethod
+    def _coerce_reference_date(value: date | datetime | str | None) -> date:
+        if value is None:
+            return datetime.now().date()
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        return datetime.fromisoformat(str(value)).date()
+
+    def verification_age_days(self, reference_date: date | datetime | str | None = None) -> int | None:
+        if not self.verified_at:
+            return None
+        verified = datetime.fromisoformat(self.verified_at).date()
+        return (self._coerce_reference_date(reference_date) - verified).days
+
+    def verification_warning(
+        self,
+        *,
+        reference_date: date | datetime | str | None = None,
+        max_age_days: int = 90,
+    ) -> str | None:
+        age_days = self.verification_age_days(reference_date)
+        if age_days is None:
+            return "pricing_db.json 缺少 verified_at，请补充核验日期。"
+        if age_days <= max_age_days:
+            return None
+        return (
+            f"pricing_db.json 已有 {age_days} 天未核验；"
+            f"当前 verified_at = {self.verified_at}，建议尽快复核价格表。"
+        )
 
     @staticmethod
     def _normalize_alias_key(value: str) -> str:

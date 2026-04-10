@@ -1,0 +1,1 @@
+{"created_at":"2026-03-25T10:50:00-07:00","provider":"mistral","model":"mistral-large-latest","session_id":"fixture-mistral-1","project_path":"/tmp/provider-mistral","usage":{"prompt_tokens":100,"completion_tokens":45,"total_tokens":145}}

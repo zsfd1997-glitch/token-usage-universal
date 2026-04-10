@@ -1,0 +1,1 @@
+{"created_at":"2026-03-25T11:15:00-07:00","provider":"azure-openai","model":"gpt-4o","session_id":"fixture-azure-openai-missing","project_path":"/tmp/provider-azure-openai","base_url":"https://example.openai.azure.com/openai/deployments/demo"}

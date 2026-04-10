@@ -24,14 +24,6 @@ from test_time import PACIFIC_TZ
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "provider"
-CORE_PROVIDER_FIXTURES = (
-    "openai-api",
-    "anthropic-api",
-    "deepseek-api",
-    "moonshot-kimi-api",
-    "zhipu-glm-api",
-    "qwen-api",
-)
 
 
 def _window() -> TimeWindow:
@@ -44,10 +36,10 @@ def _window() -> TimeWindow:
 
 
 class ProviderFamilyFixtureTests(unittest.TestCase):
-    def test_core_provider_families_have_exact_fixtures(self) -> None:
+    def test_every_provider_family_has_exact_fixture(self) -> None:
         adapter_map = {adapter.source_id: adapter for adapter in build_provider_api_adapters()}
 
-        for source_id in CORE_PROVIDER_FIXTURES:
+        for source_id in adapter_map:
             fixture = FIXTURE_ROOT / source_id / "exact.jsonl"
             with self.subTest(source_id=source_id):
                 self.assertTrue(fixture.is_file(), f"{source_id} 缺少 exact fixture: {fixture}")
@@ -71,10 +63,10 @@ class ProviderFamilyFixtureTests(unittest.TestCase):
                 self.assertEqual(result.events[0].source, source_id)
                 self.assertGreater(result.events[0].total_tokens, 0)
 
-    def test_core_provider_families_have_diagnose_fixtures(self) -> None:
+    def test_every_provider_family_has_diagnose_fixture(self) -> None:
         adapter_map = {adapter.source_id: adapter for adapter in build_provider_api_adapters()}
 
-        for source_id in CORE_PROVIDER_FIXTURES:
+        for source_id in adapter_map:
             fixture = FIXTURE_ROOT / source_id / "diagnose.jsonl"
             with self.subTest(source_id=source_id):
                 self.assertTrue(fixture.is_file(), f"{source_id} 缺少 diagnose fixture: {fixture}")

@@ -102,8 +102,18 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertEqual(payload["metrics"]["default_duplicate_event_ratio"], 0.0)
         self.assertEqual(payload["platform_matrix"]["macos"]["covered_sources"], payload["platform_matrix"]["macos"]["total_sources"])
         self.assertEqual(payload["platform_matrix"]["windows"]["covered_sources"], payload["platform_matrix"]["windows"]["total_sources"])
+        self.assertEqual(payload["platform_matrix"]["linux"]["covered_sources"], payload["platform_matrix"]["linux"]["total_sources"])
         self.assertTrue(payload["platform_matrix"]["macos"]["supported"])
         self.assertTrue(payload["platform_matrix"]["windows"]["supported"])
+        self.assertTrue(payload["platform_matrix"]["linux"]["supported"])
+        self.assertEqual(
+            payload["platform_matrix"]["linux"]["sources"]["claude-code"]["paths"],
+            [
+                "/home/example/.claude/transcripts",
+                "/home/example/.config/Claude/local-agent-mode-sessions",
+            ],
+        )
+        self.assertIn("三平台默认根路径矩阵", payload["notes"][0])
 
     def test_release_gate_fails_when_adapter_backing_is_missing(self) -> None:
         payload = build_release_gate_payload(

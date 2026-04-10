@@ -574,6 +574,9 @@ def render_release_gate(payload: dict[str, object]) -> str:
     summary = payload["summary"]
     metrics = payload["metrics"]
     platform_matrix = payload["platform_matrix"]
+    source_state_summary = payload.get("source_state_summary") or {}
+    baseline = payload.get("baseline") or {}
+    baseline_diff = baseline.get("diff") or {}
 
     lines = [
         _rule("Release Gate"),
@@ -586,6 +589,15 @@ def render_release_gate(payload: dict[str, object]) -> str:
     _append_field(lines, "exact 覆盖", _percent(float(metrics["exact_surface_ratio"])))
     _append_field(lines, "默认去重", _percent(float(metrics["default_duplicate_event_ratio"])))
     _append_field(lines, "Explain", _percent(float(metrics["diagnose_explainability_ratio"])))
+    _append_field(
+        lines,
+        "来源状态",
+        (
+            f"exact {int(source_state_summary.get('exact', 0))}   "
+            f"diagnose {int(source_state_summary.get('diagnose', 0))}   "
+            f"unsupported {int(source_state_summary.get('unsupported', 0))}"
+        ),
+    )
 
     lines.append(_rule("门禁"))
     for gate in payload["gates"]:
@@ -628,6 +640,33 @@ def render_release_gate(payload: dict[str, object]) -> str:
             f"{platform_matrix['windows']['evidence_scope']}"
         ),
     )
+    _append_field(
+        lines,
+        "Linux",
+        (
+            f"{platform_matrix['linux']['supported']}   "
+            f"{platform_matrix['linux']['covered_sources']}/{platform_matrix['linux']['total_sources']}   "
+            f"{platform_matrix['linux']['evidence_scope']}"
+        ),
+    )
+
+    if baseline_diff:
+        lines.append(_rule("Baseline"))
+        _append_field(lines, "路径", str(baseline.get("path") or "(unknown)"))
+        _append_field(
+            lines,
+            "变化",
+            (
+                f"regressed {baseline_diff['counts']['regressed']}   "
+                f"improved {baseline_diff['counts']['improved']}   "
+                f"new {baseline_diff['counts']['new_sources']}   "
+                f"removed {baseline_diff['counts']['removed_sources']}"
+            ),
+        )
+        if baseline_diff.get("regressed"):
+            _append_field(lines, "退化", ", ".join(str(item) for item in baseline_diff["regressed"]))
+        if baseline_diff.get("improved"):
+            _append_field(lines, "提升", ", ".join(str(item) for item in baseline_diff["improved"]))
 
     lines.append(_rule("备注"))
     for note in payload.get("notes", []):

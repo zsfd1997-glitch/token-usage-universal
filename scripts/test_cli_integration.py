@@ -394,9 +394,10 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("top20-coverage", gate_ids)
         self.assertIn("false-ready-claims", gate_ids)
         self.assertIn("default-report-duplicate-rate", gate_ids)
-        self.assertIn("windows-macos-root-matrix", gate_ids)
+        self.assertIn("windows-macos-linux-root-matrix", gate_ids)
         self.assertEqual(payload["registry_summary"]["surface_maturity"]["exact-ready"], 60)
         self.assertEqual(payload["metrics"]["default_duplicate_event_ratio"], 0.0)
+        self.assertEqual(payload["metrics"]["linux_root_coverage_ratio"], 1.0)
 
     def test_release_gate_can_write_release_evidence_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

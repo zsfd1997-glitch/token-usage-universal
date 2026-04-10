@@ -27,6 +27,11 @@ from core.time_window import resolve_timezone
 EXPECTED_TOTAL_ECOSYSTEMS = 20
 EXPECTED_CHINA_PRIORITY_ECOSYSTEMS = 13
 EXPECTED_TOTAL_SURFACES = 60
+_STATE_RANK = {
+    "unsupported": 0,
+    "diagnose": 1,
+    "exact": 2,
+}
 
 
 def _ratio(numerator: int, denominator: int) -> float:
@@ -55,6 +60,107 @@ def _make_gate(
         "actual": actual,
         "threshold": threshold,
         "evidence": evidence,
+    }
+
+
+def classify_source_state(source: dict[str, object]) -> str:
+    detection = source.get("detection") if isinstance(source, dict) and "detection" in source else source
+    if not isinstance(detection, dict):
+        return "unsupported"
+    if not bool(detection.get("supported")):
+        return "unsupported"
+    if bool(detection.get("available")):
+        return "exact"
+    return "diagnose"
+
+
+def normalize_source_states(source_states: list[dict[str, object]] | None) -> list[dict[str, object]]:
+    normalized: list[dict[str, object]] = []
+    for item in source_states or []:
+        detection = item.get("detection") if isinstance(item, dict) and "detection" in item else item
+        if not isinstance(detection, dict):
+            continue
+        source_id = detection.get("source_id") or item.get("source_id")
+        if not source_id:
+            continue
+        normalized.append(
+            {
+                "source_id": str(source_id),
+                "display_name": str(detection.get("display_name") or item.get("display_name") or source_id),
+                "state": str(item.get("state") or classify_source_state(detection)),
+                "supported": bool(detection.get("supported")),
+                "available": bool(detection.get("available")),
+                "in_default_rollup": bool(item.get("in_default_rollup", False)),
+            }
+        )
+    return sorted(normalized, key=lambda item: item["source_id"])
+
+
+def build_source_state_summary(source_states: list[dict[str, object]] | None) -> dict[str, int]:
+    summary = {"exact": 0, "diagnose": 0, "unsupported": 0}
+    for item in normalize_source_states(source_states):
+        state = str(item["state"])
+        if state not in summary:
+            summary[state] = 0
+        summary[state] += 1
+    return summary
+
+
+def diff_against_baseline(current: dict[str, object], baseline: dict[str, object]) -> dict[str, object]:
+    current_states = {
+        item["source_id"]: str(item["state"])
+        for item in normalize_source_states(current.get("source_states") or current.get("sources"))
+    }
+    baseline_states = {
+        item["source_id"]: str(item["state"])
+        for item in normalize_source_states(baseline.get("source_states") or baseline.get("sources"))
+    }
+
+    regressed: list[str] = []
+    improved: list[str] = []
+    unchanged: list[str] = []
+    transitions: list[dict[str, str]] = []
+
+    for source_id in sorted(current_states.keys() & baseline_states.keys()):
+        current_state = current_states[source_id]
+        baseline_state = baseline_states[source_id]
+        if current_state == baseline_state:
+            unchanged.append(source_id)
+            continue
+        transitions.append(
+            {
+                "source_id": source_id,
+                "from": baseline_state,
+                "to": current_state,
+            }
+        )
+        if _STATE_RANK[current_state] > _STATE_RANK[baseline_state]:
+            improved.append(source_id)
+        else:
+            regressed.append(source_id)
+
+    new_sources = sorted(current_states.keys() - baseline_states.keys())
+    removed_sources = sorted(baseline_states.keys() - current_states.keys())
+    return {
+        "regressed": regressed,
+        "improved": improved,
+        "unchanged": unchanged,
+        "new_sources": new_sources,
+        "removed_sources": removed_sources,
+        "transitions": transitions,
+        "counts": {
+            "regressed": len(regressed),
+            "improved": len(improved),
+            "unchanged": len(unchanged),
+            "new_sources": len(new_sources),
+            "removed_sources": len(removed_sources),
+        },
+        "current_state_summary": build_source_state_summary(
+            [{"source_id": source_id, "state": state} for source_id, state in current_states.items()]
+        ),
+        "baseline_state_summary": build_source_state_summary(
+            [{"source_id": source_id, "state": state} for source_id, state in baseline_states.items()]
+        ),
     }
 
 
@@ -192,6 +298,7 @@ def _platform_source_matrix(
                         os_name=os_name,
                         home=home,
                         appdata=appdata,
+                        platform_name=platform_name,
                     )
                 ),
             ],
@@ -266,10 +373,17 @@ def _build_platform_matrix() -> dict[str, object]:
         appdata="C:/Users/example/AppData/Roaming",
         localappdata="C:/Users/example/AppData/Local",
     )
+    linux_sources = _platform_source_matrix(
+        home=Path("/home/example"),
+        os_name="posix",
+        platform_name="linux",
+    )
     macos_total = len(macos_sources)
     windows_total = len(windows_sources)
+    linux_total = len(linux_sources)
     macos_ok = sum(1 for item in macos_sources.values() if item["ok"])
     windows_ok = sum(1 for item in windows_sources.values() if item["ok"])
+    linux_ok = sum(1 for item in linux_sources.values() if item["ok"])
     return {
         "macos": {
             "supported": macos_ok == macos_total,
@@ -287,6 +401,14 @@ def _build_platform_matrix() -> dict[str, object]:
             "evidence_scope": "root-aware-source-matrix",
             "sources": windows_sources,
         },
+        "linux": {
+            "supported": linux_ok == linux_total,
+            "covered_sources": linux_ok,
+            "total_sources": linux_total,
+            "coverage_ratio": _ratio(linux_ok, linux_total),
+            "evidence_scope": "root-aware-source-matrix",
+            "sources": linux_sources,
+        },
     }
 
 
@@ -294,6 +416,7 @@ def build_release_gate_payload(
     *,
     adapter_source_ids: set[str],
     health_report: dict[str, object],
+    source_states: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     registry_payload = build_top20_registry_payload()
     summary = registry_payload["summary"]
@@ -311,9 +434,15 @@ def build_release_gate_payload(
 
     duplicate_probe = _build_default_selection_duplicate_probe()
     default_duplicate_event_ratio = float(duplicate_probe["default_duplicate_event_ratio"])
+    normalized_source_states = normalize_source_states(source_states or health_report.get("sources"))
+    source_state_summary = build_source_state_summary(normalized_source_states)
 
     platform_matrix = _build_platform_matrix()
-    platform_ready = bool(platform_matrix["macos"]["supported"]) and bool(platform_matrix["windows"]["supported"])
+    platform_ready = (
+        bool(platform_matrix["macos"]["supported"])
+        and bool(platform_matrix["windows"]["supported"])
+        and bool(platform_matrix["linux"]["supported"])
+    )
 
     gates = [
         _make_gate(
@@ -368,15 +497,16 @@ def build_release_gate_payload(
             evidence="以 health 返回的 supported source summary 是否可读作为 explainability 代理指标。",
         ),
         _make_gate(
-            "windows-macos-root-matrix",
-            "Windows + macOS root matrix = 100%",
+            "windows-macos-linux-root-matrix",
+            "Windows + macOS + Linux root matrix = 100%",
             passed=platform_ready,
             actual=(
                 f"macOS {platform_matrix['macos']['covered_sources']}/{platform_matrix['macos']['total_sources']} "
-                f"windows {platform_matrix['windows']['covered_sources']}/{platform_matrix['windows']['total_sources']}"
+                f"windows {platform_matrix['windows']['covered_sources']}/{platform_matrix['windows']['total_sources']} "
+                f"linux {platform_matrix['linux']['covered_sources']}/{platform_matrix['linux']['total_sources']}"
             ),
-            threshold="both 100%",
-            evidence="当前自动验证所有 root-aware source 的双平台默认根路径矩阵。",
+            threshold="all 100%",
+            evidence="当前自动验证所有 root-aware source 的三平台默认根路径矩阵。",
         ),
     ]
 
@@ -399,15 +529,18 @@ def build_release_gate_payload(
             "diagnose_explainability_ratio": diagnose_explainability_ratio,
             "macos_root_coverage_ratio": float(platform_matrix["macos"]["coverage_ratio"]),
             "windows_root_coverage_ratio": float(platform_matrix["windows"]["coverage_ratio"]),
+            "linux_root_coverage_ratio": float(platform_matrix["linux"]["coverage_ratio"]),
         },
         "gates": gates,
         "registry_summary": summary,
+        "source_states": normalized_source_states,
+        "source_state_summary": source_state_summary,
         "platform_matrix": platform_matrix,
         "duplicate_probe": duplicate_probe,
         "missing_backing_source_ids": missing_backing_source_ids,
         "all_claimed_source_ids": all_claimed_source_ids,
         "notes": [
-            "release-gate 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的双平台默认根路径矩阵。",
+            "release-gate 现在会实跑默认 report 的重复计数 probe，并验证所有 root-aware source 的三平台默认根路径矩阵。",
             "真实双机 app-data 命中与大样本重复计数实测仍建议在正式对外发布前补跑。",
         ],
     }

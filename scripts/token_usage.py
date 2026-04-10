@@ -56,7 +56,7 @@ from core.ingress_bootstrap import (
 from core.aggregator import build_report
 from core.ecosystem_registry import build_top20_registry_payload
 from core.models import SourceCollectResult
-from core.release_gate import build_release_gate_payload
+from core.release_gate import build_release_gate_payload, classify_source_state, diff_against_baseline
 from core.time_window import build_month_window, build_time_window, within_window
 from core.verifier import verify_result
 
@@ -174,6 +174,46 @@ def _source_status_payload(adapter) -> dict[str, object]:
     )
     detection["in_default_rollup"] = payload["in_default_rollup"]
     return payload
+
+
+def _source_status_payload_from_result(result: SourceCollectResult, *, in_default_rollup: bool) -> dict[str, object]:
+    payload = result.as_dict()
+    detection = payload["detection"]
+    payload.update(
+        {
+            "source_id": detection["source_id"],
+            "display_name": detection["display_name"],
+            "provider": detection["provider"],
+            "accuracy_level": detection["accuracy_level"],
+            "supported": detection["supported"],
+            "available": detection["available"],
+            "status": detection["status"],
+            "in_default_rollup": in_default_rollup,
+            "state": classify_source_state(detection),
+        }
+    )
+    detection["in_default_rollup"] = payload["in_default_rollup"]
+    detection["state"] = payload["state"]
+    return payload
+
+
+def _load_release_gate_baseline(path: Path) -> dict[str, object]:
+    baseline_path = path.expanduser()
+    release_gate_file = baseline_path / "release_gate.json"
+    sources_file = baseline_path / "sources.json"
+
+    if release_gate_file.is_file():
+        payload = json.loads(release_gate_file.read_text(encoding="utf-8"))
+        if payload.get("source_states"):
+            return payload
+
+    if sources_file.is_file():
+        sources_payload = json.loads(sources_file.read_text(encoding="utf-8"))
+        return {"sources": sources_payload}
+
+    raise SystemExit(
+        f"baseline bundle must contain release_gate.json with source_states or sources.json: {baseline_path}"
+    )
 
 
 def _dashboard_mode_from_args(args) -> str | None:
@@ -408,6 +448,9 @@ def _build_release_evidence_bundle(
 def _render_release_evidence_summary(bundle: dict[str, object]) -> str:
     release_summary = bundle["release_gate"]["summary"]
     release_metrics = bundle["release_gate"]["metrics"]
+    state_summary = bundle["release_gate"].get("source_state_summary") or {}
+    baseline = bundle["release_gate"].get("baseline") or {}
+    baseline_diff = baseline.get("diff") or {}
     today_summary = bundle["report_today"]["summary"]
     recent_summary = bundle["report_recent_30d"]["summary"]
     lines = [
@@ -420,9 +463,41 @@ def _render_release_evidence_summary(bundle: dict[str, object]) -> str:
         f"- default duplicate probe: `{release_metrics['default_duplicate_event_ratio'] * 100:.1f}%`",
         f"- macOS root matrix: `{release_metrics['macos_root_coverage_ratio'] * 100:.1f}%`",
         f"- Windows root matrix: `{release_metrics['windows_root_coverage_ratio'] * 100:.1f}%`",
+        f"- Linux root matrix: `{release_metrics['linux_root_coverage_ratio'] * 100:.1f}%`",
         f"- report today total_tokens: `{today_summary['total_tokens']}`",
         f"- report 30d total_tokens: `{recent_summary['total_tokens']}`",
         "",
+        "## Source State Summary",
+        "",
+        "| exact | diagnose | unsupported |",
+        "|---|---|---|",
+        f"| {int(state_summary.get('exact', 0))} | {int(state_summary.get('diagnose', 0))} | {int(state_summary.get('unsupported', 0))} |",
+        "",
+    ]
+    if baseline_diff:
+        lines.extend(
+            [
+                "## Baseline Diff",
+                "",
+                f"- baseline: `{baseline.get('path', '(unknown)')}`",
+                f"- regressed: `{baseline_diff['counts']['regressed']}`",
+                f"- improved: `{baseline_diff['counts']['improved']}`",
+                f"- new sources: `{baseline_diff['counts']['new_sources']}`",
+                f"- removed sources: `{baseline_diff['counts']['removed_sources']}`",
+            ]
+        )
+        for label, key in (
+            ("regressed_ids", "regressed"),
+            ("improved_ids", "improved"),
+            ("new_source_ids", "new_sources"),
+            ("removed_source_ids", "removed_sources"),
+        ):
+            values = baseline_diff.get(key) or []
+            if values:
+                lines.append(f"- {label}: `{', '.join(values)}`")
+        lines.append("")
+    lines.extend(
+        [
         "## Files",
         "",
         "- `release_gate.json`",
@@ -432,7 +507,10 @@ def _render_release_evidence_summary(bundle: dict[str, object]) -> str:
         "- `report_today.json`",
         "- `report_recent_30d.json`",
         "- `diagnose/*.json`",
-    ]
+        ]
+    )
+    if baseline_diff:
+        lines.append("- `diff.json`")
     return "\n".join(lines) + "\n"
 
 
@@ -450,6 +528,9 @@ def _write_release_evidence_bundle(output_dir: Path, bundle: dict[str, object]) 
         "report_today.json": bundle["report_today"],
         "report_recent_30d.json": bundle["report_recent_30d"],
     }
+    baseline = bundle["release_gate"].get("baseline") or {}
+    if baseline.get("diff"):
+        top_level_files["diff.json"] = baseline["diff"]
     for filename, payload in top_level_files.items():
         (output_dir / filename).write_text(
             json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default) + "\n",
@@ -473,10 +554,25 @@ def command_release_gate(args) -> int:
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     health = build_health_report(results)
     targets_payload = build_top20_registry_payload()
+    source_states = [
+        _source_status_payload_from_result(
+            result,
+            in_default_rollup=getattr(registry[result.detection.source_id], "default_selected", True),
+        )
+        for result in results
+    ]
     payload = build_release_gate_payload(
         adapter_source_ids=set(registry.keys()),
         health_report=health,
+        source_states=source_states,
     )
+    if args.baseline:
+        baseline_path = Path(args.baseline).expanduser().resolve()
+        baseline_payload = _load_release_gate_baseline(baseline_path)
+        payload["baseline"] = {
+            "path": str(baseline_path),
+            "diff": diff_against_baseline(payload, baseline_payload),
+        }
     if args.output_dir:
         bundle = _build_release_evidence_bundle(
             registry=registry,
@@ -606,6 +702,7 @@ def build_parser() -> argparse.ArgumentParser:
     release_gate = subparsers.add_parser("release-gate", help="evaluate the current automated release gates")
     release_gate.add_argument("--format", choices=("ascii", "json"), default="ascii")
     release_gate.add_argument("--output-dir", help="optional directory to write a release evidence bundle")
+    release_gate.add_argument("--baseline", help="optional previous release evidence bundle directory for diffing")
     release_gate.set_defaults(func=command_release_gate)
 
     ingress = subparsers.add_parser("ingress", help="run or inspect the local ingress companion for IDE/CLI capture")

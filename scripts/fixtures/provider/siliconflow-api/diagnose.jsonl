@@ -1,0 +1,1 @@
+{"created_at":"2026-03-25T11:50:00-07:00","provider":"siliconflow","model":"Qwen/Qwen3-Coder-30B-A3B-Instruct","session_id":"fixture-siliconflow-missing","project_path":"/tmp/provider-siliconflow","request_url":"https://api.siliconflow.cn/v1/chat/completions"}
