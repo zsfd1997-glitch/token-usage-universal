@@ -37,6 +37,7 @@ from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from adapters.kimi_cli import KimiCliAdapter
 from adapters.minimax_agent import MiniMaxAgentAdapter
 from adapters.opencode import OpenCodeAdapter
+from adapters.trae import TraeAdapter
 from adapters.qwen_code_cli import QwenCodeCliAdapter
 from ascii_hifi import render_diagnose, render_health, render_release_gate, render_report, render_sources, render_targets
 from core.health import build_health_report
@@ -67,6 +68,7 @@ def _build_adapters():
         ClaudeCodeAdapter(),
         ClaudeDesktopAdapter(),
         OpenCodeAdapter(),
+        TraeAdapter(),
         MiniMaxAgentAdapter(),
         QwenCodeCliAdapter(),
         KimiCliAdapter(),

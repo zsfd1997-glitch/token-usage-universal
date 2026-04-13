@@ -33,8 +33,8 @@ class GitHubRepoContractTests(unittest.TestCase):
     def test_readme_declares_github_distribution_contract(self) -> None:
         readme_text = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertIn("GitHub 交付契约", readme_text)
-        self.assertIn("不依赖 `~/.codex/skills/...` 里的本机覆盖文件", readme_text)
+        self.assertIn("使用契约", readme_text)
+        self.assertIn("不依赖 `~/.codex/skills/...` 或任何 skills 目录", readme_text)
         self.assertIn("不依赖某台机器上的全局提示词或临时记忆", readme_text)
 
     def test_security_and_support_documents_cover_expected_paths(self) -> None:
