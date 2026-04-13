@@ -47,12 +47,12 @@ class SkillContractTests(unittest.TestCase):
         self.assertLessEqual(len(SKILL_TEXT.splitlines()), 120)
 
     def test_repo_skill_declares_short_trigger_phrases(self) -> None:
-        self.assertIn("用户只说"token / 用量 / 消耗量 / 使用量 / 消耗"", ROUTING_TEXT)
-        self.assertIn("- "token"", ROUTING_TEXT)
-        self.assertIn("- "用量"", ROUTING_TEXT)
-        self.assertIn("- "消耗量"", ROUTING_TEXT)
-        self.assertIn("- "使用量"", ROUTING_TEXT)
-        self.assertIn("- "消耗"", ROUTING_TEXT)
+        self.assertIn("用户只说“token / 用量 / 消耗量 / 使用量 / 消耗”", ROUTING_TEXT)
+        self.assertIn("- “token”", ROUTING_TEXT)
+        self.assertIn("- “用量”", ROUTING_TEXT)
+        self.assertIn("- “消耗量”", ROUTING_TEXT)
+        self.assertIn("- “使用量”", ROUTING_TEXT)
+        self.assertIn("- “消耗”", ROUTING_TEXT)
 
     def test_repo_skill_requires_ascii_hifi_panel_before_summary(self) -> None:
         self.assertIn(
@@ -66,11 +66,11 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("1. 先输出 `ascii-hifi` 面板", OUTPUT_CONTRACT_TEXT)
         self.assertIn("默认把面板放进 fenced code block", OUTPUT_CONTRACT_TEXT)
         self.assertIn(
-            "不要把 ASCII 面板"翻译"为另一套表述后冒充等价输出",
+            "不要把 ASCII 面板“翻译”为另一套表述后冒充等价输出",
             OUTPUT_CONTRACT_TEXT,
         )
         self.assertIn(
-            "`费用` 默认按"去缓存后 token"估算，不把缓存 token 算进费用里",
+            "`费用` 默认按“去缓存后 token”估算，不把缓存 token 算进费用里",
             OUTPUT_CONTRACT_TEXT,
         )
 
@@ -81,7 +81,7 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("`SKILL.md`", readme_text)
         self.assertIn("不依赖 `~/.codex/skills/...` 或任何 skills 目录", readme_text)
         self.assertIn("不依赖某台机器上的全局提示词或临时记忆", readme_text)
-        self.assertIn("短触发词", readme_text)
+        self.assertIn("短查询", readme_text)
         self.assertIn("./references/skill-routing.md", readme_text)
         self.assertIn("./references/skill-output-contract.md", readme_text)
 

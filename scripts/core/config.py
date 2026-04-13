@@ -451,6 +451,11 @@ ENVIRONMENT_VARIABLES = (
         "default": lambda: _path_text(default_gemini_cli_root()),
     },
     {
+        "name": TOKEN_USAGE_TRAE_ROOT_ENV,
+        "description": "Override the Trae AI IDE app-data directory (default: ~/Library/Application Support/Trae on macOS).",
+        "default": lambda: ",".join(_path_text(path) for path in default_trae_roots()),
+    },
+    {
         "name": TOKEN_USAGE_OPENCODE_BIN_ENV,
         "description": "Override the OpenCode CLI executable used for session export and stats.",
         "default": lambda: "opencode",

@@ -6,7 +6,7 @@
 
 ## Registry
 
-- total env keys: `30`
+- total env keys: `31`
 
 | variable | purpose |
 |---|---|
@@ -35,6 +35,7 @@
 | `TOKEN_USAGE_QWEN_CODE_ROOT` | Override the Qwen Code CLI runtime root (~/.qwen or QWEN_RUNTIME_DIR). |
 | `TOKEN_USAGE_KIMI_CLI_ROOT` | Override the Kimi CLI share root (~/.kimi or KIMI_SHARE_DIR). |
 | `TOKEN_USAGE_GEMINI_CLI_ROOT` | Override the Gemini CLI runtime root (~/.gemini). |
+| `TOKEN_USAGE_TRAE_ROOT` | Override the Trae AI IDE app-data directory (default: ~/Library/Application Support/Trae on macOS). |
 | `TOKEN_USAGE_OPENCODE_BIN` | Override the OpenCode CLI executable used for session export and stats. |
 | `TOKEN_USAGE_OPENCODE_ROOTS` | Comma-separated OpenCode roots to scan for local logs, storage, and desktop state. |
 | `TOKEN_USAGE_GENERIC_LOG_GLOBS` | Comma-separated JSON/JSONL glob patterns for OpenAI/Anthropic-compatible exact usage logs. |

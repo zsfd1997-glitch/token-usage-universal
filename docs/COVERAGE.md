@@ -6,8 +6,8 @@
 
 ## Summary
 
-- total source IDs: `50`
-- default rollup source IDs: `49`
+- total source IDs: `51`
+- default rollup source IDs: `50`
 - provider family source IDs: `24`
 - desktop source IDs: `17`
 
@@ -85,6 +85,7 @@
 | source_id | display_name | provider | accuracy | default_rollup |
 |---|---|---|---|---|
 | `generic-openai-compatible` | Generic API Compatible | `api-compatible` | `exact` | `false` |
+| `trae` | Trae AI IDE | `multi` | `unsupported` | `true` |
 
 ## Runtime Capture Paths
 

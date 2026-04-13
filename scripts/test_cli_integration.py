@@ -320,11 +320,12 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 50)
+        self.assertEqual(len(source_ids), 51)
         self.assertIn("codex", source_ids)
         self.assertIn("claude-code", source_ids)
         self.assertIn("claude-desktop", source_ids)
         self.assertIn("opencode", source_ids)
+        self.assertIn("trae", source_ids)
         self.assertIn("minimax-agent", source_ids)
         self.assertIn("qwen-code-cli", source_ids)
         self.assertIn("kimi-cli", source_ids)
@@ -383,7 +384,7 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         self.assertIn("overall_status", payload)
-        self.assertEqual(len(payload["sources"]), 50)
+        self.assertEqual(len(payload["sources"]), 51)
 
     def test_release_gate_json_exposes_automated_gate_status(self) -> None:
         result = self._run_cli(["release-gate", "--format", "json"], env=os.environ.copy())
