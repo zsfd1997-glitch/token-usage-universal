@@ -1,19 +1,19 @@
 ---
 team: 用户流量策略科
-type: skill
+type: tool
 name: token-usage-universal
 contributor: 郭珂宇
 created: 2026-03-25
 version: 1.0
 status: 已整理
-tags: [自建skill, token使用监控, 本地优先, exact-first, 多来源适配, 跨平台, 中文版]
+tags: [token使用监控, 本地优先, exact-first, 多来源适配, 跨平台, 中文版, opencode, trae]
 usage_count: 0
 effect: 把散落在本机各 AI 客户端、CLI 工具和 API 日志中的 token 消耗，自动汇总成可直接决策的本地面板
 ---
 
 # Token Usage Universal
 
-[![CI](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/zsfd1997-glitch/token-usage-universal/actions/workflows/ci.yml)
+![CI](./docs/images/ci-badge.svg)
 
 ## 简介
 
@@ -23,27 +23,28 @@ effect: 把散落在本机各 AI 客户端、CLI 工具和 API 日志中的 toke
 
 - 面向人类阅读、复盘对齐与成本评审讨论。
 - 适用于"今天 token 用了多少 / 哪个模型最费 / 为什么某个客户端没统计到"等日常查询、趋势复盘和来源排障场景。
-- 作为可复用 skill 资产沉淀，便于后续统一维护和接入其他 agent / launcher。
+- 作为可复用工具资产沉淀，便于后续统一维护和接入其他 agent / launcher。
 
 ## 使用方法
 
-1. 阅读当前目录下的 `README.md`，快速理解本 skill 的定位和上手顺序。
-2. 打开 `SKILL.md` 查看完整触发词、默认动作和面板协议。
-3. 按场景调用该 skill，并根据实际结果持续更新文档。
+1. 阅读当前目录下的 `README.md`，快速理解本工具的定位和上手顺序。
+2. 运行 `python3 scripts/token_usage.py health` 检查本机哪些数据源已就绪。
+3. 运行 `python3 scripts/token_usage.py report --today` 查看今日使用总览。
+4. 如需自然语言触发，可参考 `SKILL.md` 中的触发词配置（可选）。
 
 ## 适用版本
 
 - 当前版本：`中文版 + 独立 Python CLI`
 - 核心入口：`scripts/token_usage.py`
-- 自然语言触发层：`SKILL.md`
+- 自然语言触发描述：`SKILL.md`（可选，适用于支持系统提示词的 AI 工具）
 - 补充说明：在日常查询或排障前先跑 `python3 scripts/token_usage.py health` 确认本机哪些来源已 ready。
-- 补充说明：需要查看完整触发词和面板协议时，打开 `SKILL.md`。
-- 补充说明：如需接入其他 agent / launcher，直接调用 `scripts/token_usage.py`，不要求宿主存在 `~/.codex/skills`。
+- 补充说明：不依赖任何 skills 目录或特定 AI 客户端框架，直接运行 Python 脚本即可使用。
+- 补充说明：如需接入其他 agent / launcher，直接调用 `scripts/token_usage.py` 即可。
 
 ## 效果
 
 - 通过标准化目录与说明文档，降低查找和复用成本。
-- 让 token 使用监控从"每次手动查"升级为"有说明、有入口、可维护、可诊断"的 skill 资产。
+- 让 token 使用监控从"每次手动查"升级为"有说明、有入口、可维护、可诊断"的工具资产。
 
 ## 使用记录
 
@@ -75,9 +76,9 @@ effect: 把散落在本机各 AI 客户端、CLI 工具和 API 日志中的 toke
 
 - **核心**：独立、轻量的 Python 命令行工具
 - **入口脚本**：`scripts/token_usage.py`
-- **额外支持**：自带自然语言触发层（Codex skill 包装）
+- **额外支持**：附带自然语言触发描述（`SKILL.md`），可选集成到支持系统提示词的 AI 工具中
 
-可以单独使用它，也可以把它集成到自己的 AI 工作流、skill 或 launcher 中。
+可以单独使用它，也可以把它集成到自己的 AI 工作流或 launcher 中。
 
 ## 主要功能
 
@@ -109,6 +110,71 @@ python3 scripts/token_usage.py diagnose --source codex --today
 `health` 用来看本机哪些来源已经 ready。  
 `report --today` 用来看今天总览。  
 `diagnose` 用来查“为什么没统计到”。  
+
+## OpenCode / Trae 用户快速上手
+
+如果你在使用 **OpenCode** 或 **Trae** 等内网/私有部署 AI 工具，通常不需要配置 skills 目录，直接按以下步骤找到你的数据源：
+
+### 第一步：检查工具是否被识别
+
+```bash
+python3 scripts/token_usage.py health
+```
+
+输出中每个来源会标注 `ready` / `no_data` / `not_found`。如果 `opencode` 或你的工具显示 `not_found`，继续往下看。
+
+### 第二步：OpenCode 数据源定位
+
+OpenCode 的会话数据默认存放在：
+
+| 平台 | 默认路径 |
+|------|----------|
+| macOS/Linux | `~/.config/opencode/storage/` 或 `~/.local/share/opencode/storage/` |
+| Windows | `%APPDATA%\opencode\storage\` 或 `%LOCALAPPDATA%\opencode\storage\` |
+
+子目录结构：
+- `storage/session/` — 会话列表（含模型、时间戳）
+- `storage/message/` — 消息明细（含 token 消耗字段）
+
+如果默认路径不对，用环境变量覆盖：
+
+```bash
+export TOKEN_USAGE_OPENCODE_ROOTS="$HOME/.config/opencode,$HOME/.local/share/opencode"
+python3 scripts/token_usage.py health
+```
+
+### 第三步：Trae 及其他内网工具的数据源
+
+对于 Trae 或其他支持 OpenAI-compatible / Anthropic-compatible API 的内网 AI 工具，推荐使用 **ingress companion** 模式——在本地启动一个透明代理，自动把 exact token 数据落盘：
+
+```bash
+# 查看内置 profile 列表
+python3 scripts/token_usage.py ingress profiles
+
+# 启动本地代理（以自定义内网 API 为例）
+python3 scripts/token_usage.py ingress serve \
+  --provider generic \
+  --upstream-base-url http://your-internal-api-host/v1 \
+  --protocol openai \
+  --project-path "$PWD"
+```
+
+启动后，把你的 IDE / 工具的 API base URL 改为代理输出的本地地址（如 `http://127.0.0.1:8787/v1`），之后 token 数据会自动落盘并被 `report` 和 `diagnose` 命令读取。
+
+### 第四步：确认数据已进来
+
+```bash
+python3 scripts/token_usage.py sources
+python3 scripts/token_usage.py report --today
+```
+
+如果某个来源仍未统计到，运行诊断：
+
+```bash
+python3 scripts/token_usage.py diagnose --source opencode --today
+```
+
+---
 
 ## 常见用法
 
@@ -148,15 +214,17 @@ python3 scripts/token_usage.py diagnose --source minimax-agent --today
 python3 scripts/token_usage.py report --current-session
 ```
 
-### 用自然语言触发
+### 用自然语言触发（可选）
 
-把仓库里的 [SKILL.md](/Users/guokeyu/AI/codex/token-usage-universal/SKILL.md) 挂进 Codex skill 体系后，用户不需要记命令，直接说下面这些话就行：
+如果你的 AI 工具支持系统提示词或自定义指令（如 Claude Code、Cursor、Continue 等），可以把 `SKILL.md` 的内容作为系统提示词注入，然后直接说下面这些话触发：
 
 - `token`
 - `用量`
 - `帮我看今天 token 用量`
 - `帮我按模型看看今天哪个最消耗 token`
 - `为什么 Claude 没统计到`
+
+> **注意**：这一步是可选的。不配置系统提示词也可以直接用 CLI 命令完成所有操作。
 
 ## 你会得到什么
 
@@ -166,24 +234,19 @@ python3 scripts/token_usage.py report --current-session
 - 可以诊断“为什么没统计到”
 - 可以导出证据包，方便交接和留档
 
-## GitHub 交付契约
+## 使用契约
 
-这个仓库上传到 GitHub 给别人用时，默认交互契约以仓库根目录的 [SKILL.md](/Users/guokeyu/AI/codex/token-usage-universal/SKILL.md) 为准。
+这个工具完全独立运行，不依赖任何特定 AI 客户端的私有配置目录：
 
-这意味着：
-
-- 不依赖 `~/.codex/skills/...` 里的本机覆盖文件
+- 不依赖 `~/.codex/skills/...` 或任何 skills 目录
 - 不依赖某台机器上的全局提示词或临时记忆
-- 别人 clone 仓库后，随仓库一起拿到同一套触发词和输出协议
+- clone 仓库后，直接运行 Python 脚本即可使用
 
-当前约定已经随仓库固化：
+`SKILL.md` 是可选的自然语言接口描述文件，仅供有需要的用户集成到支持系统提示词的 AI 工具中。输出行为约定：
 
-- 短触发词 `token / 用量 / 消耗量 / 使用量 / 消耗` 默认都视为“先看今天总览”
-- 默认成品不是一句话摘要，而是 `ascii-hifi` 终端面板
-- 只要底层 CLI 已返回 `ascii-hifi` 面板，聊天输出就应先原样贴面板，再补 1 到 3 句高信号结论
-- 详细触发映射和输出协议拆在 [skill-routing.md](./references/skill-routing.md) 与 [skill-output-contract.md](./references/skill-output-contract.md)，根目录 `SKILL.md` 只保留轻量门面
-
-如果后面有人改了这套契约，仓库内测试会直接报错，避免 GitHub 版和某台开发机的私有配置漂移。
+- 短查询（`token / 用量 / 消耗量 / 使用量`）默认先看今天总览
+- 默认输出为 `ascii-hifi` 终端面板，附 1 到 3 句高信号结论
+- 详细触发映射见 [skill-routing.md](./references/skill-routing.md)，输出协议见 [skill-output-contract.md](./references/skill-output-contract.md)
 
 ## Start Here
 
@@ -326,7 +389,7 @@ python3 scripts/token_usage.py release-gate \
 | 布局版本 | 是否可 exact | 典型文件 | macOS 默认位置 | Windows 默认位置 | 说明 |
 |---|---|---|---|---|---|
 | project JSONL / assistant usage | 是 | `session-*.jsonl` 里的 `message.usage` | `~/.claude/projects/**` | `%USERPROFILE%\\.claude\\projects\\**` | 新布局优先走这里，可恢复 input / cache / output / total token |
-| 旧布局 / exact JSON | 是 | `timing.json` 或其他带 `total_tokens + executor_end/grader_end` 的 JSON | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | skill 会直接统计 total token |
+| 旧布局 / exact JSON | 是 | `timing.json` 或其他带 `total_tokens + executor_end/grader_end` 的 JSON | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | 工具会直接统计 total token |
 | 新布局 / 只有 session-config | 否，先 diagnose | `.claude.json`、`cowork_settings.json`、`manifest.json` | `~/Library/Application Support/Claude/local-agent-mode-sessions/**` | `%APPDATA%\Claude\local-agent-mode-sessions\**` | 说明本地目录存在，但当前没有 token 真源 |
 | transcript only | 否，先 diagnose | `~/.claude/transcripts/*.jsonl` | `~/.claude/transcripts` | `%USERPROFILE%\.claude\transcripts` | transcript 是文本，不含 exact token 字段 |
 
@@ -513,9 +576,10 @@ token-usage-universal/
 ├── README.md
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
-├── SKILL.md
+├── SKILL.md          # 可选：自然语言触发描述，供系统提示词集成用
 ├── LICENSE
 ├── docs/
+│   └── images/       # 本地图片资源（含 CI 状态徽章）
 ├── examples/
 ├── references/
 ├── scripts/
