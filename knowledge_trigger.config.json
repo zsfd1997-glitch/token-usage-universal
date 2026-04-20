@@ -1,0 +1,10 @@
+{
+  "default_mode": "heuristic",
+  "full_superchain_threshold": 7,
+  "remind_user_threshold": 4,
+  "light_log_threshold": 4,
+  "large_change_threshold": 1000,
+  "path_bonus_enabled": true,
+  "knowledge_root_hint": "/Users/guokeyu/Documents/Jason know",
+  "fallback_when_uncertain": "light-log"
+}

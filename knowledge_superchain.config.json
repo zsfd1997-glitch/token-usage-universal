@@ -1,0 +1,40 @@
+{
+  "knowledge_root": "/Users/guokeyu/Documents/Jason know",
+  "codex_first": true,
+  "automation_role": "light-assist",
+  "backbone_skill": "workflow-superchain",
+  "artifact_kinds": [
+    "question",
+    "daily-log",
+    "weekly-review",
+    "retro",
+    "pitfall",
+    "method",
+    "raw",
+    "reminder-card"
+  ],
+  "default_routes": {
+    "question": "01-question/ (heavy) + 01-question/轻型/ (light)",
+    "daily-log": "02-daily-log/ (heavy) + 02-daily-log/轻型/ (light)",
+    "weekly-review": "03-weekly-review/ (heavy) + 03-weekly-review/轻型/ (light)",
+    "retro": "04-retro/ (heavy) + 04-retro/轻型/ (light)",
+    "pitfall": "05-pitfall/ (heavy) + 05-pitfall/轻型/ (light)",
+    "method": "06-method/ (heavy) + 06-method/轻型/ (light)",
+    "raw": "07-evidence/<bucket>/ (heavy) + 07-evidence/轻型/<bucket>/ (light)",
+    "reminder-card": "08-reminder-card/ (heavy) + 08-reminder-card/轻型/ (light)"
+  },
+  "document_weight_threshold_lines": 500,
+  "title_pattern": "【单关键词】完整题目",
+  "versioning_defaults": {
+    "readme": "overwrite",
+    "question": "snapshot-on-meaning-change",
+    "method": "snapshot-on-meaning-change",
+    "pitfall": "snapshot-on-meaning-change",
+    "daily-log": "append",
+    "weekly-review": "append",
+    "retro": "append-or-snapshot",
+    "raw": "new-file",
+    "reminder-card": "new-file"
+  },
+  "knowledge_root_exists": true
+}

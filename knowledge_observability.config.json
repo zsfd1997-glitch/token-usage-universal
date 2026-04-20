@@ -1,0 +1,13 @@
+{
+  "mode": "knowledge-thin-wrapper",
+  "base_skill": "workflow-superchain",
+  "tracked_events": [
+    "trigger_decided",
+    "reminder_recorded",
+    "routing_recorded",
+    "version_recorded",
+    "persist_recorded",
+    "degradation_recorded"
+  ],
+  "summary_file": "输出/知识观测.md"
+}
