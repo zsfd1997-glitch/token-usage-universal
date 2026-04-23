@@ -168,17 +168,33 @@ def default_opencode_roots(
             base = Path(base_text)
             roots.extend(
                 [
+                    # Desktop bundle names
                     base / "OpenCode",
                     base / "ai.opencode.desktop",
+                    # CLI default
                     base / "opencode",
+                    # CLI with -cli suffix (observed on Windows where
+                    # opencode-cli.exe ships alongside OpenCode.exe desktop)
+                    base / "opencode-cli",
                 ]
             )
+        # Unix-style home variants some CLIs use even on Windows
+        roots.extend(
+            [
+                home_path / ".opencode",
+                home_path / ".config" / "opencode",
+                home_path / ".local" / "share" / "opencode",
+            ]
+        )
         if roots:
             return roots
         return [
             home_path / "AppData" / "Roaming" / "OpenCode",
             home_path / "AppData" / "Roaming" / "ai.opencode.desktop",
             home_path / "AppData" / "Local" / "opencode",
+            home_path / "AppData" / "Roaming" / "opencode-cli",
+            home_path / "AppData" / "Local" / "opencode-cli",
+            home_path / ".opencode",
         ]
     roots = [
         home_path / ".config" / "opencode",

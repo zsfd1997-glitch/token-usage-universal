@@ -390,6 +390,129 @@ def command_bootstrap_prompt(args) -> int:
     return 0
 
 
+def command_locate_opencode(args) -> int:
+    """Scan every plausible OpenCode storage location on this host and
+    report which ones actually have session/message files — with today's
+    activity if any. Use this when desktop sees tokens but CLI sees 0,
+    or when `report --today` returns 0 despite active CLI usage.
+    """
+    from datetime import datetime, timezone, timedelta
+    import os as _os
+
+    home = Path.home()
+    candidates: list[Path] = []
+
+    if _os.name == "nt":
+        for env_name in ("APPDATA", "LOCALAPPDATA"):
+            base = _os.environ.get(env_name, "").strip()
+            if base:
+                base_path = Path(base)
+                for name in ("OpenCode", "ai.opencode.desktop", "opencode",
+                             "opencode-cli", "opencode_cli", "OpenCodeCLI"):
+                    candidates.append(base_path / name)
+        for sub in (".opencode", ".config/opencode", ".local/share/opencode",
+                    ".local/state/opencode"):
+            candidates.append(home / sub)
+        for letter in ("C", "D", "E"):
+            for rel in ("OpenCode/storage", "opencode/storage",
+                        "opencode-cli/storage", "Tools/opencode/storage"):
+                candidates.append(Path(f"{letter}:/") / rel / "..")
+    else:
+        for sub in (".opencode", ".config/opencode",
+                    ".local/share/opencode", ".local/state/opencode",
+                    "Library/Application Support/OpenCode",
+                    "Library/Application Support/ai.opencode.desktop"):
+            candidates.append(home / sub)
+
+    extra = _os.environ.get("TOKEN_USAGE_OPENCODE_ROOTS", "").strip()
+    if extra:
+        for text in extra.split(","):
+            if text.strip():
+                candidates.append(Path(text.strip()).expanduser())
+
+    now = datetime.now().astimezone()
+    today_local = now.date()
+    seen: set[str] = set()
+    hits: list[dict[str, object]] = []
+    for root in candidates:
+        try:
+            key = str(root.resolve())
+        except (OSError, ValueError):
+            key = str(root)
+        if key in seen:
+            continue
+        seen.add(key)
+        if not root.exists() or not root.is_dir():
+            continue
+
+        session_files: list[Path] = []
+        message_files: list[Path] = []
+        try:
+            session_files = [p for p in root.rglob("storage/session/**/*.json") if p.is_file()][:200]
+            message_files = [p for p in root.rglob("storage/message/**/*.json") if p.is_file()][:500]
+        except (OSError, PermissionError):
+            pass
+
+        today_message_count = 0
+        for path in message_files:
+            try:
+                mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).astimezone()
+            except OSError:
+                continue
+            if mtime.date() == today_local:
+                today_message_count += 1
+
+        if session_files or message_files:
+            hits.append({
+                "path": str(root),
+                "sessions": len(session_files),
+                "messages": len(message_files),
+                "today_messages": today_message_count,
+            })
+
+    print("Token Usage Universal · Locate OpenCode")
+    print(f"(scanned {len(seen)} candidate paths on this machine)")
+    print()
+    if not hits:
+        print("No OpenCode storage found at any common location.")
+        print("Next steps:")
+        print("  1. Find your opencode-cli.exe / OpenCode.exe binary location:")
+        print("     Get-Command opencode, opencode-cli -ErrorAction SilentlyContinue")
+        print("  2. Look near the binary for a storage/session/ folder")
+        print("  3. Set: $env:TOKEN_USAGE_OPENCODE_ROOTS = \"<that path>\"")
+        print("  4. Rerun: python scripts/token_usage.py health")
+        return 1
+
+    print("Found OpenCode storage at:")
+    print()
+    header = f"  {'sessions':>8}  {'msgs':>6}  {'today':>6}  path"
+    print(header)
+    print("  " + "-" * (len(header) - 2))
+    for hit in hits:
+        marker = "*" if hit["today_messages"] else " "
+        print(f"{marker} {hit['sessions']:>8}  {hit['messages']:>6}  {hit['today_messages']:>6}  {hit['path']}")
+
+    active_hits = [h for h in hits if h["today_messages"] > 0]
+    print()
+    if active_hits:
+        print("Paths with today's activity (marked *) are where your CLI is actually writing.")
+        print()
+        print("To make `report --today` see all of them, set:")
+        if _os.name == "nt":
+            joined = ",".join(h["path"] for h in hits)
+            print(f"  $env:TOKEN_USAGE_OPENCODE_ROOTS = \"{joined}\"")
+        else:
+            joined = ",".join(h["path"] for h in hits)
+            print(f"  export TOKEN_USAGE_OPENCODE_ROOTS=\"{joined}\"")
+        print()
+        print("Then rerun: python scripts/token_usage.py report --today")
+    else:
+        print("No storage had today's activity. Either no OpenCode use today, or the")
+        print("CLI writes to yet another location. Check the opencode-cli.exe install")
+        print("directory directly for a self-contained storage/ subfolder.")
+    return 0
+
+
 def command_explore(args) -> int:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise SystemExit("explore requires an interactive TTY; use report flags instead")
@@ -820,6 +943,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="print a copy-paste cold-start prompt for hosts without skill loader",
     )
     bootstrap_prompt.set_defaults(func=command_bootstrap_prompt)
+
+    locate_opencode = subparsers.add_parser(
+        "locate-opencode",
+        help="scan all plausible OpenCode storage locations and report which have today's activity (diagnose CLI-vs-desktop mismatches)",
+    )
+    locate_opencode.set_defaults(func=command_locate_opencode)
 
     return parser
 

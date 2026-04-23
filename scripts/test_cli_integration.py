@@ -11,6 +11,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CLI_PATH = SCRIPT_DIR / "token_usage.py"
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
 
 class CliIntegrationTests(unittest.TestCase):
@@ -402,6 +404,37 @@ class CliIntegrationTests(unittest.TestCase):
             f"CLI crashed under cp1252\nstderr={result.stderr.decode('latin-1', errors='replace')}",
         )
         self.assertNotIn(b"UnicodeEncodeError", result.stderr)
+
+    def test_locate_opencode_runs_and_surfaces_storage(self) -> None:
+        """locate-opencode must never crash and must print the table header
+        plus next-step instructions (env var hint or binary search hint)."""
+        result = self._run_cli(["locate-opencode"], check=False)
+        self.assertIn(result.returncode, (0, 1))  # 0 if found, 1 if nothing
+        self.assertIn("Locate OpenCode", result.stdout)
+        self.assertIn("scanned", result.stdout)
+        combined = result.stdout + result.stderr
+        # Either a table with columns OR an explicit "not found" message.
+        has_table = "sessions" in combined and "msgs" in combined and "today" in combined
+        has_not_found = "No OpenCode storage found" in combined
+        self.assertTrue(has_table or has_not_found, f"unexpected output: {combined[:500]}")
+
+    def test_default_opencode_roots_include_cli_suffix_variant(self) -> None:
+        """Regression: Windows `opencode-cli.exe` installs often write to
+        `%APPDATA%\\opencode-cli\\` which was missing from the default root
+        list — causing desktop-works-CLI-returns-0 mismatches."""
+        from core.config import default_opencode_roots
+        roots = default_opencode_roots(
+            os_name="nt",
+            home=Path("C:/Users/Test"),
+            appdata="C:/Users/Test/AppData/Roaming",
+            localappdata="C:/Users/Test/AppData/Local",
+        )
+        root_strs = {str(r).replace("\\", "/") for r in roots}
+        # Must cover both the desktop and CLI naming variants
+        self.assertTrue(any("opencode-cli" in s for s in root_strs),
+                        f"opencode-cli variant missing from Windows defaults: {root_strs}")
+        self.assertTrue(any(s.endswith("/OpenCode") for s in root_strs))
+        self.assertTrue(any(s.endswith("/opencode") for s in root_strs))
 
     def test_bootstrap_prompt_shows_absolute_cli_path(self) -> None:
         result = self._run_cli(["bootstrap-prompt"])
