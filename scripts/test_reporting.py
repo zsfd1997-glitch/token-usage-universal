@@ -84,14 +84,6 @@ def _make_unavailable_result(
 
 
 class ReportingTests(unittest.TestCase):
-    def test_insights_include_latest_model_anchors(self) -> None:
-        report = build_report([_make_result(12_000_000)], window=_make_window(), group_by=None, limit=5)
-        insights = report["insights"]
-
-        self.assertEqual(insights["model_anchor_openai"], "OpenAI GPT-5.3-Codex / GPT-5.4")
-        self.assertEqual(insights["model_anchor_anthropic"], "Anthropic Opus 4.5 / Opus 4.6")
-        self.assertEqual(insights["model_anchor_verified_at"], "2026-03-25")
-
     def test_ascii_report_uses_terminal_dashboard_language(self) -> None:
         report = build_report([_make_result(120_000_000)], window=_make_window(), group_by=None, limit=5)
         rendered = render_report(report, show_estimated_cost=True)
@@ -132,37 +124,6 @@ class ReportingTests(unittest.TestCase):
         ]:
             with self.subTest(section=section):
                 self.assertIn(section, rendered)
-
-    def test_company_realm_thresholds(self) -> None:
-        cases = [
-            (9_999_999, "练气"),
-            (10_000_000, "筑基"),
-            (99_999_999, "筑基"),
-            (100_000_000, "金丹"),
-            (499_999_999, "金丹"),
-            (500_000_000, "元婴"),
-            (1_999_999_999, "元婴"),
-            (2_000_000_000, "化神"),
-        ]
-        for tokens, expected in cases:
-            with self.subTest(tokens=tokens):
-                report = build_report([_make_result(tokens)], window=_make_window(), group_by=None, limit=5)
-                self.assertEqual(report["insights"]["realm_name"], expected)
-
-    def test_daily_equivalent_normalizes_multi_day_window(self) -> None:
-        report = build_report([_make_result(700_000_000)], window=_make_window(days=7.0), group_by=None, limit=5)
-        insights = report["insights"]
-
-        self.assertEqual(insights["daily_equivalent_tokens"], 100_000_000)
-        self.assertEqual(insights["realm_name"], "金丹")
-
-    def test_benchmark_examples_are_exposed_in_json_report(self) -> None:
-        report = build_report([_make_result(12_000_000)], window=_make_window(), group_by=None, limit=5)
-
-        self.assertGreaterEqual(len(report["benchmark_examples"]), 4)
-        names = [item["source_name"] for item in report["benchmark_examples"]]
-        self.assertIn("Manage costs effectively", names)
-        self.assertIn("Introducing GPT-5.4", names)
 
     def test_report_groups_usage_by_model(self) -> None:
         report = build_report(

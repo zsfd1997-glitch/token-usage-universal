@@ -386,6 +386,38 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertIn("overall_status", payload)
         self.assertEqual(len(payload["sources"]), 51)
 
+    def test_panel_mode_does_not_crash_under_cp1252(self) -> None:
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "cp1252"
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "sources"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"CLI crashed under cp1252\nstderr={result.stderr.decode('latin-1', errors='replace')}",
+        )
+        self.assertNotIn(b"UnicodeEncodeError", result.stderr)
+
+    def test_pythonioencoding_gbk_produces_gbk_decodable_bytes(self) -> None:
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "gbk:backslashreplace"
+        result = subprocess.run(
+            [sys.executable, str(CLI_PATH), "sources"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        self.assertEqual(result.returncode, 0)
+        decoded = result.stdout.decode("gbk", errors="strict")
+        self.assertIn("Token Usage", decoded)
+        self.assertIn("来源", decoded)
+
     def test_release_gate_json_exposes_automated_gate_status(self) -> None:
         result = self._run_cli(["release-gate", "--format", "json"], env=os.environ.copy())
 
