@@ -1,89 +1,110 @@
 ---
 name: "token-usage-universal"
-description: "Local AI token usage reporter. Trigger when the user mentions `token`, `用量`, `消耗量`, `使用量`, `消耗`, or asks how many tokens were used today / by which model / by which project. Default action is `python3 scripts/token_usage.py report --today`; paste the returned ascii-hifi panel and add 1-3 sentences of conclusion. Do not trigger for vendor billing pages or cloud dashboards. Reads local client logs (Codex, Claude Code, OpenCode, Gemini/Kimi CLI, Chromium-family desktop apps) only — exact-first, never estimated. Supports Windows GBK terminals and intranet hosts where data paths diverge from defaults."
+description: "Translate natural-language requests about local AI token usage into the repo's standalone Python CLI (`scripts/token_usage.py`). Trigger when the user wants today's or recent local token usage, model/project/source/session comparisons, or diagnosis for why a local AI client is missing from counts; short triggers include `token`, `用量`, `消耗量`, `使用量`, `消耗`. Do not trigger for vendor billing pages, internet research, or remote/web-only analytics without local logs. Read local logs only and default to exact-first results. Before execution, gracefully handle intranet edge cases: GBK terminals, data paths that diverge from defaults, and multi-endpoint OpenCode (desktop + CLI + IDE plugin share one source)."
 ---
 
 # Token Usage Universal
 
-## What I do
+## 核心提示词
 
-Turn natural-language token-usage questions into one `scripts/token_usage.py` command, then paste the ascii-hifi panel back with a 1-3 sentence conclusion. I do not estimate, do not reinterpret panels, do not ask users to pick flags.
+你的任务是把用户说的人话翻成正确的本地 CLI 调用，再把结果按固定协议回出来。
 
-## When to use me
+真正负责统计和诊断的是 `scripts/token_usage.py`；这个 skill 的工作是翻译意图、选择最小命令、把 ascii-hifi 面板原样贴出来，再补 1 到 3 句高信号结论。不推测没有本地真源的数字，不让用户自己拼参数，不把面板翻译成项目符号摘要。
 
-Trigger me when the user says any of:
+## 什么时候调用
 
-- `token` / `用量` / `消耗量` / `使用量` / `消耗` (short triggers → today's overview by default)
-- "今天/本周/最近 token 用量多少"
-- "哪个模型/项目/来源最费 token"
-- "为什么 Claude / Codex / OpenCode / 某某桌面端没统计到"
+适合调用：
 
-Do **not** trigger me for: vendor billing pages, cloud dashboards, future-usage estimators, generic LLM cost calculators, anything that doesn't read local logs.
+- 用户问"今天 / 本周 / 最近 token 用量多少"
+- 用户问"哪个模型 / 项目 / 来源最费 token"
+- 用户问"为什么 Claude / Codex / OpenCode / 其他桌面端没统计到"
+- 用户只说 `token / 用量 / 消耗量 / 使用量 / 消耗`（默认先给今天总览）
+- 用户要求一个本地优先、exact-first 的 token 查询入口
 
-## How I work (happy path)
+不适合调用：
 
-Four steps. Do them in order. Do not ask clarifying questions on short triggers — run the default.
+- 用户想看云端账单页或供应商 dashboard
+- 手里没有本地日志，只想估算未来用量
+- 用户在问和本机无关的通用 LLM 费用计算器
 
-**Step 1. Run the default command.** For short triggers, run exactly:
+## 输入
+
+调用前至少具备：
+
+- 一个明确的时间窗口或查询方向（今天 / 本周 / 按模型 / 按来源）
+- 本机至少一个已支持来源的日志可读（运行 `health` 确认）
+- 如果是排障，需要知道哪个来源没出现在统计里
+
+内网四项前置自检（任一命中**先处理再执行**，优先级：宿主 → 编码 → 路径 → 多端归因）：
+
+- **宿主没装 skill 库**（opencode 桌面端 / 自研 CLI / 私有 launcher）→ [references/intranet-bootstrap.md](references/intranet-bootstrap.md)
+- **终端只认 GBK 不认 UTF-8**（Windows `chcp` 返回 `936`）→ [references/gbk-terminal.md](references/gbk-terminal.md)
+- **默认路径在本机不成立** → `not_found` 不等于没用量，先探测：[references/path-discovery.md](references/path-discovery.md)
+- **同机多端 / IDE 内嵌 / 自定义 base_url** → [references/multi-endpoint-scenarios.md](references/multi-endpoint-scenarios.md)
+
+## 输出
+
+必须同时包含：
+
+- 先输出 `ascii-hifi` 面板（fenced code block），再补结论
+- 总 token 和去缓存后 token（两者明确区分，不允许只给裸数字）
+- 当前来源状态：`exact / diagnose / unsupported` 三级之一
+- 如果结果为零，必须给出"为什么是零"的原因，不允许空白成功
+- 可选展开方向：一句"要继续的话，我再拆模型 / 项目 / 当前会话"
+
+## 验收标准
+
+同时满足以下条件才算完成：
+
+- 用户看完能直接知道今天 token 花在哪、多少是真实消耗、多少是缓存命中
+- 每条来源状态都能追到本地日志路径或诊断原因
+- 面板没有被翻译成等价的项目符号摘要冒充输出
+- 没有真源的来源没有被猜成 exact 数字
+- 用户说"先停"后已经收口，没有继续追问细节
+
+## 执行协议
+
+**第 1 步：确认来源状态。** 必要时跑：
 
 ```bash
-python3 scripts/token_usage.py report --today
+python3 scripts/token_usage.py health
 ```
 
-For other intents, pick from this table:
+如果大部分来源 `not_found` / `no_data`，**不要**直接得出"没用量"——先按 [references/path-discovery.md](references/path-discovery.md) 探测：`health --format json` 看解析后绝对路径 → `sources` 看不 ready 原因 → `find` / `Get-ChildItem` 搜特征文件 → 用 `TOKEN_USAGE_<SOURCE>_ROOT` / `TOKEN_USAGE_DISCOVERY_ROOTS` 覆盖 → 重跑 health。
 
-| User said | Command |
-|---|---|
-| 今天/当前总量 | `report --today` |
-| 本周/最近 / "最近几天" | `report --trend 7d` or `report --last 7d` |
-| 按模型/项目/来源拆 | `report --today --by model`（或 `project` / `source`） |
-| 当前会话 | `report --current-session` |
-| 月历热力图 | `report --calendar month` |
-| 某来源没统计到 | `diagnose --source <source_id> --today` |
-| 来源就绪状态总览 | `sources` 或 `health` |
+**第 2 步：选最小命令。** 按用户意图选命令——
 
-**Step 2. Paste the ascii-hifi panel.** The CLI returns a panel (box-drawing text). Put it in a fenced code block **verbatim** — do not summarize, do not translate to bullets, do not drop lines.
+- 今天总览：`report --today`
+- 按模型 / 项目 / 来源拆分：`report --today --by model|project|source`
+- 最近趋势：`report --trend 7d`
+- 月历热力图：`report --calendar month`
+- 当前会话：`report --current-session`
+- 来源排障：`diagnose --source <source_id> --today`
+- 来源状态总览：`sources`
 
-**Step 3. Add 1-3 sentence conclusion.** Under the panel:
+**第 3 步：贴面板，补结论。** CLI 返回 ascii-hifi 面板后，先原样放进 fenced code block，再补 1 到 3 句高信号结论，最后一句给可选展开方向。GBK 终端三级降级（Tier 1 `chcp 65001` → Tier 1.5 `PYTHONIOENCODING=gbk:backslashreplace` → Tier 2 `--format json` + skill 端英文重绘 → Tier 3 `--plain-ascii` + 英文标签，禁止中英混排）详见 [references/gbk-terminal.md](references/gbk-terminal.md)。
 
-- Which model / project / source drove the number
-- 总 token vs 去缓存后 token 差异大不大
-- 一句可选展开方向（"要再拆模型/项目/当前会话，就说一声"）
+**第 4 步：收口。** 用户说"先这样 / 够了 / 不用继续 / 先停 / 先看到这里"时，用 1 到 3 句收口总结，不再追问。
 
-**Step 4. Stop when user says stop.** "先这样" / "够了" / "不用继续" / "先停" / "先看到这里" → 1-3 句收口，不追问。
+引导细则和默认面板骨架见 [references/skill-routing.md](references/skill-routing.md)。  
+来源契约和 exact / diagnose / unsupported 边界见 [references/source-contract.md](references/source-contract.md)。  
+精度口径和费用估算规则见 [references/accuracy-policy.md](references/accuracy-policy.md)。
 
-## Output contract (must hold every time)
+## 禁忌
 
-- Panel goes into a fenced code block, first, before any prose
-- 总 token and 去缓存后 token stated separately — no naked numbers
-- Source status is one of `exact / diagnose / unsupported` — no "probably"
-- If total is 0, explain why (no sessions today / source not_found / GBK file read failed) — never silent-success
-- Costs are always local-price-table estimates, never a billing claim
+- 禁止把 ascii-hifi 面板翻译成等价的项目符号摘要后冒充原面板
+- 禁止在用户只说短触发词时返回一个裸数字
+- 禁止一上来反问一长串选项，让用户自己拼 `--trend / --calendar / --session`
+- 禁止在没有本地真源时把估算数字冒充 exact
+- 禁止在用户说"先这样 / 够了"之后继续追问细节或推图表
+- 禁止把 `generic-openai-compatible` 当作默认总览的主要来源
+- 禁止假设宿主已加载过 SKILL.md；内网 opencode / 自研 CLI 常常没装 skill 库，首轮必须先确认或手动 bootstrap
+- 禁止在默认路径 `not_found` 时直接得出"今天没用量"的结论；一律先路径探测
+- 禁止在 GBK 终端直接贴 UTF-8 面板；未确认终端编码前不要输出中文面板
+- 禁止在 GBK 降级场景下中英混排输出（GBK 终端只能稳渲 ASCII）
+- 禁止把 `opencode.exe` / `opencode-cli.exe` / IDE 插件拆成多条 source 报数；共享同一条 `opencode` source
+- 禁止对 `trae` source 反复 diagnose 期望拿到 exact token；DB 加密，只能走 ingress 劫持 base_url
 
-## When something's off (degradation branches)
+## 一句话操作口令
 
-Check these only if the happy path fails or the user explicitly signals trouble:
-
-- **`health` shows most sources `not_found`** → default paths miss real data. Do not conclude "no usage"; follow [references/path-discovery.md](references/path-discovery.md) to locate and env-override.
-- **Output is garbled / terminal is GBK** (`chcp` returns `936` or chars render as `鍘熷緥`) → three-tier degradation in [references/gbk-terminal.md](references/gbk-terminal.md). Prefer Tier 1.5 (`PYTHONIOENCODING=gbk:backslashreplace`) or Tier 2 (`--format json` + re-render in ASCII).
-- **OpenCode reports 0 despite active use** → adapter may need multi-endpoint config (desktop + `opencode-cli.exe` + IDE plugin share one source). See [references/multi-endpoint-scenarios.md](references/multi-endpoint-scenarios.md) and `diagnose --source opencode` for verification_issues.
-- **Host has no skills loader at all** (pure chat shell) → bootstrap with `python3 scripts/token_usage.py bootstrap-prompt` or see [references/intranet-bootstrap.md](references/intranet-bootstrap.md).
-
-Routing, source contract, and accuracy policy details: [skill-routing.md](references/skill-routing.md) · [source-contract.md](references/source-contract.md) · [accuracy-policy.md](references/accuracy-policy.md).
-
-## Forbidden
-
-- Do not translate the ascii-hifi panel into bullets and claim it's equivalent output
-- Do not return a naked number for a short trigger — always panel first
-- Do not ask the user to pick `--trend / --calendar / --session` flags; pick for them
-- Do not estimate when local exact data is missing — say it's missing
-- Do not keep pushing more charts after user says stop
-- Do not default-promote `generic-openai-compatible` as a main source
-- Do not split `opencode.exe` / `opencode-cli.exe` / IDE plugin into separate sources — they share one `opencode` source
-- Do not paste UTF-8 Chinese output directly to a GBK terminal — confirm encoding first
-- Do not keep running `diagnose --source trae` expecting exact tokens — trae DB is encrypted, ingress is the only path
-- Do not conclude "0 tokens today" when default paths show `not_found` — discovery first
-
-## One-line mnemonic
-
-短触发词直接跑 `report --today`；面板先贴，结论后补 1-3 句；用户说停就停。
+先自检（宿主 / 编码 / 路径 / 多端），再选最小命令，先贴面板再补结论，用户停手就收口。

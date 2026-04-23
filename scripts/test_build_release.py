@@ -64,29 +64,28 @@ class BuildReleaseTests(unittest.TestCase):
             self.assertIn("token-usage-universal/docs/guide.md", names)
             self.assertTrue(all("\\" not in name for name in names))
 
-    def test_skill_only_export_honors_skill_creator_rules(self) -> None:
-        """Skill-creator authoritative rule (SKILL.md §What to Not Include):
-        skill packages must NOT include README/CHANGELOG/governance docs/
-        tests/build tooling. --skill-only must enforce this."""
+    def test_skill_only_export_matches_xianfeng_artifact_convention(self) -> None:
+        """先锋组织范例要求分发产物保留 README.md (7-section template +
+        team frontmatter) 和 LICENSE；--skill-only 只剔除 governance /
+        dev-harness 文件（CHANGELOG / CoC / CONTRIBUTING / SECURITY /
+        SUPPORT / docs / .github / examples / tests / build tooling）。"""
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "skill-only"
             build_release.export_release(output, force=False, skill_only=True)
 
             top_level = {p.name for p in output.iterdir()}
-            # Must include
-            self.assertIn("SKILL.md", top_level)
-            self.assertIn("LICENSE", top_level)
-            self.assertIn("scripts", top_level)
-            self.assertIn("references", top_level)
-            # Must exclude auxiliary / governance / doc files per skill-creator
+            # 必须保留（先锋模板 + skill 本体）
+            for required in ("README.md", "SKILL.md", "LICENSE", "scripts", "references"):
+                self.assertIn(required, top_level, f"skill-only export missing required 先锋 artifact: {required}")
+            # 必须剔除 governance / dev-harness / repo-internal 文件
             for forbidden in (
-                "README.md", "CHANGELOG.md", "CODE_OF_CONDUCT.md",
-                "CONTRIBUTING.md", "SECURITY.md", "SUPPORT.md",
+                "CHANGELOG.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md",
+                "SECURITY.md", "SUPPORT.md",
                 "docs", ".github", "examples",
             ):
                 self.assertNotIn(forbidden, top_level, f"skill-only export must not include {forbidden}")
 
-            # scripts/ must drop tests + build tooling, keep runtime code.
+            # scripts/ 只留运行时代码，不带 tests / build tooling / fixtures
             script_files = {p.name for p in (output / "scripts").iterdir() if p.is_file()}
             self.assertIn("token_usage.py", script_files)
             self.assertIn("install_to_opencode.py", script_files)

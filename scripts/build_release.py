@@ -39,14 +39,14 @@ NESTED_EXPORT_IGNORES = {
     Path("examples") / "vm-testing": {"output"},
 }
 
-# Anthropic skill-creator authoritative rule (SKILL.md §"What to Not Include"):
-#   Skill packages must NOT contain auxiliary / governance / documentation
-#   files — only what the AI agent needs to do its job.
-# --skill-only mode enforces this: drops README/CHANGELOG/CoC/CONTRIBUTING/
-# SECURITY/SUPPORT/docs/.github/examples/tests/build-tooling/fixtures, keeps
-# only SKILL.md + LICENSE + runtime code + progressively-disclosed refs.
+# --skill-only distribution mode. Follows the 先锋组织 artifact convention:
+# KEEPS README.md (先锋 7-section template with team/type/name/contributor/
+# created/version/status/tags/usage_count/effect frontmatter) and LICENSE
+# at the top level — these are required 先锋 artifacts, NOT auxiliary files.
+# DROPS only: CHANGELOG/CoC/CONTRIBUTING/SECURITY/SUPPORT/docs/.github/
+# examples/tests/build-tooling/fixtures — these are governance / repo-
+# tooling / dev-harness artifacts that end users don't need.
 SKILL_ONLY_ROOT_IGNORES = {
-    "README.md",
     "CHANGELOG.md",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
