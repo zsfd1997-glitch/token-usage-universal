@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Contributing
 
 欢迎补充新来源、修正路径兼容性，或改进输出与文档。

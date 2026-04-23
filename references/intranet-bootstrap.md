@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Intranet Bootstrap
 
 面向**宿主没预装 skill 库**的场景：内网自建 opencode 桌面端、企业自研 CLI、私有分发的 Claude 客户端。这些宿主不会自动加载 `SKILL.md`，也不会自动探测仓库，`token-usage-universal` 必须靠人工引导完成首次接入。

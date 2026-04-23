@@ -11,6 +11,8 @@ usage_count: 0
 effect: 把散落在本机各 AI 客户端、CLI 工具和 API 日志中的 token 消耗，自动汇总成可直接决策的本地面板
 ---
 
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
 # Token Usage Universal
 
 ![CI](./docs/images/ci-badge.svg)

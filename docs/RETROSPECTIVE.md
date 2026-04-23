@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # 复盘：token-usage-universal 是怎么被真实对话逼出来的
 
 > 生成日期：2026-04-20  

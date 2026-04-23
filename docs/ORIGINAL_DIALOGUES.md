@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # 原文对话档案：Token Usage Universal
 
 - 生成时间：2026-04-21 US/Pacific

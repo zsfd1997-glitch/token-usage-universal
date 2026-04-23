@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Multi-Endpoint Scenarios
 
 面向**同机多端并存**、**IDE 内嵌 CLI**、**IDE 直连第三方 URL** 这类容易漏统计或误统计的场景。`health` 输出看着正常、但用户觉得数字不对时，优先对照本文档三条分支。

@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # 对话分类分析：Token Usage Universal
 
 > 证据底座：[`ORIGINAL_DIALOGUES.md`](./ORIGINAL_DIALOGUES.md)  

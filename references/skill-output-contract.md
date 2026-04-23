@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Skill Output Contract
 
 Use this file when formatting the final chat answer, deciding whether to stay in panel mode, or deciding whether to stop.

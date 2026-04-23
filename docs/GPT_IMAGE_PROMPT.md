@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # GPT 画图提示词：对话如何塑造 Token Usage Universal
 
 ## 主提示词

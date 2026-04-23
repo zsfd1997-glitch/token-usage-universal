@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Skill Routing
 
 Use this file when the user's phrasing is vague and you need the default mapping from natural language to `scripts/token_usage.py`.

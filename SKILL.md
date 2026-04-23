@@ -3,6 +3,8 @@ name: "token-usage-universal"
 description: "Translate natural-language requests about local AI token usage into the repo's standalone Python CLI (`scripts/token_usage.py`). Trigger when the user wants today's or recent local token usage, model/project/source/session comparisons, or diagnosis for why a local AI client is missing from counts; short triggers include `token`, `用量`, `消耗量`, `使用量`, `消耗`. Do not trigger for vendor billing pages, internet research, or remote/web-only analytics without local logs. Read local logs only and default to exact-first results. Before execution, gracefully handle intranet edge cases: GBK terminals, data paths that diverge from defaults, and multi-endpoint OpenCode (desktop + CLI + IDE plugin share one source)."
 ---
 
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
 # Token Usage Universal
 
 ## 核心提示词

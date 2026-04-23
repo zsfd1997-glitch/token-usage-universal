@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # GBK Terminal
 
 面向**终端只认 GBK、不认 UTF-8** 的场景。内网 Windows cmd / PowerShell 老主机、部分国产 Linux 终端默认 locale 仍是 `zh_CN.GBK`，直接渲染 UTF-8 的 ascii-hifi 面板会出现乱码（常见表现：中文变成 `鍘熷緥` / `鎸変緥` / `?` 这类）。

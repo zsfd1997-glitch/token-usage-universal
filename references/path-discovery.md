@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 token.skill v1.1 -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # Path Discovery
 
 面向**默认路径在本机不成立**的场景：内网企业机改了用户目录、会话存在共享盘、客户端被重装到非默认位置、Windows 企业策略把 `AppData` 重定向。本文档给定位真源的标准流程。
