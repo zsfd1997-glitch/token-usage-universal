@@ -111,6 +111,28 @@ python3 scripts/token_usage.py diagnose --source codex --today
 `report --today` 用来看今天总览。  
 `diagnose` 用来查“为什么没统计到”。  
 
+## OpenCode CLI 用户最短路径（1 分钟）
+
+如果你用的是 **opencode CLI**，跑一条命令把本 skill 注册进 opencode 的 skills 目录，之后对话里说 `token` / `用量` 就会自动触发：
+
+```bash
+python3 scripts/install_to_opencode.py
+```
+
+脚本会：
+- 自动探测 opencode skills 目录（macOS/Linux: `~/.config/opencode/skills/`；Windows: `%APPDATA%\opencode\skills\`）
+- 把仓库软链进去（Windows 无开发者模式时自动降级到目录联接或完整拷贝）
+- 验证 SKILL.md 可达，打印下一步操作
+
+装完**重启一次 opencode CLI**，再对话里说 `token`、`用量`、`今天 token 用了多少` 就会直接出面板。
+
+卸载 / 换位置：
+```bash
+python3 scripts/install_to_opencode.py --dry-run    # 只看计划不动手
+python3 scripts/install_to_opencode.py --uninstall  # 拆掉软链
+python3 scripts/install_to_opencode.py --target DIR # 指定 skills 目录
+```
+
 ## OpenCode / Trae 用户快速上手
 
 如果你在使用 **OpenCode** 或 **Trae** 等内网/私有部署 AI 工具，通常不需要配置 skills 目录，直接按以下步骤找到你的数据源：
