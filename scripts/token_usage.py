@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -13,19 +14,51 @@ if str(SCRIPT_DIR) not in sys.path:
 
 
 def _configure_stdio_utf8() -> None:
-    # Windows-hosted subprocess pipes may default to a legacy codec like cp1252.
-    # Force UTF-8 so JSON/text output with Chinese copy stays printable in CI.
+    # Intranet GBK terminals (Windows cmd cp936, zh_CN.GBK locale) cannot
+    # encode every unicode char; without intervention print() raises
+    # UnicodeEncodeError and crashes mid-panel. Guarantees:
+    #   1. If PYTHONIOENCODING is set, keep that codec — the user (or CI)
+    #      made an explicit choice — but force errors="backslashreplace" so
+    #      any unencodable char degrades to an escape instead of crashing.
+    #      Escaped output stays valid JSON (\uXXXX) and parseable ASCII.
+    #   2. Otherwise prefer UTF-8 with the same non-crashing error handler.
+    user_set = bool(os.environ.get("PYTHONIOENCODING"))
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if not callable(reconfigure):
             continue
+        if user_set:
+            try:
+                reconfigure(errors="backslashreplace")
+            except (LookupError, ValueError):
+                continue
+            continue
         try:
-            reconfigure(encoding="utf-8", errors="strict")
+            reconfigure(encoding="utf-8", errors="backslashreplace")
+            continue
+        except (LookupError, ValueError):
+            pass
+        try:
+            reconfigure(errors="backslashreplace")
         except (LookupError, ValueError):
             continue
 
 
 _configure_stdio_utf8()
+
+
+def _stdout_needs_ascii_json() -> bool:
+    # When stdout is not UTF-8 (cp1252 CI, GBK intranet terminals, unknown
+    # pipes), raw non-ASCII chars in JSON become codec-specific bytes that
+    # downstream UTF-8 consumers (test harnesses, skills reading the pipe)
+    # can't decode. Falling back to ensure_ascii=True keeps stdout pure ASCII
+    # (\uXXXX escapes are valid JSON) so the bytes round-trip through any
+    # codec without loss or decode errors.
+    encoding = (getattr(sys.stdout, "encoding", "") or "").lower()
+    return not encoding.startswith("utf")
+
+
+_STDOUT_JSON_ENSURE_ASCII = _stdout_needs_ascii_json()
 
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.claude_desktop import ClaudeDesktopAdapter
@@ -286,7 +319,7 @@ def command_report(args) -> int:
         dashboard_mode=dashboard_mode,
     )
     if args.format == "json":
-        print(json.dumps({"results": [item.as_dict() for item in results], "report": report}, ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps({"results": [item.as_dict() for item in results], "report": report}, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_report(report, plain_ascii=args.plain_ascii, show_estimated_cost=(args.estimated_cost or bool(dashboard_mode))))
     return 0
@@ -296,7 +329,7 @@ def command_sources(args) -> int:
     registry = _build_adapters()
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     if args.format == "json":
-        print(json.dumps([_source_status_payload(adapter) for adapter in registry.values()], ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps([_source_status_payload(adapter) for adapter in registry.values()], ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_sources(results))
     return 0
@@ -307,7 +340,7 @@ def command_health(args) -> int:
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     health = build_health_report(results)
     if args.format == "json":
-        print(json.dumps(health, ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps(health, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_health(health))
     return 0
@@ -322,7 +355,7 @@ def command_diagnose(args) -> int:
     result = adapter.collect(window)
     result.verification_issues.extend(verify_result(result))
     if args.format == "json":
-        print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps(result.as_dict(), ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_diagnose(result, window))
     return 0
@@ -365,7 +398,7 @@ def command_explore(args) -> int:
 def command_targets(args) -> int:
     payload = build_top20_registry_payload()
     if args.format == "json":
-        print(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps(payload, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_targets(payload))
     return 0
@@ -585,7 +618,7 @@ def command_release_gate(args) -> int:
         )
         _write_release_evidence_bundle(Path(args.output_dir).expanduser(), bundle)
     if args.format == "json":
-        print(json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default))
+        print(json.dumps(payload, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
     else:
         print(render_release_gate(payload))
     return 0
@@ -604,7 +637,7 @@ def command_ingress_config(args) -> int:
     )
     payload = build_ingress_companion_payload(config)
     if args.format == "json":
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(json.dumps(payload, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2))
     else:
         print(render_ingress_companion_payload(payload))
     return 0
