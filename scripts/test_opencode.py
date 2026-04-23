@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -173,7 +174,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
             adapter = OpenCodeAdapter()
             adapter.roots = [root]
 
-            def fake_run(*args, timeout: int):
+            def fake_run(*args, timeout: int, cwd: str | None = None):
                 if args == ("session", "list", "--max-count", "8", "--format", "json"):
                     return subprocess.CompletedProcess(
                         args,
@@ -216,6 +217,229 @@ class OpenCodeAdapterTests(unittest.TestCase):
         self.assertEqual(result.events[0].provider, "moonshot")
         self.assertEqual(result.events[0].total_tokens, 250)
         self.assertEqual(result.events[0].session_id, "ses_1")
+
+    def test_resolve_cli_prefers_opencode_cli_binary_over_gui(self) -> None:
+        """Problem 1 regression: on Windows both opencode.exe (GUI) and
+        opencode-cli.exe can coexist in PATH. The adapter must pick the CLI."""
+        adapter = OpenCodeAdapter()
+
+        gui_path = "C:\\OpenCode\\OpenCode.exe"
+        cli_path = "D:\\OpenCode\\opencode-cli.exe"
+
+        def fake_which(name: str) -> str | None:
+            mapping = {
+                "opencode-cli.exe": cli_path,
+                "opencode.exe": gui_path,
+                "opencode-cli": None, "opencode-cli.cmd": None,
+                "opencode": None, "opencode.cmd": None,
+            }
+            return mapping.get(name)
+
+        with patch("adapters.opencode.shutil.which", side_effect=fake_which), patch.dict(
+            "os.environ", {}, clear=False,
+        ):
+            os.environ.pop("TOKEN_USAGE_OPENCODE_BIN", None)
+            resolved = adapter._resolve_cli()
+
+        self.assertEqual(resolved, cli_path, "adapter picked the GUI binary over opencode-cli")
+
+    def test_opencode_v1_1_13_export_shape_with_info_and_parts(self) -> None:
+        """Problem 4 regression: export format {"messages": [{"info": {...},
+        "parts": [{"tokens": {...}}]}]} must yield events — iter_usage_carriers
+        alone can't cross info/parts siblings."""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "log").mkdir()
+            (root / "log" / "2026-03-25.log").write_text("sample", encoding="utf-8")
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            export_payload = {
+                "messages": [
+                    {
+                        "info": {
+                            "id": "msg_1",
+                            "sessionID": "ses_v1_1_13",
+                            "role": "assistant",
+                            "providerID": "aliyun",
+                            "modelID": "qwen3-coder-plus",
+                            "time": {"created": created_at, "completed": completed_at},
+                            "path": {"root": "D:\\知识库", "cwd": "D:\\知识库"},
+                        },
+                        "parts": [
+                            {"type": "reasoning", "tokens": {"input": 13000, "output": 30, "reasoning": 5, "cache": {"read": 500, "write": 0}}},
+                            {"type": "reasoning", "tokens": {"input": 13964, "output": 70, "reasoning": 37, "cache": {"read": 500, "write": 0}}},
+                        ],
+                    },
+                    {
+                        "info": {"id": "msg_0", "sessionID": "ses_v1_1_13", "role": "user"},
+                        "parts": [{"type": "text", "text": "hi"}],
+                    },
+                ]
+            }
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                    return subprocess.CompletedProcess(
+                        args, 0,
+                        stdout=json.dumps([{"id": "ses_v1_1_13", "updated_at": "2026-03-25T10:00:00-07:00", "title": "demo"}]),
+                        stderr="",
+                    )
+                if args == ("export", "ses_v1_1_13"):
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps(export_payload), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="/usr/local/bin/opencode-cli"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        self.assertEqual(len(result.events), 1, "v1.1.13 export shape silently returned 0 events")
+        event = result.events[0]
+        # Best-part picker took the larger total
+        self.assertEqual(event.total_tokens, 14571)  # 13964 + 500 + 70 + 37
+        self.assertEqual(event.input_tokens, 13964)
+        self.assertEqual(event.cached_input_tokens, 500)
+        self.assertEqual(event.output_tokens, 70)
+        self.assertEqual(event.reasoning_tokens, 37)
+        self.assertEqual(event.provider, "aliyun")
+        self.assertIn("qwen3-coder-plus", (event.model or "", event.raw_model or ""))
+        self.assertEqual(event.project_path, "D:\\知识库")
+
+    def test_cli_export_uses_local_cwd_not_session_list_directory(self) -> None:
+        """Problem 5 regression: when session list returns a mojibake
+        `directory` field (Windows cp936 leaking), we must prefer the UTF-8
+        path recovered from local message JSON."""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real_project = root / "project-utf8"
+            real_project.mkdir()
+
+            session_dir = root / "storage" / "session"
+            message_dir = root / "storage" / "message" / "ses_cwd"
+            session_dir.mkdir(parents=True)
+            message_dir.mkdir(parents=True)
+
+            # Local message file carries the CORRECT path (UTF-8 JSON on disk),
+            # but has no tokens field — so local scan yields 0 events and
+            # forces the adapter into the CLI-export code path.
+            (session_dir / "ses_cwd.json").write_text(
+                json.dumps({"id": "ses_cwd", "directory": str(real_project), "time": {"created": created_at}}),
+                encoding="utf-8",
+            )
+            (message_dir / "msg_user.json").write_text(
+                json.dumps({
+                    "id": "msg_user", "sessionID": "ses_cwd", "role": "user",
+                    "time": {"created": created_at},
+                    "path": {"root": str(real_project)},
+                }),
+                encoding="utf-8",
+            )
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            observed_cwds: list[str | None] = []
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                    return subprocess.CompletedProcess(
+                        args, 0,
+                        stdout=json.dumps([{
+                            "id": "ses_cwd",
+                            "updated_at": "2026-03-25T10:00:00-07:00",
+                            # Garbled mojibake path — NOT a real directory
+                            "directory": "D:\\֪ʶ",
+                            "title": "demo",
+                        }]),
+                        stderr="",
+                    )
+                if args == ("export", "ses_cwd"):
+                    observed_cwds.append(cwd)
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+                        "messages": [{
+                            "info": {
+                                "id": "msg_1", "sessionID": "ses_cwd", "role": "assistant",
+                                "providerID": "aliyun", "modelID": "qwen3-coder-plus",
+                                "time": {"created": created_at, "completed": completed_at},
+                                "path": {"root": str(real_project)},
+                            },
+                            "parts": [{"type": "reasoning", "tokens": {"input": 100, "output": 50, "reasoning": 0, "cache": {"read": 0, "write": 0}}}],
+                        }],
+                    }), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="/usr/local/bin/opencode-cli"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        # cwd for export must be the REAL UTF-8 path, not the mojibake one.
+        # (detect phase + collect phase each call export once, so observed >= 1.)
+        self.assertGreaterEqual(len(observed_cwds), 1)
+        for cwd in observed_cwds:
+            self.assertEqual(cwd, str(real_project), f"adapter used mojibake directory: {cwd}")
+        self.assertEqual(len(result.events), 1)
+        self.assertEqual(result.events[0].total_tokens, 150)
+
+    def test_cli_export_skips_nonexistent_cwd_gracefully(self) -> None:
+        """Problem 5 corollary: if NO valid cwd can be derived, the adapter
+        still calls export without a cwd instead of crashing."""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "log").mkdir()
+            (root / "log" / "2026-03-25.log").write_text("sample", encoding="utf-8")
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            observed_cwds: list[str | None] = []
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                    return subprocess.CompletedProcess(
+                        args, 0,
+                        stdout=json.dumps([{
+                            "id": "ses_bad_cwd", "updated_at": "2026-03-25T10:00:00-07:00",
+                            "directory": "/this/path/definitely/does/not/exist/中文",
+                            "title": "demo",
+                        }]),
+                        stderr="",
+                    )
+                if args == ("export", "ses_bad_cwd"):
+                    observed_cwds.append(cwd)
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+                        "messages": [{
+                            "info": {"id": "m", "sessionID": "ses_bad_cwd", "role": "assistant",
+                                     "providerID": "x", "modelID": "y",
+                                     "time": {"completed": created_at + 1000}},
+                            "parts": [{"type": "reasoning", "tokens": {"input": 10, "output": 5, "reasoning": 0, "cache": {"read": 0, "write": 0}}}],
+                        }],
+                    }), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="/usr/local/bin/opencode-cli"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        # Each observed cwd must be None — the nonexistent path should never
+        # reach subprocess (detect phase + collect phase each may call).
+        self.assertGreaterEqual(len(observed_cwds), 1)
+        for cwd in observed_cwds:
+            self.assertIsNone(cwd, f"nonexistent cwd leaked to subprocess: {cwd}")
+        self.assertEqual(len(result.events), 1)
+        any_cwd_note = any("didn't exist on this machine" in issue for issue in result.verification_issues)
+        self.assertTrue(any_cwd_note, f"expected mojibake-cwd diagnostic, got {result.verification_issues}")
 
     def test_detect_reports_local_data_when_cli_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

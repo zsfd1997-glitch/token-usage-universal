@@ -59,6 +59,9 @@ def _looks_like_usage_dict(node: dict[str, object]) -> bool:
             "prompt_tokens",
             "cached_input_tokens",
             "cache_read_input_tokens",
+            # OpenCode v1.1.13+ schema: {"input", "output", "reasoning",
+            # "cache": {"read", "write"}} — short keys on a bare token dict.
+            "input",
         )
     )
     has_output = any(
@@ -68,14 +71,19 @@ def _looks_like_usage_dict(node: dict[str, object]) -> bool:
             "completion_tokens",
             "reasoning_tokens",
             "reasoning_output_tokens",
+            # OpenCode v1.1.13+ schema (see above).
+            "output",
+            "reasoning",
         )
     )
     has_total = "total_tokens" in node
-    has_nested_cache = _nested_int(node, "input_token_details", "cached_tokens") > 0 or _nested_int(
-        node,
-        "prompt_tokens_details",
-        "cached_tokens",
-    ) > 0
+    has_nested_cache = (
+        _nested_int(node, "input_token_details", "cached_tokens") > 0
+        or _nested_int(node, "prompt_tokens_details", "cached_tokens") > 0
+        # OpenCode nested cache: {"cache": {"read": N, "write": N}}
+        or _nested_int(node, "cache", "read") > 0
+        or _nested_int(node, "cache", "write") > 0
+    )
     return has_total or ((has_input or has_nested_cache) and has_output)
 
 
@@ -112,23 +120,49 @@ def iter_usage_carriers(node):
 
 
 def normalize_usage(payload: dict[str, object]) -> dict[str, int]:
-    input_tokens = _int_value(payload.get("input_tokens", payload.get("prompt_tokens", 0)))
+    # Two schemas share this function:
+    #  - OpenAI / Anthropic long-key: input_tokens / prompt_tokens already
+    #    includes any cached_read portion; total_tokens = input + output.
+    #  - OpenCode v1.1.13+ short-key: {"input", "output", "reasoning",
+    #    "cache": {"read", "write"}}; "input" excludes cached read, and
+    #    total must include cache.read + cache.write.
+    has_long_input = "input_tokens" in payload or "prompt_tokens" in payload
+    has_short_input = "input" in payload and not has_long_input
+
+    if has_long_input:
+        input_tokens = _int_value(payload.get("input_tokens", payload.get("prompt_tokens", 0)))
+    elif has_short_input:
+        # OpenCode: "input" excludes cache.read; fold cache.write into input
+        # so the first-time cache-population cost shows up as billable input.
+        input_tokens = _int_value(payload.get("input", 0)) + _nested_int(payload, "cache", "write")
+    else:
+        input_tokens = 0
+
     cached_input_tokens = max(
         _int_value(payload.get("cached_input_tokens", 0)),
         _int_value(payload.get("cache_read_input_tokens", 0)),
         _nested_int(payload, "input_token_details", "cached_tokens"),
         _nested_int(payload, "prompt_tokens_details", "cached_tokens"),
+        _nested_int(payload, "cache", "read"),
     )
-    output_tokens = _int_value(payload.get("output_tokens", payload.get("completion_tokens", 0)))
+    output_tokens = _int_value(
+        payload.get("output_tokens", payload.get("completion_tokens", payload.get("output", 0)))
+    )
     reasoning_tokens = max(
         _int_value(payload.get("reasoning_tokens", 0)),
         _int_value(payload.get("reasoning_output_tokens", 0)),
+        _int_value(payload.get("reasoning", 0)),
         _nested_int(payload, "output_token_details", "reasoning_tokens"),
         _nested_int(payload, "completion_tokens_details", "reasoning_tokens"),
     )
     total_tokens = _int_value(payload.get("total_tokens", 0))
     if not total_tokens:
-        total_tokens = input_tokens + output_tokens
+        if has_short_input:
+            # OpenCode: total = (input including cache.write) + cache.read + output + reasoning
+            total_tokens = input_tokens + cached_input_tokens + output_tokens + reasoning_tokens
+        else:
+            # OpenAI / Anthropic: input already includes cached; total = input + output
+            total_tokens = input_tokens + output_tokens
     return {
         "input_tokens": input_tokens,
         "cached_input_tokens": cached_input_tokens,

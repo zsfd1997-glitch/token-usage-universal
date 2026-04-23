@@ -93,6 +93,22 @@ def _read_json_file(path: Path):
     return payload
 
 
+def _looks_like_opencode_export_shape(payload) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    messages = payload.get("messages")
+    if not isinstance(messages, list) or not messages:
+        return False
+    for item in messages:
+        if not isinstance(item, dict):
+            continue
+        info = item.get("info")
+        parts = item.get("parts")
+        if isinstance(info, dict) and isinstance(parts, list):
+            return True
+    return False
+
+
 def _read_json_file_with_encoding(path: Path):
     """Return (payload, encoding_used). encoding_used is None on failure,
     a codec name on success, or 'utf-8:replace' when lossy fallback was needed.
@@ -127,7 +143,18 @@ class OpenCodeAdapter(BaseAdapter):
         configured = os.environ.get(self.bin_env, "").strip()
         if configured:
             return expand_path_text(configured)
-        for candidate in ("opencode", "opencode.cmd", "opencode.exe"):
+        # On Windows, `opencode.exe` (GUI) and `opencode-cli.exe` (CLI) may
+        # both exist in PATH; prefer the CLI one — the GUI binary either
+        # doesn't support `session list` / `export` or launches a window.
+        # Fall back to the plain name for macOS/Linux and older installs.
+        for candidate in (
+            "opencode-cli",
+            "opencode-cli.cmd",
+            "opencode-cli.exe",
+            "opencode",
+            "opencode.cmd",
+            "opencode.exe",
+        ):
             resolved = shutil.which(candidate)
             if resolved:
                 return resolved
@@ -160,16 +187,27 @@ class OpenCodeAdapter(BaseAdapter):
             "message_files": sorted({path for path in message_files}),
         }
 
-    def _run_cli(self, *args: str, timeout: int):
+    def _run_cli(self, *args: str, timeout: int, cwd: str | None = None):
         command = self._resolve_cli()
         if not command:
             raise FileNotFoundError("opencode executable not found")
-        return subprocess.run(
+        # Windows subprocess with text=True decodes stdout using the system
+        # codepage (GBK/cp936 on Chinese Windows). OpenCode CLI writes UTF-8,
+        # so GBK decode blows up on Chinese filenames. Read raw bytes and
+        # decode UTF-8 explicitly with errors="replace" so we never crash
+        # the adapter even if a stray non-UTF-8 byte slips in.
+        raw = subprocess.run(
             [command, *args],
             capture_output=True,
-            text=True,
             check=True,
             timeout=timeout,
+            cwd=cwd,
+        )
+        return subprocess.CompletedProcess(
+            args=raw.args,
+            returncode=raw.returncode,
+            stdout=raw.stdout.decode("utf-8", errors="replace"),
+            stderr=raw.stderr.decode("utf-8", errors="replace"),
         )
 
     def _load_local_inventory(self) -> dict[str, object]:
@@ -363,7 +401,21 @@ class OpenCodeAdapter(BaseAdapter):
 
             sample_session_id = str(sessions[0].get("id") or sessions[0].get("sessionID") or sessions[0].get("session_id"))
             inventory["sample_session_id"] = sample_session_id
-            exported = self._run_cli("export", sample_session_id, timeout=_EXPORT_TIMEOUT_SECONDS)
+
+            # Apply the same "prefer local-sourced cwd, skip mojibake" logic
+            # as the main collect() path so detect-phase sample export also
+            # survives Windows cp936 session-list output.
+            sample_cwd: str | None = None
+            local_cwd_map = self._build_session_cwd_map_from_local()
+            candidate = local_cwd_map.get(sample_session_id) or sessions[0].get("directory")
+            if isinstance(candidate, str) and candidate:
+                try:
+                    if Path(candidate).is_dir():
+                        sample_cwd = candidate
+                except (OSError, ValueError):
+                    sample_cwd = None
+
+            exported = self._run_cli("export", sample_session_id, timeout=_EXPORT_TIMEOUT_SECONDS, cwd=sample_cwd)
             payload = _decode_json_output(exported.stdout)
             sample_events, _ = self._collect_export_payload(
                 payload,
@@ -517,6 +569,21 @@ class OpenCodeAdapter(BaseAdapter):
         session_id_hint: str,
         source_path: str,
     ) -> tuple[list[UsageEvent], list[str]]:
+        # OpenCode v1.1.13+ export layout puts metadata and token numbers
+        # in sibling nodes: {"messages": [{"info": {...}, "parts": [{"tokens": ...}]}]}
+        # iter_usage_carriers can't see across siblings, so route this
+        # specific shape through a dedicated parser first. Any other layout
+        # (older OpenCode, or generic payloads) falls back to the generic walker.
+        if _looks_like_opencode_export_shape(payload):
+            return self._collect_opencode_export_messages(
+                payload,
+                exported_at=exported_at,
+                fallback_tz=fallback_tz,
+                pricing=pricing,
+                session_id_hint=session_id_hint,
+                source_path=source_path,
+            )
+
         events: list[UsageEvent] = []
         verification_issues: list[str] = []
         seen: set[tuple[str, str, str, int]] = set()
@@ -581,6 +648,148 @@ class OpenCodeAdapter(BaseAdapter):
             )
         return events, verification_issues
 
+    def _collect_opencode_export_messages(
+        self,
+        payload: dict,
+        *,
+        exported_at: datetime,
+        fallback_tz,
+        pricing: PricingDatabase,
+        session_id_hint: str,
+        source_path: str,
+    ) -> tuple[list[UsageEvent], list[str]]:
+        """Parse OpenCode v1.1.13+ export layout.
+
+        Token numbers live in `messages[i].parts[j].tokens` but the per-message
+        metadata (role / modelID / providerID / time / path) lives in
+        `messages[i].info`. iter_usage_carriers can't associate siblings, so
+        we walk the structure explicitly and emit one event per assistant
+        message (not per part — parts usually share identical token counts
+        because OpenCode reports cumulative tokens on each reasoning chunk).
+        """
+        events: list[UsageEvent] = []
+        verification_issues: list[str] = []
+        seen: set[tuple[str, str, int]] = set()
+
+        for message in payload.get("messages", []):
+            if not isinstance(message, dict):
+                continue
+            info = message.get("info") if isinstance(message.get("info"), dict) else {}
+            parts = message.get("parts") if isinstance(message.get("parts"), list) else []
+            if info.get("role") != "assistant":
+                continue
+
+            # Pick the part with the largest total tokens — OpenCode writes
+            # cumulative counts on every part, so the last / max one is the
+            # real message total. Using max() is order-independent.
+            best_usage = None
+            for part in parts:
+                if not isinstance(part, dict):
+                    continue
+                token_block = part.get("tokens")
+                if not isinstance(token_block, dict):
+                    continue
+                usage_values = normalize_usage(token_block)
+                if usage_values["total_tokens"] <= 0:
+                    continue
+                if best_usage is None or usage_values["total_tokens"] > best_usage["total_tokens"]:
+                    best_usage = usage_values
+            if best_usage is None:
+                continue
+
+            time_block = info.get("time") if isinstance(info.get("time"), dict) else {}
+            epoch_ms = time_block.get("completed") or time_block.get("created")
+            if isinstance(epoch_ms, (int, float)):
+                try:
+                    timestamp = datetime.fromtimestamp(int(epoch_ms) / 1000, tz=fallback_tz)
+                except (TypeError, ValueError, OSError) as exc:
+                    verification_issues.append(
+                        f"invalid OpenCode export timestamp for {session_id_hint}: {exc}"
+                    )
+                    timestamp = exported_at
+            else:
+                timestamp = exported_at
+                verification_issues.append(
+                    f"OpenCode export message lacked time.completed/created for {session_id_hint}"
+                )
+
+            provider_raw = str(info.get("providerID") or self.provider)
+            raw_model = info.get("modelID")
+            provider, raw_model = _split_provider_model(provider_raw, raw_model)
+            canonical_model = pricing.canonical_model(raw_model, provider) if raw_model else None
+            normalized_raw_model = pricing.normalize_model_name(raw_model) if raw_model else None
+            model_resolution = "unknown"
+            if canonical_model:
+                model_resolution = "exact" if canonical_model == normalized_raw_model else "alias"
+
+            path_block = info.get("path") if isinstance(info.get("path"), dict) else {}
+            project_path = path_block.get("root") or path_block.get("cwd")
+
+            session_id = str(info.get("sessionID") or session_id_hint)
+            message_id = str(info.get("id") or info.get("messageID") or "")
+            dedupe_key = (session_id, message_id, best_usage["total_tokens"])
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+
+            events.append(
+                UsageEvent(
+                    source=self.source_id,
+                    provider=provider,
+                    timestamp=timestamp,
+                    session_id=session_id,
+                    project_path=str(project_path) if project_path not in (None, "") else None,
+                    model=canonical_model or raw_model,
+                    input_tokens=best_usage["input_tokens"],
+                    cached_input_tokens=best_usage["cached_input_tokens"],
+                    output_tokens=best_usage["output_tokens"],
+                    reasoning_tokens=best_usage["reasoning_tokens"],
+                    total_tokens=best_usage["total_tokens"],
+                    accuracy_level=self.accuracy_level,
+                    raw_event_kind="opencode_export:v1_1_13_messages",
+                    source_path=source_path,
+                    raw_model=str(raw_model) if raw_model not in (None, "") else None,
+                    model_resolution=model_resolution,
+                    model_source="opencode_export_messages" if raw_model not in (None, "") else None,
+                )
+            )
+
+        return events, verification_issues
+
+    def _build_session_cwd_map_from_local(self) -> dict[str, str]:
+        """Derive session-id -> project cwd from local message / session JSON.
+
+        Trusted because OpenCode writes these files as UTF-8 JSON, so
+        Chinese / non-ASCII paths survive intact. `session list --format json`
+        output via subprocess.run can get mojibake'd on Windows GBK hosts.
+        """
+        mapping: dict[str, str] = {}
+        local = self._collect_local_markers()
+
+        # First pass: message JSON carries both sessionID and path.root per event.
+        for path in local.get("message_files", []):
+            payload = _read_json_file(path)
+            if not isinstance(payload, dict):
+                continue
+            session_id = payload.get("sessionID") or payload.get("session_id")
+            path_block = payload.get("path") if isinstance(payload.get("path"), dict) else {}
+            root = path_block.get("root") or path_block.get("cwd")
+            if session_id and isinstance(root, str) and root and session_id not in mapping:
+                mapping[str(session_id)] = root
+
+        # Second pass: session JSON often stores a `directory` for sessions
+        # whose first message file hasn't been visited yet.
+        for path in local.get("session_files", []):
+            payload = _read_json_file(path)
+            if not isinstance(payload, dict):
+                continue
+            session_id = payload.get("id") or payload.get("sessionID")
+            directory = payload.get("directory")
+            if session_id and isinstance(directory, str) and directory and session_id not in mapping:
+                mapping[str(session_id)] = directory
+
+        return mapping
+
     def collect(self, window) -> SourceCollectResult:
         detection = self.detect()
         local_inventory = self._load_local_inventory()
@@ -606,19 +815,53 @@ class OpenCodeAdapter(BaseAdapter):
         pricing = PricingDatabase()
         fallback_tz = window.start.tzinfo if window.start else datetime.now().astimezone().tzinfo
 
+        # OpenCode CLI `export` only finds a session when invoked from the
+        # session's own project directory. Build session-id -> cwd from
+        # LOCAL message JSON files (which OpenCode writes as UTF-8 JSON,
+        # reliable) instead of from CLI `session list` output (which gets
+        # mangled into mojibake when subprocess reads via cp936 on Windows
+        # GBK hosts). Skip any path that doesn't exist on this machine
+        # rather than letting subprocess crash with NotADirectoryError.
+        session_cwd_map = self._build_session_cwd_map_from_local()
+
         events: list[UsageEvent] = []
         verification_issues: list[str] = []
         exported_sessions = 0
+        skipped_for_missing_cwd = 0
 
         for row in sessions[:_MAX_SESSION_EXPORTS]:
             session_id = row.get("id") or row.get("sessionID") or row.get("session_id")
             if session_id in (None, ""):
                 continue
             session_text = str(session_id)
+
+            # Prefer a locally-sourced cwd. Fall back to whatever session
+            # list reported (usually correct on UTF-8 hosts). If neither
+            # yields an existing path, still try export without cwd — it
+            # works on many setups and failing cleanly is fine either way.
+            cwd_candidate = session_cwd_map.get(session_text)
+            if cwd_candidate is None:
+                raw_dir = row.get("directory") or row.get("cwd") or row.get("projectPath")
+                if isinstance(raw_dir, str) and raw_dir:
+                    cwd_candidate = raw_dir
+            export_cwd: str | None = None
+            if cwd_candidate:
+                try:
+                    if Path(cwd_candidate).is_dir():
+                        export_cwd = cwd_candidate
+                    else:
+                        skipped_for_missing_cwd += 1
+                except (OSError, ValueError):
+                    # Mojibake unicode codepoints can raise OSError on Windows
+                    # when stat'd; treat as "no valid cwd" and carry on.
+                    skipped_for_missing_cwd += 1
+
             try:
-                exported = self._run_cli("export", session_text, timeout=_EXPORT_TIMEOUT_SECONDS)
+                exported = self._run_cli(
+                    "export", session_text, timeout=_EXPORT_TIMEOUT_SECONDS, cwd=export_cwd,
+                )
                 payload = _decode_json_output(exported.stdout)
-            except (FileNotFoundError, subprocess.SubprocessError, ValueError, json.JSONDecodeError) as exc:
+            except (FileNotFoundError, subprocess.SubprocessError, ValueError, json.JSONDecodeError, OSError) as exc:
                 verification_issues.append(f"OpenCode export failed for {session_text}: {exc}")
                 continue
 
@@ -633,6 +876,13 @@ class OpenCodeAdapter(BaseAdapter):
             )
             events.extend(event for event in payload_events if within_window(window, event.timestamp))
             verification_issues.extend(payload_issues)
+
+        if skipped_for_missing_cwd > 0:
+            verification_issues.append(
+                f"{skipped_for_missing_cwd} OpenCode session(s) had a project path that "
+                "didn't exist on this machine (likely mojibake from a Windows cp936 host); "
+                "CLI export was attempted without cwd"
+            )
 
         if not events and not verification_issues:
             verification_issues.append("no OpenCode exact usage records landed inside the selected time window")
