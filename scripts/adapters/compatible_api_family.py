@@ -560,7 +560,13 @@ class CompatibleApiAdapter(BaseAdapter):
 
 
 class GenericOpenAICompatibleAdapter(CompatibleApiAdapter):
-    default_selected = False
+    # v1.2 slim: per-provider adapters (qwen-api, zhipu-glm-api, ...) were
+    # archived because the deployment routes everything through a single
+    # 百炼 compatible URL. Generic is now the primary catcher for
+    # ingress-companion JSONL and TOKEN_USAGE_GENERIC_LOG_GLOBS output,
+    # so it must be in the default rollup (was False previously to avoid
+    # double-counting with per-provider family).
+    default_selected = True
 
     def __init__(self) -> None:
         super().__init__(

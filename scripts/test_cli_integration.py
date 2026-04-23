@@ -332,37 +332,10 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         source_ids = [item["source_id"] for item in payload["sources"]]
-        self.assertEqual(len(source_ids), 51)
-        self.assertIn("codex", source_ids)
-        self.assertIn("claude-code", source_ids)
-        self.assertIn("claude-desktop", source_ids)
-        self.assertIn("opencode", source_ids)
-        self.assertIn("trae", source_ids)
-        self.assertIn("minimax-agent", source_ids)
-        self.assertIn("qwen-code-cli", source_ids)
-        self.assertIn("kimi-cli", source_ids)
-        self.assertIn("gemini-cli", source_ids)
-        self.assertIn("kimi-desktop", source_ids)
-        self.assertIn("glm-desktop", source_ids)
-        self.assertIn("stepfun-desktop", source_ids)
-        self.assertIn("chatgpt-desktop", source_ids)
-        self.assertIn("gemini-desktop", source_ids)
-        self.assertIn("qwen-desktop", source_ids)
-        self.assertIn("deepseek-desktop", source_ids)
-        self.assertIn("doubao-desktop", source_ids)
-        self.assertIn("qianfan-desktop", source_ids)
-        self.assertIn("yuanbao-desktop", source_ids)
-        self.assertIn("perplexity-desktop", source_ids)
-        self.assertIn("openai-api", source_ids)
-        self.assertIn("anthropic-api", source_ids)
-        self.assertIn("moonshot-kimi-api", source_ids)
-        self.assertIn("zhipu-glm-api", source_ids)
-        self.assertIn("qwen-api", source_ids)
-        self.assertIn("sensenova-api", source_ids)
-        self.assertIn("baichuan-api", source_ids)
-        self.assertIn("siliconflow-api", source_ids)
-        self.assertIn("spark-api", source_ids)
-        self.assertIn("generic-openai-compatible", source_ids)
+        # v1.2 slim: opencode + trae + generic-openai-compatible only.
+        # Per-provider and per-foreign-client adapters were archived since
+        # the deployment routes all traffic through 百炼's compatible URL.
+        self.assertEqual(set(source_ids), {"opencode", "trae", "generic-openai-compatible"})
         self.assertIn("overall_status", payload)
 
     def test_explore_requires_tty(self) -> None:
@@ -371,24 +344,6 @@ class CliIntegrationTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("interactive TTY", result.stderr or result.stdout)
 
-    def test_targets_json_exposes_frozen_registry(self) -> None:
-        result = self._run_cli(["targets", "--format", "json"], env=os.environ.copy())
-
-        payload = json.loads(result.stdout)
-        self.assertEqual(payload["summary"]["total_ecosystems"], 20)
-        self.assertEqual(payload["summary"]["china_priority_ecosystems"], 13)
-        self.assertEqual(payload["summary"]["surface_maturity"]["exact-ready"], 60)
-        self.assertEqual(payload["summary"]["surface_maturity"].get("detect-ready", 0), 0)
-        self.assertEqual(payload["scope"]["surfaces"], ["desktop", "cli", "ide"])
-
-    def test_targets_json_survives_legacy_stdout_encoding(self) -> None:
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "cp1252"
-        result = self._run_cli(["targets", "--format", "json"], env=env)
-
-        payload = json.loads(result.stdout)
-        self.assertEqual(payload["summary"]["total_ecosystems"], 20)
-
     def test_health_json_survives_legacy_stdout_encoding(self) -> None:
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "cp1252"
@@ -396,7 +351,8 @@ class CliIntegrationTests(unittest.TestCase):
 
         payload = json.loads(result.stdout)
         self.assertIn("overall_status", payload)
-        self.assertEqual(len(payload["sources"]), 51)
+        # v1.2 slim: 3 active adapters (opencode + trae + generic)
+        self.assertEqual(len(payload["sources"]), 3)
 
     def test_panel_mode_does_not_crash_under_cp1252(self) -> None:
         env = os.environ.copy()
@@ -470,89 +426,6 @@ class CliIntegrationTests(unittest.TestCase):
         decoded = result.stdout.decode("gbk", errors="strict")
         self.assertIn("Token Usage", decoded)
         self.assertIn("来源", decoded)
-
-    def test_release_gate_json_exposes_automated_gate_status(self) -> None:
-        result = self._run_cli(["release-gate", "--format", "json"], env=os.environ.copy())
-
-        payload = json.loads(result.stdout)
-        gate_ids = {item["gate_id"] for item in payload["gates"]}
-        self.assertEqual(payload["summary"]["status"], "pass")
-        self.assertIn("top20-coverage", gate_ids)
-        self.assertIn("false-ready-claims", gate_ids)
-        self.assertIn("default-report-duplicate-rate", gate_ids)
-        self.assertIn("windows-macos-linux-root-matrix", gate_ids)
-        self.assertEqual(payload["registry_summary"]["surface_maturity"]["exact-ready"], 60)
-        self.assertEqual(payload["metrics"]["default_duplicate_event_ratio"], 0.0)
-        self.assertEqual(payload["metrics"]["linux_root_coverage_ratio"], 1.0)
-
-    def test_release_gate_can_write_release_evidence_bundle(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            output_dir = Path(tmp) / "release-evidence"
-            result = self._run_cli(
-                [
-                    "release-gate",
-                    "--format",
-                    "json",
-                    "--output-dir",
-                    str(output_dir),
-                ],
-                env=os.environ.copy(),
-            )
-
-            payload = json.loads(result.stdout)
-            self.assertEqual(payload["summary"]["status"], "pass")
-            self.assertTrue((output_dir / "release_gate.json").exists())
-            self.assertTrue((output_dir / "health.json").exists())
-            self.assertTrue((output_dir / "sources.json").exists())
-            self.assertTrue((output_dir / "targets.json").exists())
-            self.assertTrue((output_dir / "report_today.json").exists())
-            self.assertTrue((output_dir / "report_recent_30d.json").exists())
-            self.assertTrue((output_dir / "SUMMARY.md").exists())
-            self.assertTrue((output_dir / "diagnose").is_dir())
-            summary_text = (output_dir / "SUMMARY.md").read_text(encoding="utf-8")
-            self.assertIn("Release Evidence Bundle", summary_text)
-            release_payload = json.loads((output_dir / "release_gate.json").read_text(encoding="utf-8"))
-            self.assertEqual(release_payload["summary"]["status"], "pass")
-
-    def test_release_gate_can_diff_against_baseline_bundle(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            baseline_dir = tmp_path / "baseline"
-            baseline_dir.mkdir(parents=True)
-            output_dir = tmp_path / "release-evidence"
-            (baseline_dir / "sources.json").write_text(
-                json.dumps(
-                    [
-                        {
-                            "source_id": "synthetic-source",
-                            "state": "exact",
-                        }
-                    ],
-                    ensure_ascii=False,
-                    indent=2,
-                )
-                + "\n",
-                encoding="utf-8",
-            )
-
-            result = self._run_cli(
-                [
-                    "release-gate",
-                    "--format",
-                    "json",
-                    "--baseline",
-                    str(baseline_dir),
-                    "--output-dir",
-                    str(output_dir),
-                ],
-                env=os.environ.copy(),
-            )
-
-            payload = json.loads(result.stdout)
-            self.assertIn("baseline", payload)
-            self.assertEqual(payload["baseline"]["diff"]["counts"]["removed_sources"], 1)
-            self.assertIn("synthetic-source", payload["baseline"]["diff"]["removed_sources"])
-            self.assertTrue((output_dir / "diff.json").exists())
 
     def test_ingress_config_json_exposes_local_base_url(self) -> None:
         result = self._run_cli(

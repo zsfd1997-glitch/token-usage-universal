@@ -9,39 +9,22 @@
 
 ## Summary
 
-- total source IDs: `10`
-- default rollup source IDs: `9`
+- total source IDs: `3`
+- default rollup source IDs: `3`
 - provider family source IDs: `0`
-- desktop source IDs: `2`
+- desktop source IDs: `0`
 
 ## Native Clients
 
 | source_id | display_name | provider | accuracy | default_rollup |
 |---|---|---|---|---|
-| `claude-code` | Claude Code | `anthropic` | `exact` | `true` |
-| `claude-desktop` | Claude Desktop | `anthropic` | `exact` | `true` |
-| `codex` | Codex | `openai` | `exact` | `true` |
-| `minimax-agent` | MiniMax Agent | `minimax` | `exact` | `true` |
 | `opencode` | OpenCode | `opencode` | `exact` | `true` |
-
-## Coding CLI
-
-| source_id | display_name | provider | accuracy | default_rollup |
-|---|---|---|---|---|
-| `gemini-cli` | Gemini CLI | `google` | `exact` | `true` |
-
-## Desktop Clients
-
-| source_id | display_name | provider | accuracy | default_rollup |
-|---|---|---|---|---|
-| `chatgpt-desktop` | ChatGPT Desktop | `openai` | `exact` | `true` |
-| `qwen-desktop` | Qwen Desktop | `qwen` | `exact` | `true` |
 
 ## Fallback
 
 | source_id | display_name | provider | accuracy | default_rollup |
 |---|---|---|---|---|
-| `generic-openai-compatible` | Generic API Compatible | `api-compatible` | `exact` | `false` |
+| `generic-openai-compatible` | Generic API Compatible | `api-compatible` | `exact` | `true` |
 | `trae` | Trae AI IDE | `multi` | `unsupported` | `true` |
 
 ## Runtime Capture Paths
