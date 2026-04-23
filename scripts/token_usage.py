@@ -361,6 +361,35 @@ def command_diagnose(args) -> int:
     return 0
 
 
+_BOOTSTRAP_PROMPT_TEMPLATE = """你现在要扮演 token-usage-universal 这个本地工具的翻译层。
+工具入口：python3 {cli_path}
+规则：
+- 触发词：token / 用量 / 消耗量 / 使用量 / 消耗。用户说这五个词之一，默认跑 `report --today`。
+- 按模型/项目/来源拆：加 `--by model|project|source`。
+- 趋势：`report --trend 7d` 或 `--trend 30d`。
+- 当前会话：`report --current-session`。
+- 排障：`diagnose --source <source_id> --today`。
+- 来源状态：`sources` 或 `health`。
+输出协议：
+- CLI 返回的 ascii-hifi 面板必须原样放进 fenced code block，再补 1-3 句高信号结论，末句给可选展开方向。
+- 结果为 0 必须解释"为什么是 0"，不允许空白成功。
+- 总 token 和去缓存后 token 要分开说，不允许只给裸数字。
+终端编码：
+- 如果中文渲染成乱码或 `chcp` 返回 936，先让用户 `chcp 65001`（Windows）或 `export LANG=en_US.UTF-8`，或设 `PYTHONIOENCODING=gbk:backslashreplace`；实在不行改跑 `--format json` 再由我自己重绘英文面板。
+禁忌：
+- 不拆桌面/CLI/插件为多条 source；它们共享同一条 `opencode` source。
+- 不在默认路径 not_found 时直接断言"没用量"；先路径探测。
+- 不中英混排输出到 GBK 终端。
+用户停手（"先这样/够了/不用继续/先停"）立刻收口，不追问。
+"""
+
+
+def command_bootstrap_prompt(args) -> int:
+    cli_path = Path(__file__).resolve()
+    print(_BOOTSTRAP_PROMPT_TEMPLATE.format(cli_path=cli_path), end="")
+    return 0
+
+
 def command_explore(args) -> int:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise SystemExit("explore requires an interactive TTY; use report flags instead")
@@ -785,6 +814,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     explore = subparsers.add_parser("explore", help="interactive dashboard launcher")
     explore.set_defaults(func=command_explore)
+
+    bootstrap_prompt = subparsers.add_parser(
+        "bootstrap-prompt",
+        help="print a copy-paste cold-start prompt for hosts without skill loader",
+    )
+    bootstrap_prompt.set_defaults(func=command_bootstrap_prompt)
 
     return parser
 

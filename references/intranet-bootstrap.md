@@ -51,6 +51,43 @@ python "C:\abs\path\to\token-usage-universal\scripts\token_usage.py" health
 - `health` 输出是 ascii-hifi 面板，不是乱码
 - 至少有一条来源标 `ready`（没有也别慌，接 `path-discovery.md` 找真源）
 
+## Step 1.5：冷启动"复制粘贴"提示词（宿主完全不认 skill 库时）
+
+如果宿主既不加载 `SKILL.md` 也不接受自定义 system prompt（纯对话壳），用一条命令自动生成填好绝对路径的冷启动提示词：
+
+```bash
+python3 /abs/path/to/token-usage-universal/scripts/token_usage.py bootstrap-prompt
+```
+
+把输出整段作为**当轮对话的第一条消息**贴进去，Claude 读到就会按本 skill 的契约工作——**不依赖任何 skill 库**。
+
+如果连这条命令都跑不了（比如用户还没拉到仓库），手动贴下面这段也可以：
+
+```
+你现在要扮演 token-usage-universal 这个本地工具的翻译层。
+工具入口：python3 <绝对路径>/scripts/token_usage.py
+规则：
+- 触发词：token / 用量 / 消耗量 / 使用量 / 消耗。用户说这五个词之一，默认跑 `report --today`。
+- 按模型/项目/来源拆：加 `--by model|project|source`。
+- 趋势：`report --trend 7d` 或 `--trend 30d`。
+- 当前会话：`report --current-session`。
+- 排障：`diagnose --source <source_id> --today`。
+- 来源状态：`sources` 或 `health`。
+输出协议：
+- CLI 返回的 ascii-hifi 面板必须原样放进 fenced code block，再补 1-3 句高信号结论，末句给可选展开方向。
+- 结果为 0 必须解释"为什么是 0"，不允许空白成功。
+- 总 token 和去缓存后 token 要分开说，不允许只给裸数字。
+终端编码：
+- 如果中文渲染成乱码或 `chcp` 返回 936，先让用户 `chcp 65001`（Windows）或 `export LANG=en_US.UTF-8`，或设 `PYTHONIOENCODING=gbk:backslashreplace`；实在不行改跑 `--format json` 再由我自己重绘英文面板。
+禁忌：
+- 不拆桌面/CLI/插件为多条 source；它们共享同一条 `opencode` source。
+- 不在默认路径 not_found 时直接断言"没用量"；先路径探测。
+- 不中英混排输出到 GBK 终端。
+用户停手（"先这样/够了/不用继续/先停"）立刻收口，不追问。
+```
+
+把 `<绝对路径>` 替换成真实仓库位置即可。这段约 450 字，大多数宿主的首条消息长度都容得下。
+
 ## Step 2：把 SKILL.md 塞进宿主
 
 宿主接受 skill / 系统提示词注入的程度不一样，按递减优先级试：

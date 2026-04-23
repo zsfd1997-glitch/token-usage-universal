@@ -403,6 +403,16 @@ class CliIntegrationTests(unittest.TestCase):
         )
         self.assertNotIn(b"UnicodeEncodeError", result.stderr)
 
+    def test_bootstrap_prompt_shows_absolute_cli_path(self) -> None:
+        result = self._run_cli(["bootstrap-prompt"])
+
+        self.assertIn("token-usage-universal", result.stdout)
+        self.assertIn(str(CLI_PATH), result.stdout)
+        self.assertIn("触发词", result.stdout)
+        self.assertIn("ascii-hifi", result.stdout)
+        self.assertIn("chcp 65001", result.stdout)
+        self.assertIn("PYTHONIOENCODING", result.stdout)
+
     def test_pythonioencoding_gbk_produces_gbk_decodable_bytes(self) -> None:
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "gbk:backslashreplace"
