@@ -39,37 +39,76 @@ NESTED_EXPORT_IGNORES = {
     Path("examples") / "vm-testing": {"output"},
 }
 
+# Anthropic skill-creator authoritative rule (SKILL.md §"What to Not Include"):
+#   Skill packages must NOT contain auxiliary / governance / documentation
+#   files — only what the AI agent needs to do its job.
+# --skill-only mode enforces this: drops README/CHANGELOG/CoC/CONTRIBUTING/
+# SECURITY/SUPPORT/docs/.github/examples/tests/build-tooling/fixtures, keeps
+# only SKILL.md + LICENSE + runtime code + progressively-disclosed refs.
+SKILL_ONLY_ROOT_IGNORES = {
+    "README.md",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "docs",
+    ".github",
+    ".gitignore",
+    "examples",
+}
+SKILL_ONLY_SCRIPT_IGNORES_PREFIXES = ("test_", "build_")
+SKILL_ONLY_SCRIPT_IGNORES_EXACT = {"fixtures"}
 
-def _ignore(directory: str, names: list[str]) -> set[str]:
-    ignored: set[str] = set()
-    current_dir = Path(directory).resolve()
-    try:
-        relative_dir = current_dir.relative_to(SKILL_ROOT.resolve())
-    except ValueError:
-        relative_dir = Path(".")
 
-    for name in names:
-        if name in ROOT_LEVEL_EXPORT_IGNORES and relative_dir == Path("."):
-            ignored.add(name)
-        if name in {"__pycache__", ".pytest_cache", ".mypy_cache", ".DS_Store", ".coverage", ".venv", "build", "dist"}:
-            ignored.add(name)
-        if name.endswith(".pyc"):
-            ignored.add(name)
+def _make_ignore(skill_only: bool):
+    def _ignore(directory: str, names: list[str]) -> set[str]:
+        ignored: set[str] = set()
+        current_dir = Path(directory).resolve()
+        try:
+            relative_dir = current_dir.relative_to(SKILL_ROOT.resolve())
+        except ValueError:
+            relative_dir = Path(".")
 
-    nested_ignores = NESTED_EXPORT_IGNORES.get(relative_dir)
-    if nested_ignores:
-        ignored.update(set(names) & nested_ignores)
-    return ignored
+        for name in names:
+            if name in ROOT_LEVEL_EXPORT_IGNORES and relative_dir == Path("."):
+                ignored.add(name)
+            if name in {"__pycache__", ".pytest_cache", ".mypy_cache", ".DS_Store", ".coverage", ".venv", "build", "dist"}:
+                ignored.add(name)
+            if name.endswith(".pyc"):
+                ignored.add(name)
+
+        if skill_only:
+            if relative_dir == Path("."):
+                ignored.update(set(names) & SKILL_ONLY_ROOT_IGNORES)
+            if relative_dir == Path("scripts"):
+                for name in names:
+                    if name in SKILL_ONLY_SCRIPT_IGNORES_EXACT:
+                        ignored.add(name)
+                    elif name.startswith(SKILL_ONLY_SCRIPT_IGNORES_PREFIXES) and name.endswith(".py"):
+                        ignored.add(name)
+
+        nested_ignores = NESTED_EXPORT_IGNORES.get(relative_dir)
+        if nested_ignores:
+            ignored.update(set(names) & nested_ignores)
+        return ignored
+
+    return _ignore
 
 
-def export_release(output_dir: Path, *, force: bool) -> Path:
+# Backward-compat shim for tests / callers that invoke the default ignore
+# filter directly (pre-skill-only refactor). Keep the same signature.
+_ignore = _make_ignore(skill_only=False)
+
+
+def export_release(output_dir: Path, *, force: bool, skill_only: bool = False) -> Path:
     if output_dir.exists():
         if not force:
             raise FileExistsError(f"output directory already exists: {output_dir}")
         shutil.rmtree(output_dir)
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(SKILL_ROOT, output_dir, ignore=_ignore)
+    shutil.copytree(SKILL_ROOT, output_dir, ignore=_make_ignore(skill_only))
     return output_dir
 
 
@@ -102,12 +141,17 @@ def run_release_validation() -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Export a GitHub-ready release directory for token-usage-universal")
+    parser = argparse.ArgumentParser(description="Export a release directory for token-usage-universal")
     parser.add_argument("--output-dir", required=True, help="target directory for the exported release")
     parser.add_argument("--force", action="store_true", help="overwrite the target directory if it already exists")
     parser.add_argument("--validate", action="store_true", help="run unit tests and release-gate before exporting")
     parser.add_argument("--zip-path", help="optional standard ZIP output path for Windows-friendly distribution")
     parser.add_argument("--zip-root-name", help="optional top-level folder name inside the ZIP archive")
+    parser.add_argument(
+        "--skill-only",
+        action="store_true",
+        help="produce a minimal skill-package per skill-creator rules: drops README/CHANGELOG/docs/.github/examples/tests/build-tooling; keeps only SKILL.md + LICENSE + runtime scripts + references",
+    )
     return parser
 
 
@@ -116,7 +160,7 @@ def main() -> int:
     output_dir = Path(args.output_dir).expanduser()
     if args.validate:
         run_release_validation()
-    export_release(output_dir, force=args.force)
+    export_release(output_dir, force=args.force, skill_only=args.skill_only)
     if args.zip_path:
         zip_path = Path(args.zip_path).expanduser()
         create_zip_from_directory(
