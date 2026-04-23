@@ -175,7 +175,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
             adapter.roots = [root]
 
             def fake_run(*args, timeout: int, cwd: str | None = None):
-                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                if args == ("session", "list", "--format", "json"):
                     return subprocess.CompletedProcess(
                         args,
                         0,
@@ -283,7 +283,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
             }
 
             def fake_run(*args, timeout: int, cwd: str | None = None):
-                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                if args == ("session", "list", "--format", "json"):
                     return subprocess.CompletedProcess(
                         args, 0,
                         stdout=json.dumps([{"id": "ses_v1_1_13", "updated_at": "2026-03-25T10:00:00-07:00", "title": "demo"}]),
@@ -349,7 +349,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
             observed_cwds: list[str | None] = []
 
             def fake_run(*args, timeout: int, cwd: str | None = None):
-                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                if args == ("session", "list", "--format", "json"):
                     return subprocess.CompletedProcess(
                         args, 0,
                         stdout=json.dumps([{
@@ -405,7 +405,7 @@ class OpenCodeAdapterTests(unittest.TestCase):
             observed_cwds: list[str | None] = []
 
             def fake_run(*args, timeout: int, cwd: str | None = None):
-                if args == ("session", "list", "--max-count", "8", "--format", "json"):
+                if args == ("session", "list", "--format", "json"):
                     return subprocess.CompletedProcess(
                         args, 0,
                         stdout=json.dumps([{
@@ -440,6 +440,98 @@ class OpenCodeAdapterTests(unittest.TestCase):
         self.assertEqual(len(result.events), 1)
         any_cwd_note = any("didn't exist on this machine" in issue for issue in result.verification_issues)
         self.assertTrue(any_cwd_note, f"expected mojibake-cwd diagnostic, got {result.verification_issues}")
+
+    def test_desktop_with_only_global_dat_falls_back_through_cli_export(self) -> None:
+        """Desktop-only compat: no storage/session JSON tree, only an
+        opencode.global.dat file. Previously the adapter returned 0 events
+        because local scan found nothing and `opencode session list`
+        returns [] when invoked outside any project cwd. Now the session
+        list falls back to sessions parsed from .dat, and export uses the
+        cwd carried on each .dat session entry."""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            real_project = root / "project-utf8"
+            real_project.mkdir()
+
+            # Write only opencode.global.dat — NO storage/session/ tree
+            (root / "opencode.global.dat").write_text(
+                json.dumps({
+                    "sessions": [
+                        {"id": "ses_dat", "directory": str(real_project),
+                         "time": {"created": created_at}},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            (root / "log").mkdir()
+            (root / "log" / "2026-03-25.log").write_text("sample", encoding="utf-8")
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                if args == ("session", "list", "--format", "json"):
+                    # opencode's `session list` returns empty when the
+                    # current cwd isn't any session's project dir —
+                    # simulate that failure mode.
+                    return subprocess.CompletedProcess(args, 0, stdout="[]", stderr="")
+                if args == ("export", "ses_dat"):
+                    assert cwd == str(real_project), f"export didn't receive .dat's cwd, got: {cwd}"
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+                        "messages": [{
+                            "info": {
+                                "id": "msg_1", "sessionID": "ses_dat", "role": "assistant",
+                                "providerID": "opencode", "modelID": "minimax-m2.1-free",
+                                "time": {"created": created_at, "completed": completed_at},
+                                "path": {"root": str(real_project)},
+                            },
+                            "parts": [{"type": "reasoning", "tokens": {"input": 800, "output": 40, "reasoning": 2, "cache": {"read": 0, "write": 0}}}],
+                        }],
+                    }), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="/usr/local/bin/opencode"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        self.assertEqual(len(result.events), 1, "desktop-with-only-.dat fallback produced 0 events")
+        event = result.events[0]
+        self.assertEqual(event.session_id, "ses_dat")
+        self.assertEqual(event.total_tokens, 842)  # 800 + 40 + 2
+        self.assertEqual(event.project_path, str(real_project))
+
+    def test_cli_session_list_does_not_pass_max_count_flag(self) -> None:
+        """Regression: some opencode builds don't support --max-count and
+        silently fail. We trim in Python instead of passing the flag."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "log").mkdir()
+            (root / "log" / "2026-03-25.log").write_text("sample", encoding="utf-8")
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            observed_args: list[tuple] = []
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                observed_args.append(args)
+                if args[0:2] == ("session", "list"):
+                    return subprocess.CompletedProcess(args, 0, stdout="[]", stderr="")
+                return subprocess.CompletedProcess(args, 0, stdout="{}", stderr="")
+
+            with patch.object(adapter, "_resolve_cli", return_value="/usr/local/bin/opencode"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                adapter._load_cli_inventory()
+
+        session_list_calls = [a for a in observed_args if a[0:2] == ("session", "list")]
+        self.assertTrue(session_list_calls, "adapter didn't call session list at all")
+        for call_args in session_list_calls:
+            self.assertNotIn("--max-count", call_args, f"--max-count must not be in session list args: {call_args}")
 
     def test_detect_reports_local_data_when_cli_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

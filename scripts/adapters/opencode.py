@@ -93,6 +93,49 @@ def _read_json_file(path: Path):
     return payload
 
 
+def _extract_sessions_from_global_dat(payload) -> list[dict]:
+    """opencode.global.dat is JSON on some builds. Schema varies by version;
+    accept any of:
+      - top-level list of session dicts
+      - {"sessions": [...]}
+      - {"storage": {"session": {...}}} — nested storage shape
+      - dict-of-sessions: {session_id: {...}, ...}
+    Returns a (possibly empty) list of session dicts, each normalized to
+    contain at least `id` and, when available, `directory` / `projectID`.
+    """
+    if payload is None:
+        return []
+    candidates: list = []
+    if isinstance(payload, list):
+        candidates = payload
+    elif isinstance(payload, dict):
+        if isinstance(payload.get("sessions"), list):
+            candidates = payload["sessions"]
+        elif isinstance(payload.get("storage"), dict):
+            session_block = payload["storage"].get("session")
+            if isinstance(session_block, dict):
+                candidates = list(session_block.values())
+            elif isinstance(session_block, list):
+                candidates = session_block
+        else:
+            # dict-of-sessions heuristic: all values look like session dicts
+            values = [v for v in payload.values() if isinstance(v, dict)]
+            if values and any(("id" in v or "sessionID" in v) for v in values):
+                candidates = values
+
+    sessions: list[dict] = []
+    for item in candidates:
+        if not isinstance(item, dict):
+            continue
+        sid = item.get("id") or item.get("sessionID") or item.get("session_id")
+        if not sid:
+            continue
+        normalized = dict(item)
+        normalized.setdefault("id", sid)
+        sessions.append(normalized)
+    return sessions
+
+
 def _looks_like_opencode_export_shape(payload) -> bool:
     if not isinstance(payload, dict):
         return False
@@ -170,6 +213,12 @@ class OpenCodeAdapter(BaseAdapter):
         storage_markers: list[Path] = []
         session_files: list[Path] = []
         message_files: list[Path] = []
+        # Newer OpenCode builds (notably the Windows desktop) don't write
+        # the per-session / per-message JSON trees — everything lives in a
+        # monolithic .dat file (despite the extension, it's JSON on builds
+        # observed in the wild; LevelDB on others). Collect both patterns
+        # so downstream code can fall back when storage/*.json is empty.
+        global_dat_files: list[Path] = []
 
         for root in roots:
             log_files.extend(path for path in root.rglob("*.log") if path.is_file())
@@ -177,11 +226,14 @@ class OpenCodeAdapter(BaseAdapter):
             storage_markers.extend(path for path in root.rglob("*.json") if path.is_file() and "storage" in path.parts)
             session_files.extend(path for path in root.rglob("storage/session/**/*.json") if path.is_file())
             message_files.extend(path for path in root.rglob("storage/message/**/*.json") if path.is_file())
+            global_dat_files.extend(path for path in root.rglob("*.global.dat") if path.is_file())
+            global_dat_files.extend(path for path in root.rglob("opencode.global.dat") if path.is_file())
 
         return {
             "roots": roots,
             "log_files": sorted({path for path in log_files}),
             "prompt_histories": sorted({path for path in prompt_histories}),
+            "global_dat_files": sorted({path for path in global_dat_files}),
             "storage_markers": sorted({path for path in storage_markers}),
             "session_files": sorted({path for path in session_files}),
             "message_files": sorted({path for path in message_files}),
@@ -380,7 +432,10 @@ class OpenCodeAdapter(BaseAdapter):
             return inventory
 
         try:
-            listed = self._run_cli("session", "list", "--max-count", "8", "--format", "json", timeout=_SESSION_LIST_TIMEOUT_SECONDS)
+            # --max-count is not in every opencode build; slice the result
+            # in Python instead so older/variant CLIs (which silently fail
+            # on unknown args) still return a valid list here.
+            listed = self._run_cli("session", "list", "--format", "json", timeout=_SESSION_LIST_TIMEOUT_SECONDS)
             list_payload = _decode_json_output(listed.stdout)
             sessions = []
             seen_ids: set[str] = set()
@@ -393,6 +448,21 @@ class OpenCodeAdapter(BaseAdapter):
                     continue
                 seen_ids.add(session_text)
                 sessions.append(row)
+
+            # Fallback: `opencode session list` is project-scoped — when
+            # invoked from a dir that isn't any session's project root, it
+            # returns [] even though sessions exist. Desktop builds in
+            # particular only expose the global session registry via
+            # opencode.global.dat. Merge those in so we can still call
+            # `export <id>` with the right cwd per session.
+            dat_sessions = self._sessions_from_global_dat()
+            for row in dat_sessions:
+                sid = str(row.get("id") or "")
+                if not sid or sid in seen_ids:
+                    continue
+                seen_ids.add(sid)
+                sessions.append(row)
+
             inventory["sessions"] = sessions
             if not sessions:
                 inventory["available"] = True
@@ -756,8 +826,27 @@ class OpenCodeAdapter(BaseAdapter):
 
         return events, verification_issues
 
+    def _sessions_from_global_dat(self) -> list[dict]:
+        """Read all opencode.global.dat files discovered on this host and
+        return the merged, de-duplicated list of session metadata dicts.
+        Empty list if no .dat files exist or none are JSON-parseable.
+        """
+        local = self._collect_local_markers()
+        seen: set[str] = set()
+        out: list[dict] = []
+        for path in local.get("global_dat_files", []):
+            payload = _read_json_file(path)
+            for session in _extract_sessions_from_global_dat(payload):
+                sid = str(session.get("id") or "")
+                if not sid or sid in seen:
+                    continue
+                seen.add(sid)
+                out.append(session)
+        return out
+
     def _build_session_cwd_map_from_local(self) -> dict[str, str]:
-        """Derive session-id -> project cwd from local message / session JSON.
+        """Derive session-id -> project cwd from local message / session
+        JSON and, as a fallback, from opencode.global.dat.
 
         Trusted because OpenCode writes these files as UTF-8 JSON, so
         Chinese / non-ASCII paths survive intact. `session list --format json`
@@ -787,6 +876,24 @@ class OpenCodeAdapter(BaseAdapter):
             directory = payload.get("directory")
             if session_id and isinstance(directory, str) and directory and session_id not in mapping:
                 mapping[str(session_id)] = directory
+
+        # Third pass: opencode.global.dat (desktop builds that skip the
+        # storage/session JSON trees). Each session dict may carry
+        # `directory` / `projectID.worktree` / `path.root` — pick the first
+        # existing.
+        for session in self._sessions_from_global_dat():
+            sid = str(session.get("id") or "")
+            if not sid or sid in mapping:
+                continue
+            cwd = session.get("directory") or session.get("cwd")
+            if not cwd:
+                path_block = session.get("path") if isinstance(session.get("path"), dict) else {}
+                cwd = path_block.get("root") or path_block.get("cwd")
+            if not cwd:
+                project = session.get("projectID") if isinstance(session.get("projectID"), dict) else {}
+                cwd = project.get("worktree") if isinstance(project, dict) else None
+            if isinstance(cwd, str) and cwd:
+                mapping[sid] = cwd
 
         return mapping
 
