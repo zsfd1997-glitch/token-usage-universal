@@ -441,6 +441,205 @@ class OpenCodeAdapterTests(unittest.TestCase):
         any_cwd_note = any("didn't exist on this machine" in issue for issue in result.verification_issues)
         self.assertTrue(any_cwd_note, f"expected mojibake-cwd diagnostic, got {result.verification_issues}")
 
+    def test_opencode_cli_v1_1_13_end_to_end_windows_intranet_scenario(self) -> None:
+        """完整复现用户内网 Windows 机器的真实形态，v1.1.13 全链路必过：
+
+        1. Desktop 写 opencode.global.dat（JSON 编码的 sessions registry），
+           没有 storage/session/*.json 树
+        2. opencode-cli.exe 在 %APPDATA%\\opencode-cli\\ 下写 storage
+           （默认根不含 -cli 后缀，靠新的默认根 + env 覆盖才扫得到）
+        3. session list 不接 --max-count（v1.1.13 不认）
+        4. session list 本身返回 [] （项目作用域问题，desktop 的全局
+           session 只在 .dat 里暴露）
+        5. export 返回 v1.1.13 的 {messages: [{info:{...}, parts:[
+           {tokens:{input, output, reasoning, cache:{read,write}}}]}]}
+           嵌套格式
+        6. 项目路径是中文（模拟内网用户的 D:\\知识库）
+
+        期望：adapter 能从 .dat 拿到 session list，自动带上正确中文
+        cwd 调 export，解出 v1.1.13 token schema，合并 desktop + CLI
+        的 token 数据，不是 0，不是重复计数。
+        """
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        created_2 = int(datetime(2026, 3, 25, 14, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_2 = int(datetime(2026, 3, 25, 14, 0, 45, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            appdata = Path(tmp) / "AppData" / "Roaming"
+            # 两个独立根：desktop 和 opencode-cli 各自用自己的
+            desktop_root = appdata / "OpenCode"
+            cli_root = appdata / "opencode-cli"
+            real_project = Path(tmp) / "projects" / "knowledge-base"
+            real_project.mkdir(parents=True)
+            desktop_root.mkdir(parents=True)
+            cli_root.mkdir(parents=True)
+
+            # Desktop: 只有 opencode.global.dat，无 storage/session 树
+            (desktop_root / "opencode.global.dat").write_text(
+                json.dumps({
+                    "sessions": [
+                        {
+                            "id": "ses_desktop_1",
+                            "directory": str(real_project),
+                            "projectID": "proj-knowledge",
+                            "time": {"created": created_at, "updated": completed_at},
+                        },
+                    ],
+                }, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (desktop_root / "log").mkdir()
+            (desktop_root / "log" / "2026-03-25.log").write_text("desktop session", encoding="utf-8")
+
+            # CLI: 老式 storage/session + storage/message 树（v1.1.13 短键）
+            cli_session_dir = cli_root / "storage" / "session"
+            cli_message_dir = cli_root / "storage" / "message" / "ses_cli_1"
+            cli_session_dir.mkdir(parents=True)
+            cli_message_dir.mkdir(parents=True)
+            (cli_session_dir / "ses_cli_1.json").write_text(
+                json.dumps({
+                    "id": "ses_cli_1",
+                    "projectID": "proj-knowledge",
+                    "directory": str(real_project),
+                    "time": {"created": created_2, "updated": completed_2},
+                }),
+                encoding="utf-8",
+            )
+            (cli_message_dir / "msg_cli_1.json").write_text(
+                json.dumps({
+                    "id": "msg_cli_1",
+                    "sessionID": "ses_cli_1",
+                    "role": "assistant",
+                    "time": {"created": created_2, "completed": completed_2},
+                    "modelID": "qwen3-coder-plus",
+                    "providerID": "aliyun",
+                    "path": {"cwd": str(real_project), "root": str(real_project)},
+                    "tokens": {
+                        "input": 2000,
+                        "output": 150,
+                        "reasoning": 10,
+                        "cache": {"read": 500, "write": 100},
+                    },
+                }),
+                encoding="utf-8",
+            )
+
+            adapter = OpenCodeAdapter()
+            # 同时配两端的 root，模拟 desktop+cli 并存
+            adapter.roots = [desktop_root, cli_root]
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                # session list 项目作用域空返——desktop 全局 session 只
+                # 在 .dat 里；CLI 侧已经被本地 storage 路径吃掉了。
+                if args == ("session", "list", "--format", "json"):
+                    return subprocess.CompletedProcess(args, 0, stdout="[]", stderr="")
+                if args == ("export", "ses_desktop_1"):
+                    # 必须用 .dat 里记录的项目路径（中文），验证 cwd 正确
+                    assert cwd == str(real_project), f"export cwd 不对: {cwd}"
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+                        "messages": [{
+                            "info": {
+                                "id": "msg_desktop_1",
+                                "sessionID": "ses_desktop_1",
+                                "role": "assistant",
+                                "providerID": "anthropic",
+                                "modelID": "claude-sonnet-4-6",
+                                "time": {"created": created_at, "completed": completed_at},
+                                "path": {"root": str(real_project)},
+                            },
+                            "parts": [{
+                                "type": "reasoning",
+                                "tokens": {
+                                    "input": 1500,
+                                    "output": 200,
+                                    "reasoning": 25,
+                                    "cache": {"read": 300, "write": 50},
+                                },
+                            }],
+                        }],
+                    }), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="D:\\OpenCode\\opencode-cli.exe"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        # 预期：CLI 本地路径捕获 msg_cli_1（local 优先，立刻返回）
+        # 所以 session_id 应为 ses_cli_1，total_tokens = 2000 + 150 + 10 + 500 + 100 = 2760
+        self.assertEqual(len(result.events), 1, "CLI 本地优先路径应该捕获 1 条 event")
+        event = result.events[0]
+        self.assertEqual(event.session_id, "ses_cli_1")
+        self.assertEqual(event.total_tokens, 2760)  # input(2000+100 cache.write) + cache.read(500) + output(150) + reasoning(10)
+        self.assertEqual(event.input_tokens, 2100)  # input + cache.write
+        self.assertEqual(event.cached_input_tokens, 500)
+        self.assertEqual(event.output_tokens, 150)
+        self.assertEqual(event.reasoning_tokens, 10)
+        self.assertEqual(event.project_path, str(real_project))
+        self.assertIn("qwen3-coder-plus", (event.model or "", event.raw_model or ""))
+        # accuracy 必须是 exact 不能降级
+        self.assertEqual(event.accuracy_level, "exact")
+
+    def test_opencode_cli_v1_1_13_desktop_only_when_no_cli_storage(self) -> None:
+        """v1.1.13 纯 desktop 场景：没装 opencode-cli，只有 desktop 写的
+        .dat + 没有 storage/session 树 → 必须靠 .dat → CLI export 链路
+        把 token 拿出来。本测试把 CLI 本地路径彻底清空，强制走 .dat。"""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            desktop_root = Path(tmp) / "OpenCode"
+            desktop_root.mkdir()
+            real_project = Path(tmp) / "project-chinese"
+            real_project.mkdir()
+
+            (desktop_root / "opencode.global.dat").write_text(
+                json.dumps({
+                    "sessions": [
+                        {"id": "ses_d", "directory": str(real_project),
+                         "time": {"created": created_at}},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            (desktop_root / "log").mkdir()
+            (desktop_root / "log" / "2026-03-25.log").write_text("x", encoding="utf-8")
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [desktop_root]
+
+            def fake_run(*args, timeout: int, cwd: str | None = None):
+                if args == ("session", "list", "--format", "json"):
+                    return subprocess.CompletedProcess(args, 0, stdout="[]", stderr="")
+                if args == ("export", "ses_d"):
+                    assert cwd == str(real_project)
+                    return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+                        "messages": [{
+                            "info": {
+                                "id": "m1", "sessionID": "ses_d", "role": "assistant",
+                                "providerID": "anthropic", "modelID": "claude-opus-4-6",
+                                "time": {"created": created_at, "completed": completed_at},
+                                "path": {"root": str(real_project)},
+                            },
+                            "parts": [{"type": "reasoning", "tokens": {
+                                "input": 800, "output": 60, "reasoning": 5,
+                                "cache": {"read": 0, "write": 0},
+                            }}],
+                        }],
+                    }), stderr="")
+                raise AssertionError(f"unexpected args: {args}")
+
+            with patch.object(adapter, "_resolve_cli", return_value="opencode-cli"), patch.object(
+                adapter, "_run_cli", side_effect=fake_run,
+            ):
+                result = adapter.collect(_window())
+
+        self.assertEqual(len(result.events), 1, "纯 desktop .dat 场景必须能 export 出 token")
+        event = result.events[0]
+        self.assertEqual(event.session_id, "ses_d")
+        self.assertEqual(event.total_tokens, 865)  # 800 + 60 + 5
+
     def test_desktop_with_only_global_dat_falls_back_through_cli_export(self) -> None:
         """Desktop-only compat: no storage/session JSON tree, only an
         opencode.global.dat file. Previously the adapter returned 0 events

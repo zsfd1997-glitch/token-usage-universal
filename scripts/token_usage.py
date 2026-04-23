@@ -95,7 +95,10 @@ from core.time_window import build_month_window, build_time_window, within_windo
 from core.verifier import verify_result
 
 
-def _build_adapters():
+def _build_full_registry():
+    """Always return the full 51-adapter registry — used by commands like
+    `sources` / `targets` / `release-gate` / `probe` that need the global
+    view, and as the starting point for filtered registries."""
     adapters = [
         CodexAdapter(),
         ClaudeCodeAdapter(),
@@ -111,6 +114,61 @@ def _build_adapters():
         GenericOpenAICompatibleAdapter(),
     ]
     return {adapter.source_id: adapter for adapter in adapters}
+
+
+def _probe_and_cache_active_sources(full_registry) -> list[str]:
+    """Run detect() on every adapter and remember which ones have local
+    traces. Writes the result to the environment cache file. Returns the
+    list of active source IDs."""
+    from core.environment_cache import pick_active_from_detections, save_active_source_ids
+
+    detections = {sid: adapter.detect() for sid, adapter in full_registry.items()}
+    active = pick_active_from_detections(detections)
+    # Always keep the generic fallback adapter — it costs almost nothing
+    # to instantiate and the user may add log globs after the probe.
+    if "generic-openai-compatible" in full_registry and "generic-openai-compatible" not in active:
+        active.append("generic-openai-compatible")
+    save_active_source_ids(active)
+    return active
+
+
+def _build_adapters(*, use_cache: bool = True, force_refresh: bool = False, all_sources: bool = False):
+    """Return the adapter registry for runtime use, optionally filtered to
+    sources that have been probed active on this host.
+
+    Resolution order (first match wins):
+      1. `all_sources=True` or env `TOKEN_USAGE_ALL_SOURCES=1`    → full 51 adapters
+      2. env `TOKEN_USAGE_SOURCES=a,b,c` (explicit whitelist)     → filter by whitelist
+      3. `force_refresh=True`: probe now, save cache, filter       → fresh subset
+      4. cache present and not expired                             → filter by cache
+      5. no cache: probe now, save cache, filter                   → fresh subset
+
+    Filtering always keeps at least the generic-openai-compatible adapter
+    so a user who adds log globs after the probe still gets counted.
+    """
+    from core.environment_cache import (
+        load_active_source_ids,
+        parse_env_filter,
+    )
+
+    full = _build_full_registry()
+
+    if all_sources or os.environ.get("TOKEN_USAGE_ALL_SOURCES", "").strip() == "1":
+        return full
+
+    env_filter = parse_env_filter(os.environ.get("TOKEN_USAGE_SOURCES", ""))
+    if env_filter:
+        return {sid: a for sid, a in full.items() if sid in env_filter}
+
+    if force_refresh or not use_cache:
+        active = set(_probe_and_cache_active_sources(full))
+        return {sid: a for sid, a in full.items() if sid in active}
+
+    cached = load_active_source_ids()
+    if cached is None:
+        # First run on this host — probe once, cache result.
+        cached = set(_probe_and_cache_active_sources(full))
+    return {sid: a for sid, a in full.items() if sid in cached}
 
 
 def _resolve_sources(args, registry):
@@ -279,7 +337,10 @@ def _should_preaggregate_results(args, window) -> bool:
 
 
 def command_report(args) -> int:
-    registry = _build_adapters()
+    registry = _build_adapters(
+        force_refresh=getattr(args, "refresh", False),
+        all_sources=getattr(args, "all_sources", False),
+    )
     window = _time_window_from_args(args)
     selected_adapters = _resolve_sources(args, registry)
     dashboard_mode = _dashboard_mode_from_args(args)
@@ -326,7 +387,9 @@ def command_report(args) -> int:
 
 
 def command_sources(args) -> int:
-    registry = _build_adapters()
+    # `sources` always shows the full 51-source panel regardless of cache;
+    # users expect to see the complete supported list here.
+    registry = _build_full_registry()
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     if args.format == "json":
         print(json.dumps([_source_status_payload(adapter) for adapter in registry.values()], ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
@@ -336,8 +399,22 @@ def command_sources(args) -> int:
 
 
 def command_health(args) -> int:
-    registry = _build_adapters()
+    # `health` IS the probe — it scans every adapter and uses the result
+    # to refresh the environment cache so subsequent `report` / `diagnose`
+    # calls can skip inactive sources.
+    from core.environment_cache import pick_active_from_detections, save_active_source_ids
+
+    registry = _build_full_registry()
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
+    detections = {r.detection.source_id: r.detection for r in results}
+    active_ids = pick_active_from_detections(detections)
+    if "generic-openai-compatible" in registry and "generic-openai-compatible" not in active_ids:
+        active_ids.append("generic-openai-compatible")
+    try:
+        save_active_source_ids(active_ids)
+    except OSError:
+        pass  # non-fatal: health still works without cache write
+
     health = build_health_report(results)
     if args.format == "json":
         print(json.dumps(health, ensure_ascii=_STDOUT_JSON_ENSURE_ASCII, indent=2, default=_json_default))
@@ -347,7 +424,10 @@ def command_health(args) -> int:
 
 
 def command_diagnose(args) -> int:
-    registry = _build_adapters()
+    # Diagnose must work for any source the user names, even if that
+    # source isn't in the cached active set — so start from the full
+    # registry.
+    registry = _build_full_registry()
     adapter = registry.get(args.source)
     if not adapter:
         raise SystemExit(f"unknown source: {args.source}")
@@ -387,6 +467,50 @@ _BOOTSTRAP_PROMPT_TEMPLATE = """你现在要扮演 token-usage-universal 这个�
 def command_bootstrap_prompt(args) -> int:
     cli_path = Path(__file__).resolve()
     print(_BOOTSTRAP_PROMPT_TEMPLATE.format(cli_path=cli_path), end="")
+    return 0
+
+
+def command_probe(args) -> int:
+    """One-off environment probe: detect every adapter, decide which ones
+    have local traces on this host, and persist the list so future
+    `report` calls only run those. Equivalent in effect to `health` but
+    emits a focused summary instead of the ascii-hifi health panel."""
+    from core.environment_cache import (
+        environment_cache_path,
+        pick_active_from_detections,
+        save_active_source_ids,
+    )
+    import time as _time
+
+    full = _build_full_registry()
+    t0 = _time.perf_counter()
+    detections = {sid: adapter.detect() for sid, adapter in full.items()}
+    elapsed_ms = (_time.perf_counter() - t0) * 1000
+
+    active = pick_active_from_detections(detections)
+    if "generic-openai-compatible" in full and "generic-openai-compatible" not in active:
+        active.append("generic-openai-compatible")
+    path = save_active_source_ids(active)
+
+    total = len(full)
+    inactive = total - len(active)
+    print(f"Token Usage Universal · Environment Probe")
+    print(f"  total adapters:  {total}")
+    print(f"  active on host:  {len(active)}")
+    print(f"  skipped:         {inactive}")
+    print(f"  probe time:      {elapsed_ms:.0f} ms")
+    print(f"  cache written:   {path}")
+    print()
+    print("Active sources (these will run on every `report --today`):")
+    for sid in sorted(active):
+        detection = detections.get(sid)
+        mark = "✓" if detection and getattr(detection, "available", False) else " "
+        print(f"  {mark} {sid}")
+    if inactive:
+        print()
+        print(f"Skipped {inactive} sources with no local trace on this host.")
+        print("Force a re-probe any time with:  python scripts/token_usage.py probe")
+        print("Or run a single report with all adapters:  report --all-sources")
     return 0
 
 
@@ -737,7 +861,8 @@ def _write_release_evidence_bundle(output_dir: Path, bundle: dict[str, object]) 
 
 
 def command_release_gate(args) -> int:
-    registry = _build_adapters()
+    # release-gate validates full source coverage by design — never filter.
+    registry = _build_full_registry()
     results = [SourceCollectResult(detection=adapter.detect()) for adapter in registry.values()]
     health = build_health_report(results)
     targets_payload = build_top20_registry_payload()
@@ -865,6 +990,16 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--plain-ascii", action="store_true", help="render charts without unicode blocks")
     report.add_argument("--limit", type=int, default=5, help="row limit per section")
     report.add_argument("--format", choices=("ascii", "json"), default="ascii")
+    report.add_argument(
+        "--refresh",
+        action="store_true",
+        help="ignore the environment cache and re-probe every adapter this run (updates cache)",
+    )
+    report.add_argument(
+        "--all-sources",
+        action="store_true",
+        help="bypass the environment cache and run every adapter (slow; equivalent to TOKEN_USAGE_ALL_SOURCES=1)",
+    )
     report.set_defaults(func=command_report)
 
     sources = subparsers.add_parser("sources", help="list source availability")
@@ -949,6 +1084,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="scan all plausible OpenCode storage locations and report which have today's activity (diagnose CLI-vs-desktop mismatches)",
     )
     locate_opencode.set_defaults(func=command_locate_opencode)
+
+    probe = subparsers.add_parser(
+        "probe",
+        help="detect which adapters have any data on this host and cache the result (so future `report` runs skip the ~45 dead adapters)",
+    )
+    probe.set_defaults(func=command_probe)
 
     return parser
 

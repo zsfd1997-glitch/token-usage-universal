@@ -9,10 +9,10 @@
 
 ## Summary
 
-- total source IDs: `51`
-- default rollup source IDs: `50`
-- provider family source IDs: `24`
-- desktop source IDs: `17`
+- total source IDs: `10`
+- default rollup source IDs: `9`
+- provider family source IDs: `0`
+- desktop source IDs: `2`
 
 ## Native Clients
 
@@ -29,59 +29,13 @@
 | source_id | display_name | provider | accuracy | default_rollup |
 |---|---|---|---|---|
 | `gemini-cli` | Gemini CLI | `google` | `exact` | `true` |
-| `kimi-cli` | Kimi CLI | `moonshotai` | `exact` | `true` |
-| `qwen-code-cli` | Qwen Code CLI | `qwen` | `exact` | `true` |
 
 ## Desktop Clients
 
 | source_id | display_name | provider | accuracy | default_rollup |
 |---|---|---|---|---|
-| `baichuan-desktop` | Baichuan Desktop | `baichuan` | `exact` | `true` |
 | `chatgpt-desktop` | ChatGPT Desktop | `openai` | `exact` | `true` |
-| `deepseek-desktop` | DeepSeek Desktop | `deepseek` | `exact` | `true` |
-| `doubao-desktop` | Doubao Desktop | `bytedance` | `exact` | `true` |
-| `gemini-desktop` | Gemini Desktop | `google` | `exact` | `true` |
-| `glm-desktop` | GLM Desktop | `z-ai` | `exact` | `true` |
-| `grok-desktop` | Grok Desktop | `xai` | `exact` | `true` |
-| `kimi-desktop` | Kimi Desktop | `moonshotai` | `exact` | `true` |
-| `mistral-desktop` | Mistral Desktop | `mistral` | `exact` | `true` |
-| `perplexity-desktop` | Perplexity Desktop | `perplexity` | `exact` | `true` |
-| `qianfan-desktop` | Qianfan Desktop | `baidu` | `exact` | `true` |
 | `qwen-desktop` | Qwen Desktop | `qwen` | `exact` | `true` |
-| `sensenova-desktop` | SenseNova Desktop | `sensenova` | `exact` | `true` |
-| `siliconflow-desktop` | SiliconFlow Desktop | `siliconflow` | `exact` | `true` |
-| `spark-desktop` | Spark Desktop | `spark` | `exact` | `true` |
-| `stepfun-desktop` | StepFun Desktop | `stepfun` | `exact` | `true` |
-| `yuanbao-desktop` | Yuanbao Desktop | `tencent` | `exact` | `true` |
-
-## Provider / API Families
-
-| source_id | display_name | provider | accuracy | default_rollup |
-|---|---|---|---|---|
-| `anthropic-api` | Anthropic API | `anthropic` | `exact` | `true` |
-| `azure-openai-api` | Azure OpenAI API | `azure-openai` | `exact` | `true` |
-| `baichuan-api` | Baichuan API | `baichuan` | `exact` | `true` |
-| `baidu-qianfan-api` | Baidu Qianfan API | `baidu` | `exact` | `true` |
-| `cohere-api` | Cohere API | `cohere` | `exact` | `true` |
-| `deepseek-api` | DeepSeek API | `deepseek` | `exact` | `true` |
-| `doubao-api` | Doubao API | `bytedance` | `exact` | `true` |
-| `fireworks-api` | Fireworks API | `fireworks` | `exact` | `true` |
-| `google-gemini-api` | Google Gemini API | `google` | `exact` | `true` |
-| `minimax-api` | MiniMax API | `minimax` | `exact` | `true` |
-| `mistral-api` | Mistral API | `mistral` | `exact` | `true` |
-| `moonshot-kimi-api` | Moonshot Kimi API | `moonshotai` | `exact` | `true` |
-| `openai-api` | OpenAI API | `openai` | `exact` | `true` |
-| `openrouter-api` | OpenRouter API | `openrouter` | `exact` | `true` |
-| `perplexity-api` | Perplexity API | `perplexity` | `exact` | `true` |
-| `qwen-api` | Qwen API | `qwen` | `exact` | `true` |
-| `sensenova-api` | SenseNova API | `sensenova` | `exact` | `true` |
-| `siliconflow-api` | SiliconFlow API | `siliconflow` | `exact` | `true` |
-| `spark-api` | Spark API | `spark` | `exact` | `true` |
-| `stepfun-api` | StepFun API | `stepfun` | `exact` | `true` |
-| `tencent-hunyuan-api` | Tencent Hunyuan API | `tencent` | `exact` | `true` |
-| `togetherai-api` | Together AI API | `togetherai` | `exact` | `true` |
-| `xai-grok-api` | xAI Grok API | `xai` | `exact` | `true` |
-| `zhipu-glm-api` | Zhipu GLM API | `z-ai` | `exact` | `true` |
 
 ## Fallback
 

@@ -23,6 +23,16 @@ class CliIntegrationTests(unittest.TestCase):
         env: dict[str, str] | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[str]:
+        # Test subprocesses must not read the dev host's persistent
+        # environment cache (~/Library/Caches/token-usage-universal/
+        # environment.json on macOS, etc.) — that cache filters adapters
+        # based on what's installed on the developer's machine, which
+        # makes tests non-deterministic. Force the full registry unless
+        # the individual test explicitly opts out.
+        if env is not None and "TOKEN_USAGE_ALL_SOURCES" not in env:
+            env = {**env, "TOKEN_USAGE_ALL_SOURCES": "1"}
+        elif env is None:
+            env = {**os.environ, "TOKEN_USAGE_ALL_SOURCES": "1"}
         result = subprocess.run(
             [sys.executable, str(CLI_PATH), *args],
             check=False,

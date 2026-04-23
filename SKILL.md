@@ -29,21 +29,6 @@ description: "Translate natural-language requests about local AI token usage int
 - 手里没有本地日志，只想估算未来用量
 - 用户在问和本机无关的通用 LLM 费用计算器
 
-## 输入
-
-调用前至少具备：
-
-- 一个明确的时间窗口或查询方向（今天 / 本周 / 按模型 / 按来源）
-- 本机至少一个已支持来源的日志可读（运行 `health` 确认）
-- 如果是排障，需要知道哪个来源没出现在统计里
-
-内网四项前置自检（任一命中**先处理再执行**，优先级：宿主 → 编码 → 路径 → 多端归因）：
-
-- **宿主没装 skill 库**（opencode 桌面端 / 自研 CLI / 私有 launcher）→ [references/intranet-bootstrap.md](references/intranet-bootstrap.md)
-- **终端只认 GBK 不认 UTF-8**（Windows `chcp` 返回 `936`）→ [references/gbk-terminal.md](references/gbk-terminal.md)
-- **默认路径在本机不成立** → `not_found` 不等于没用量，先探测：[references/path-discovery.md](references/path-discovery.md)
-- **同机多端 / IDE 内嵌 / 自定义 base_url** → [references/multi-endpoint-scenarios.md](references/multi-endpoint-scenarios.md)
-
 ## 输出
 
 必须同时包含：
@@ -66,31 +51,40 @@ description: "Translate natural-language requests about local AI token usage int
 
 ## 执行协议
 
-**第 1 步：确认来源状态。** 必要时跑：
+**第 1 步（happy path，**就一条命令**）**。用户说短触发词或询问今天 / 本周 token，**直接跑**：
 
 ```bash
-python3 scripts/token_usage.py health
+python "$HOME/.opencode/skills/token.skill"*/scripts/token_usage.py report --today
 ```
 
-如果大部分来源 `not_found` / `no_data`，**不要**直接得出"没用量"——先按 [references/path-discovery.md](references/path-discovery.md) 探测：`health --format json` 看解析后绝对路径 → `sources` 看不 ready 原因 → `find` / `Get-ChildItem` 搜特征文件 → 用 `TOKEN_USAGE_<SOURCE>_ROOT` / `TOKEN_USAGE_DISCOVERY_ROOTS` 覆盖 → 重跑 health。
+关键：
 
-**第 2 步：选最小命令。** 按用户意图选命令——
+- 用 **bash glob 绝对路径**，不要假设 cwd 是 skill 目录（opencode 常把 cwd 设成用户项目目录）。
+- `token.skill*` 能匹配 `token.skill` / `token.skill v1.2` / 其他后缀变体，不要为目录名探路、ls、glob 找位置。
+- **不要**先跑 `health` / `chcp` / `ls`——上面这条直接出面板；失败了才进下面的分支。
+- Windows Git Bash 同样支持 `$HOME` 和 glob；PowerShell 环境下改用 `python "$env:USERPROFILE\.opencode\skills\token.skill\scripts\token_usage.py" report --today`。
 
-- 今天总览：`report --today`
-- 按模型 / 项目 / 来源拆分：`report --today --by model|project|source`
-- 最近趋势：`report --trend 7d`
-- 月历热力图：`report --calendar month`
-- 当前会话：`report --current-session`
-- 来源排障：`diagnose --source <source_id> --today`
-- 来源状态总览：`sources`
+按用户意图换命令（路径前缀不变）：
 
-**第 3 步：贴面板，补结论。** CLI 返回 ascii-hifi 面板后，先原样放进 fenced code block，再补 1 到 3 句高信号结论，最后一句给可选展开方向。GBK 终端三级降级（Tier 1 `chcp 65001` → Tier 1.5 `PYTHONIOENCODING=gbk:backslashreplace` → Tier 2 `--format json` + skill 端英文重绘 → Tier 3 `--plain-ascii` + 英文标签，禁止中英混排）详见 [references/gbk-terminal.md](references/gbk-terminal.md)。
+- 今天总览 → `report --today`（默认）
+- 按模型/项目/来源 → `report --today --by model|project|source`
+- 趋势 → `report --trend 7d` / `--trend 30d`
+- 月历 → `report --calendar month`
+- 当前会话 → `report --current-session`
+- 排障 → `diagnose --source <source_id> --today`
 
-**第 4 步：收口。** 用户说"先这样 / 够了 / 不用继续 / 先停 / 先看到这里"时，用 1 到 3 句收口总结，不再追问。
+**第 2 步：贴面板，补结论。** CLI 返回后，原样把 ascii-hifi 面板放进 fenced code block，补 1-3 句高信号结论，末句给可选展开方向。
 
-引导细则和默认面板骨架见 [references/skill-routing.md](references/skill-routing.md)。  
-来源契约和 exact / diagnose / unsupported 边界见 [references/source-contract.md](references/source-contract.md)。  
-精度口径和费用估算规则见 [references/accuracy-policy.md](references/accuracy-policy.md)。
+**第 3 步：只在命令失败时才排障。** 上面那条命令成功就停，不要画蛇添足再跑 health。失败时按错误归类：
+
+- `No such file or directory` → skill 目录不在默认路径，先跑 `ls ~/.opencode/skills/` 定位
+- 中文乱码 / `UnicodeEncodeError` → [references/gbk-terminal.md](references/gbk-terminal.md)
+- 结果 0 token 但用户说明明用了 → [references/path-discovery.md](references/path-discovery.md) + [references/multi-endpoint-scenarios.md](references/multi-endpoint-scenarios.md)
+- 宿主不加载 skill 库 → [references/intranet-bootstrap.md](references/intranet-bootstrap.md)
+
+**第 4 步：收口。** 用户说"先这样 / 够了 / 不用继续 / 先停"时，1-3 句收口，不追问。
+
+路由细则：[references/skill-routing.md](references/skill-routing.md) · 来源契约：[references/source-contract.md](references/source-contract.md) · 精度：[references/accuracy-policy.md](references/accuracy-policy.md)
 
 ## 禁忌
 
@@ -109,4 +103,4 @@ python3 scripts/token_usage.py health
 
 ## 一句话操作口令
 
-先自检（宿主 / 编码 / 路径 / 多端），再选最小命令，先贴面板再补结论，用户停手就收口。
+短触发词**一条绝对路径命令**直接出面板，不要先跑 health / chcp / ls；失败了才排障。
