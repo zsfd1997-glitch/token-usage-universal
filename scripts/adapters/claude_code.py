@@ -13,6 +13,7 @@ from core.config import (
     safe_home_path,
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
+from core.robust_read import read_json_robust, read_text_robust
 from core.time_window import parse_timestamp, within_window
 
 _CLAUDE_TIMESTAMP_KEYS = ("executor_end", "grader_end")
@@ -73,10 +74,9 @@ class ClaudeCodeAdapter(BaseAdapter):
         for path in json_files:
             if path.name in _CLAUDE_LAYOUT_MARKER_NAMES and len(marker_files) < 5:
                 marker_files.append(path)
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                parse_issues.append(f"failed parsing {path}: {exc}")
+            payload, _enc = read_json_robust(path)
+            if payload is None:
+                parse_issues.append(f"failed parsing {path}")
                 continue
 
             if not isinstance(payload, dict):
@@ -112,11 +112,11 @@ class ClaudeCodeAdapter(BaseAdapter):
         )
 
         for path in project_files:
-            try:
-                lines = path.read_text(encoding="utf-8").splitlines()
-            except OSError as exc:
-                issues.append(f"failed reading {path}: {exc}")
+            text, _enc = read_text_robust(path)
+            if text is None:
+                issues.append(f"failed reading {path}")
                 continue
+            lines = text.splitlines()
 
             for line_number, line in enumerate(lines, start=1):
                 if not line.strip():
@@ -329,10 +329,9 @@ class ClaudeCodeAdapter(BaseAdapter):
         )
 
         for path in candidate_files:
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                verification_issues.append(f"failed parsing {path}: {exc}")
+            payload, _enc = read_json_robust(path)
+            if payload is None:
+                verification_issues.append(f"failed parsing {path}")
                 continue
 
             total_tokens = payload.get("total_tokens")

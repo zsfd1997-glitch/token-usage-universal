@@ -131,6 +131,39 @@ CLI 在任何终端编码下都**必须**不崩。当前 [scripts/token_usage.py
 
 所以在 GBK 终端里，**最坏的情况是乱码，不会是崩溃**。
 
+## 文件侧编码兼容（读不进去也算"乱码很严重"）
+
+输出到终端只是乱码的一半；另一半是**读取第三方客户端写出的数据文件**时遇到的编码问题。
+
+### 真实踩坑：opencode CLI 读不出 token 消耗量
+
+**症状**：内网 Windows 机上 `report --today` 全部 0 token，`health` 却说 opencode ready。
+
+**根因**：老版本的 `_read_json_file` 只认 `encoding="utf-8"`，遇到 `UnicodeDecodeError` 就静默返回 None。如果 OpenCode 在 GBK / cp936 系统默认编码下写文件（某些老版本、或用户手动编辑过 JSON 文件），所有消息文件会被当成"文件不存在"跳过，token 事件归零——而 adapter 既不报错也不诊断，用户完全看不出哪里出了问题。
+
+**已修**：[scripts/core/robust_read.py](../scripts/core/robust_read.py) 提供 `read_text_robust` / `read_json_robust`，按 `utf-8-sig → utf-8 → gbk → gb18030` 顺序尝试解码，全部失败后还会走 `errors="replace"` 兜底，保证 token 数字字段能穿透解码损坏。所有第三方数据读取的 adapter（opencode / claude-code / kimi-cli / gemini-cli）都换用了这个函数。
+
+### 诊断信号
+
+OpenCode adapter 如果靠 fallback 才读通文件，会在 `verification_issues` 里留一条：
+
+> `N OpenCode message file(s) were decoded using a legacy codec (GBK/GB18030) — OpenCode likely wrote under a non-UTF-8 system codepage; set PYTHONIOENCODING=gbk or switch the host locale to UTF-8 to make this stable`
+
+跑 `python3 scripts/token_usage.py diagnose --source opencode --today` 能直接看到。出现这条说明机器现在数字是对的，但源头（OpenCode 自己写文件的方式）不规范，长期应该让用户把系统 locale 切到 UTF-8 或升级 OpenCode。
+
+### 非 GBK 的其他编码（Big5 / Shift-JIS / EUC-KR）
+
+默认 fallback 列表**只含**UTF-8 / GBK / GB18030。原因：GBK / GB18030 的字节范围几乎能吞下任何 2-byte 序列而不报错，如果盲加 Big5 会出现"Big5 文件被当成 GBK 读出垃圾"的误匹配。
+
+确实需要繁中/日韩解码的场景，直接在 adapter 里调：
+
+```python
+from core.robust_read import read_json_robust
+payload, enc = read_json_robust(path, encodings=("big5",))
+```
+
+或把需求提交给维护方扩展默认列表。
+
 ## Tier 1.5：设 `PYTHONIOENCODING=gbk`（推荐，改好后一次到位）
 
 由于 CLI 现在尊重这个 env，这条路是成本最低的稳妥方案：

@@ -16,6 +16,7 @@ from core.config import (
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.pricing import PricingDatabase
+from core.robust_read import read_json_robust
 from core.time_window import parse_timestamp, within_window
 from core.usage_records import (
     MODEL_KEYS,
@@ -88,10 +89,17 @@ def _split_provider_model(provider: str, raw_model) -> tuple[str, str | None]:
 
 
 def _read_json_file(path: Path):
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return None
+    payload, _encoding = read_json_robust(path)
+    return payload
+
+
+def _read_json_file_with_encoding(path: Path):
+    """Return (payload, encoding_used). encoding_used is None on failure,
+    a codec name on success, or 'utf-8:replace' when lossy fallback was needed.
+    Adapters call this on hot paths (message JSON) to surface GBK / corruption
+    issues via verification_issues instead of silently skipping files.
+    """
+    return read_json_robust(path)
 
 
 def _parse_epoch_millis(value, fallback_tz):
@@ -198,8 +206,18 @@ class OpenCodeAdapter(BaseAdapter):
                 project_roots[str(project_id)] = str(worktree)
 
         seen: set[tuple[str, str]] = set()
+        legacy_codec_hits = 0
+        lossy_decode_hits = 0
+        unreadable_files = 0
         for path in message_files:
-            payload = _read_json_file(path)
+            payload, encoding_used = _read_json_file_with_encoding(path)
+            if encoding_used is None:
+                unreadable_files += 1
+                continue
+            if encoding_used not in ("utf-8", "utf-8-sig") and encoding_used != "utf-8:replace":
+                legacy_codec_hits += 1
+            elif encoding_used == "utf-8:replace":
+                lossy_decode_hits += 1
             if not isinstance(payload, dict) or payload.get("role") != "assistant":
                 continue
 
@@ -279,6 +297,23 @@ class OpenCodeAdapter(BaseAdapter):
                     model_resolution=model_resolution,
                     model_source="opencode_local" if raw_model not in (None, "") else None,
                 )
+            )
+
+        if unreadable_files > 0:
+            verification_issues.append(
+                f"{unreadable_files} OpenCode message file(s) could not be decoded as "
+                "UTF-8 / GBK / GB18030 — they may be corrupted or in an unsupported encoding"
+            )
+        if legacy_codec_hits > 0:
+            verification_issues.append(
+                f"{legacy_codec_hits} OpenCode message file(s) were decoded using a legacy "
+                "codec (GBK/GB18030) — OpenCode likely wrote under a non-UTF-8 system codepage; "
+                "set PYTHONIOENCODING=gbk or switch the host locale to UTF-8 to make this stable"
+            )
+        if lossy_decode_hits > 0:
+            verification_issues.append(
+                f"{lossy_decode_hits} OpenCode message file(s) required lossy fallback decoding; "
+                "some text fields may be corrupted but token counts are preserved"
             )
 
         self._local_inventory = {

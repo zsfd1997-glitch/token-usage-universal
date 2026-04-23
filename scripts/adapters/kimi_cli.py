@@ -13,6 +13,7 @@ from core.config import (
     resolve_path_override,
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
+from core.robust_read import read_json_robust, read_text_robust
 from core.time_window import within_window
 
 
@@ -69,9 +70,8 @@ class KimiCliAdapter(BaseAdapter):
     def _load_project_map(self) -> dict[str, str]:
         if not self.metadata_file.exists():
             return {}
-        try:
-            payload = json.loads(self.metadata_file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        payload, _enc = read_json_robust(self.metadata_file)
+        if not isinstance(payload, dict):
             return {}
 
         result: dict[str, str] = {}
@@ -100,43 +100,43 @@ class KimiCliAdapter(BaseAdapter):
         parse_issues: list[str] = []
 
         for path in wire_files:
-            try:
-                with path.open(encoding="utf-8") as handle:
-                    for line in handle:
-                        stripped = line.strip()
-                        if not stripped:
-                            continue
-                        try:
-                            payload = json.loads(stripped)
-                        except json.JSONDecodeError as exc:
-                            parse_issues.append(f"failed parsing {path}: {exc}")
-                            break
+            text, _enc = read_text_robust(path)
+            if text is None:
+                parse_issues.append(f"failed reading {path}")
+                continue
+            for line in text.splitlines():
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    payload = json.loads(stripped)
+                except json.JSONDecodeError as exc:
+                    parse_issues.append(f"failed parsing {path}: {exc}")
+                    break
 
-                        if not isinstance(payload, dict) or payload.get("type") == "metadata":
-                            continue
+                if not isinstance(payload, dict) or payload.get("type") == "metadata":
+                    continue
 
-                        message = payload.get("message")
-                        if not isinstance(message, dict):
-                            continue
+                message = payload.get("message")
+                if not isinstance(message, dict):
+                    continue
 
-                        message_type = message.get("type")
-                        message_payload = message.get("payload")
-                        if not isinstance(message_type, str):
-                            continue
+                message_type = message.get("type")
+                message_payload = message.get("payload")
+                if not isinstance(message_type, str):
+                    continue
 
-                        found_usage = False
-                        for event_type, event_payload in _iter_kimi_events(message_type, message_payload):
-                            if event_type != "StatusUpdate":
-                                continue
-                            token_usage = event_payload.get("token_usage")
-                            if isinstance(token_usage, dict):
-                                files_with_usage.append(path)
-                                found_usage = True
-                                break
-                        if found_usage:
-                            break
-            except OSError as exc:
-                parse_issues.append(f"failed reading {path}: {exc}")
+                found_usage = False
+                for event_type, event_payload in _iter_kimi_events(message_type, message_payload):
+                    if event_type != "StatusUpdate":
+                        continue
+                    token_usage = event_payload.get("token_usage")
+                    if isinstance(token_usage, dict):
+                        files_with_usage.append(path)
+                        found_usage = True
+                        break
+                if found_usage:
+                    break
 
         self._inventory = {
             "wire_files": wire_files,
@@ -240,81 +240,81 @@ class KimiCliAdapter(BaseAdapter):
         for path in wire_files:
             workdir_hash = path.parent.parent.name
             project_path = project_map.get(workdir_hash)
-            try:
-                with path.open(encoding="utf-8") as handle:
-                    for line_number, line in enumerate(handle, start=1):
-                        stripped = line.strip()
-                        if not stripped:
-                            continue
-                        try:
-                            payload = json.loads(stripped)
-                        except json.JSONDecodeError as exc:
-                            verification_issues.append(f"failed parsing {path}:{line_number}: {exc}")
-                            break
+            text, _enc = read_text_robust(path)
+            if text is None:
+                verification_issues.append(f"failed reading {path}")
+                continue
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    payload = json.loads(stripped)
+                except json.JSONDecodeError as exc:
+                    verification_issues.append(f"failed parsing {path}:{line_number}: {exc}")
+                    break
 
-                        if not isinstance(payload, dict) or payload.get("type") == "metadata":
-                            continue
+                if not isinstance(payload, dict) or payload.get("type") == "metadata":
+                    continue
 
-                        message = payload.get("message")
-                        if not isinstance(message, dict):
-                            continue
-                        message_type = message.get("type")
-                        message_payload = message.get("payload")
-                        if not isinstance(message_type, str):
-                            continue
+                message = payload.get("message")
+                if not isinstance(message, dict):
+                    continue
+                message_type = message.get("type")
+                message_payload = message.get("payload")
+                if not isinstance(message_type, str):
+                    continue
 
-                        try:
-                            timestamp = datetime.fromtimestamp(float(payload.get("timestamp", 0)), tz=fallback_tz)
-                        except (TypeError, ValueError, OSError) as exc:
-                            verification_issues.append(f"invalid timestamp in {path}:{line_number}: {exc}")
-                            continue
+                try:
+                    timestamp = datetime.fromtimestamp(float(payload.get("timestamp", 0)), tz=fallback_tz)
+                except (TypeError, ValueError, OSError) as exc:
+                    verification_issues.append(f"invalid timestamp in {path}:{line_number}: {exc}")
+                    continue
 
-                        if not within_window(window, timestamp):
-                            continue
+                if not within_window(window, timestamp):
+                    continue
 
-                        for event_type, event_payload in _iter_kimi_events(message_type, message_payload):
-                            if event_type != "StatusUpdate":
-                                continue
-                            token_usage = event_payload.get("token_usage")
-                            if not isinstance(token_usage, dict):
-                                continue
+                for event_type, event_payload in _iter_kimi_events(message_type, message_payload):
+                    if event_type != "StatusUpdate":
+                        continue
+                    token_usage = event_payload.get("token_usage")
+                    if not isinstance(token_usage, dict):
+                        continue
 
-                            usage_values = _normalize_kimi_token_usage(token_usage)
-                            if usage_values["total_tokens"] <= 0:
-                                continue
+                    usage_values = _normalize_kimi_token_usage(token_usage)
+                    if usage_values["total_tokens"] <= 0:
+                        continue
 
-                            session_id = path.parent.name
-                            message_id = str(event_payload.get("message_id") or "")
-                            dedupe_key = (
-                                session_id,
-                                message_id,
-                                usage_values["total_tokens"],
-                                int(timestamp.timestamp()),
-                            )
-                            if dedupe_key in seen:
-                                continue
-                            seen.add(dedupe_key)
+                    session_id = path.parent.name
+                    message_id = str(event_payload.get("message_id") or "")
+                    dedupe_key = (
+                        session_id,
+                        message_id,
+                        usage_values["total_tokens"],
+                        int(timestamp.timestamp()),
+                    )
+                    if dedupe_key in seen:
+                        continue
+                    seen.add(dedupe_key)
 
-                            events.append(
-                                UsageEvent(
-                                    source=self.source_id,
-                                    provider=self.provider,
-                                    timestamp=timestamp,
-                                    session_id=session_id,
-                                    project_path=project_path,
-                                    model=None,
-                                    input_tokens=usage_values["input_tokens"],
-                                    cached_input_tokens=usage_values["cached_input_tokens"],
-                                    output_tokens=usage_values["output_tokens"],
-                                    reasoning_tokens=usage_values["reasoning_tokens"],
-                                    total_tokens=usage_values["total_tokens"],
-                                    accuracy_level=self.accuracy_level,
-                                    raw_event_kind="kimi_cli:status_update",
-                                    source_path=str(path),
-                                )
-                            )
-            except OSError as exc:
-                verification_issues.append(f"failed reading {path}: {exc}")
+                    events.append(
+                        UsageEvent(
+                            source=self.source_id,
+                            provider=self.provider,
+                            timestamp=timestamp,
+                            session_id=session_id,
+                            project_path=project_path,
+                            model=None,
+                            input_tokens=usage_values["input_tokens"],
+                            cached_input_tokens=usage_values["cached_input_tokens"],
+                            output_tokens=usage_values["output_tokens"],
+                            reasoning_tokens=usage_values["reasoning_tokens"],
+                            total_tokens=usage_values["total_tokens"],
+                            accuracy_level=self.accuracy_level,
+                            raw_event_kind="kimi_cli:status_update",
+                            source_path=str(path),
+                        )
+                    )
 
         if not events and not verification_issues:
             verification_issues.append("no Kimi CLI token_usage events landed inside the selected time window")

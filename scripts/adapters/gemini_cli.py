@@ -12,6 +12,7 @@ from core.config import (
 )
 from core.models import SourceCollectResult, SourceDetection, UsageEvent
 from core.pricing import PricingDatabase
+from core.robust_read import read_json_robust, read_text_robust
 from core.time_window import parse_timestamp, within_window
 
 
@@ -61,10 +62,10 @@ class GeminiCliAdapter(BaseAdapter):
         for marker in self.tmp_root.glob("*/.project_root"):
             if not marker.is_file():
                 continue
-            try:
-                project_root = marker.read_text(encoding="utf-8").strip()
-            except OSError:
+            text, _enc = read_text_robust(marker)
+            if text is None:
                 continue
+            project_root = text.strip()
             if project_root:
                 result[marker.parent.name] = project_root
         return result
@@ -78,10 +79,9 @@ class GeminiCliAdapter(BaseAdapter):
         parse_issues: list[str] = []
 
         for path in session_files:
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                parse_issues.append(f"failed parsing {path}: {exc}")
+            payload, _enc = read_json_robust(path)
+            if payload is None:
+                parse_issues.append(f"failed parsing {path}")
                 continue
 
             if not isinstance(payload, dict):
@@ -202,10 +202,9 @@ class GeminiCliAdapter(BaseAdapter):
         for path in session_files:
             project_key = path.parent.parent.name
             project_path = project_roots.get(project_key)
-            try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                verification_issues.append(f"failed parsing {path}: {exc}")
+            payload, _enc = read_json_robust(path)
+            if payload is None:
+                verification_issues.append(f"failed parsing {path}")
                 continue
 
             if not isinstance(payload, dict):

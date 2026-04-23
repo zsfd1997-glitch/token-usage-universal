@@ -97,6 +97,73 @@ class OpenCodeAdapterTests(unittest.TestCase):
         self.assertEqual(result.events[0].total_tokens, 303)
         self.assertEqual(result.events[0].raw_event_kind, "opencode_local:message_json")
 
+    def test_gbk_encoded_message_file_still_yields_tokens(self) -> None:
+        """GBK intranet regression: a GBK-encoded message file must not
+        silently produce 0 events — robust_read should decode it and the
+        adapter should extract the usage the same as UTF-8 data."""
+        created_at = int(datetime(2026, 3, 25, 10, 0, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+        completed_at = int(datetime(2026, 3, 25, 10, 0, 30, tzinfo=PACIFIC_TZ).timestamp() * 1000)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            session_dir = root / "storage" / "session"
+            message_dir = root / "storage" / "message" / "ses_gbk"
+            session_dir.mkdir(parents=True)
+            message_dir.mkdir(parents=True)
+
+            (session_dir / "ses_gbk.json").write_bytes(
+                json.dumps(
+                    {
+                        "id": "ses_gbk",
+                        "projectID": "proj-gbk",
+                        "directory": "/tmp/gbk-项目",
+                        "time": {"created": created_at, "updated": completed_at},
+                    },
+                    ensure_ascii=False,
+                ).encode("gbk")
+            )
+            (root / "storage" / "project").mkdir(parents=True)
+            (root / "storage" / "project" / "proj-gbk.json").write_bytes(
+                json.dumps(
+                    {"id": "proj-gbk", "worktree": "/tmp/gbk-项目"},
+                    ensure_ascii=False,
+                ).encode("gbk")
+            )
+            (message_dir / "msg_gbk.json").write_bytes(
+                json.dumps(
+                    {
+                        "id": "msg_gbk",
+                        "sessionID": "ses_gbk",
+                        "role": "assistant",
+                        "time": {"created": created_at, "completed": completed_at},
+                        "modelID": "qwen-max",
+                        "providerID": "opencode",
+                        "path": {"cwd": "/tmp/gbk-项目", "root": "/tmp/gbk-项目"},
+                        "tokens": {
+                            "input": 500,
+                            "output": 120,
+                            "reasoning": 0,
+                            "cache": {"read": 100, "write": 0},
+                        },
+                    },
+                    ensure_ascii=False,
+                ).encode("gbk")
+            )
+
+            adapter = OpenCodeAdapter()
+            adapter.roots = [root]
+
+            with patch.object(adapter, "_resolve_cli", return_value=None):
+                result = adapter.collect(_window())
+
+        self.assertEqual(len(result.events), 1, "GBK-encoded message file silently produced 0 events")
+        event = result.events[0]
+        self.assertEqual(event.total_tokens, 720)
+        self.assertEqual(event.input_tokens, 500)
+        self.assertEqual(event.cached_input_tokens, 100)
+        self.assertEqual(event.output_tokens, 120)
+        self.assertEqual(event.project_path, "/tmp/gbk-项目")
+
     def test_detect_and_collect_exact_usage_via_cli_export(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
