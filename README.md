@@ -111,9 +111,40 @@ python3 scripts/token_usage.py diagnose --source codex --today
 `report --today` 用来看今天总览。  
 `diagnose` 用来查“为什么没统计到”。  
 
-## OpenCode CLI 用户最短路径（1 分钟）
+## OpenCode CLI 用户最短路径（对话式一键装）
 
-如果你用的是 **opencode CLI**，跑一条命令把本 skill 注册进 opencode 的 skills 目录，之后对话里说 `token` / `用量` 就会自动触发：
+**不想跑命令？直接对话装。** 把下面这段贴到 opencode CLI 的首条消息里回车，AI 会自动找仓库、跑安装脚本、告诉你什么时候可以用：
+
+```
+请帮我把 token-usage-universal 这个 skill 装进 opencode CLI。按下面四步操作，不要反问，直接跑：
+
+步骤 1：在本机找仓库路径。macOS / Linux 跑：
+    find "$HOME" -maxdepth 6 -type d -name token-usage-universal -not -path "*/.*" 2>/dev/null | head -1
+Windows PowerShell 跑：
+    Get-ChildItem -Path $HOME -Recurse -Depth 6 -Directory -Filter token-usage-universal -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+
+步骤 2：拿到路径（记为 $REPO），跑安装脚本：
+    python3 "$REPO/scripts/install_to_opencode.py"
+Windows 用 `python` 代替 `python3`。
+
+步骤 3：原样贴出安装脚本的输出到我的对话里。
+
+步骤 4：最后告诉我：『重启一次 opencode CLI，下次说 token 或 用量 就会自动出面板』。
+
+如果步骤 1 找不到仓库，先提示我告诉你仓库在哪，不要猜。
+```
+
+贴一次就好。第一次装完以后，重启 opencode CLI，后面每次对话说 `token` / `用量` / `今天 token 用了多少` 都会直接触发面板，不用再贴任何指令。
+
+这段提示词也可以命令行生成（不用手动从 README 复制）：
+
+```bash
+python3 scripts/install_to_opencode.py --print-prompt
+```
+
+### 一条命令装（不走对话）
+
+如果你更习惯直接跑命令：
 
 ```bash
 python3 scripts/install_to_opencode.py

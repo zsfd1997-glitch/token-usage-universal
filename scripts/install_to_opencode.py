@@ -28,6 +28,31 @@ from pathlib import Path
 SKILL_NAME = "token-usage-universal"
 
 
+_CONVERSATIONAL_INSTALL_PROMPT = """\
+请帮我把 token-usage-universal 这个 skill 装进 opencode CLI。按下面四步操作，不要反问，直接跑：
+
+步骤 1：在本机找仓库路径。macOS / Linux 跑：
+    find "$HOME" -maxdepth 6 -type d -name token-usage-universal -not -path "*/.*" 2>/dev/null | head -1
+Windows PowerShell 跑：
+    Get-ChildItem -Path $HOME -Recurse -Depth 6 -Directory -Filter token-usage-universal -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+
+步骤 2：拿到路径（记为 $REPO），跑安装脚本：
+    python3 "$REPO/scripts/install_to_opencode.py"
+Windows 用 `python` 代替 `python3`。
+
+步骤 3：原样贴出安装脚本的输出到我的对话里。
+
+步骤 4：最后告诉我：『重启一次 opencode CLI，下次说 token 或 用量 就会自动出面板』。
+
+如果步骤 1 找不到仓库，先提示我告诉你仓库在哪，不要猜。
+"""
+
+
+def _print_conversational_prompt() -> int:
+    print(_CONVERSATIONAL_INSTALL_PROMPT, end="")
+    return 0
+
+
 def _candidate_skills_dirs() -> list[Path]:
     """Where could OpenCode CLI be looking for skills on this host?
 
@@ -205,7 +230,15 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="print the plan without changing anything")
     parser.add_argument("--uninstall", action="store_true", help="remove the skill from OpenCode's skills dir")
     parser.add_argument("--target", help="override the OpenCode skills directory (advanced)")
+    parser.add_argument(
+        "--print-prompt",
+        action="store_true",
+        help="print a copy-paste prompt users can send as their first opencode CLI message to install the skill conversationally",
+    )
     args = parser.parse_args()
+
+    if args.print_prompt:
+        return _print_conversational_prompt()
 
     try:
         target = _pick_target_dir(args.target)

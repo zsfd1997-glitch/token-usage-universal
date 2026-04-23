@@ -103,5 +103,46 @@ class PickTargetDirTests(unittest.TestCase):
         self.assertEqual(result, Path(tmp).resolve())
 
 
+class ConversationalPromptTests(unittest.TestCase):
+    def test_prompt_contains_all_four_steps(self) -> None:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT_DIR / "install_to_opencode.py"), "--print-prompt"],
+            capture_output=True, check=True, text=True,
+        )
+        output = result.stdout
+        self.assertIn("步骤 1", output)
+        self.assertIn("步骤 2", output)
+        self.assertIn("步骤 3", output)
+        self.assertIn("步骤 4", output)
+
+    def test_prompt_covers_macos_linux_and_windows(self) -> None:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT_DIR / "install_to_opencode.py"), "--print-prompt"],
+            capture_output=True, check=True, text=True,
+        )
+        output = result.stdout
+        # macOS/Linux discovery
+        self.assertIn("find", output)
+        self.assertIn("-maxdepth", output)
+        # Windows discovery
+        self.assertIn("Get-ChildItem", output)
+        self.assertIn("PowerShell", output)
+        # Install script invocation
+        self.assertIn("install_to_opencode.py", output)
+        # Restart reminder
+        self.assertIn("重启", output)
+
+    def test_readme_embeds_conversational_prompt(self) -> None:
+        readme = (SCRIPT_DIR.parent / "README.md").read_text(encoding="utf-8")
+        # README must show the exact multi-line block so users can copy it
+        # without running a command first.
+        self.assertIn("对话式一键装", readme)
+        self.assertIn("install_to_opencode.py", readme)
+        self.assertIn("--print-prompt", readme)
+        self.assertIn("Get-ChildItem", readme)
+
+
 if __name__ == "__main__":
     unittest.main()
