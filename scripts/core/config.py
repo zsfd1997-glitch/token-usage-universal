@@ -32,6 +32,7 @@ TOKEN_USAGE_QWEN_CODE_ROOT_ENV = "TOKEN_USAGE_QWEN_CODE_ROOT"
 TOKEN_USAGE_KIMI_CLI_ROOT_ENV = "TOKEN_USAGE_KIMI_CLI_ROOT"
 TOKEN_USAGE_GEMINI_CLI_ROOT_ENV = "TOKEN_USAGE_GEMINI_CLI_ROOT"
 TOKEN_USAGE_TRAE_ROOT_ENV = "TOKEN_USAGE_TRAE_ROOT"
+TOKEN_USAGE_CLAUDE_CODE_ROOT_ENV = "TOKEN_USAGE_CLAUDE_CODE_ROOT"
 TOKEN_USAGE_OPENCODE_BIN_ENV = "TOKEN_USAGE_OPENCODE_BIN"
 TOKEN_USAGE_OPENCODE_ROOTS_ENV = "TOKEN_USAGE_OPENCODE_ROOTS"
 TOKEN_USAGE_GENERIC_LOG_GLOBS_ENV = "TOKEN_USAGE_GENERIC_LOG_GLOBS"
@@ -270,6 +271,28 @@ def default_trae_roots(
     if (platform_name or sys.platform) == "darwin":
         return [home_path / "Library" / "Application Support" / "Trae"]
     return [home_path / ".config" / "Trae", home_path / ".local" / "share" / "Trae"]
+
+
+def default_claude_code_roots(
+    *,
+    os_name: str | None = None,
+    home: Path | None = None,
+    appdata: str | None = None,
+    platform_name: str | None = None,
+) -> list[Path]:
+    """Return candidate root paths for Anthropic Claude Code project logs.
+
+    Claude Code stores per-project JSONL session transcripts under
+    ``~/.claude/projects/<encoded-path>/<session>.jsonl`` on macOS/Linux
+    and ``%USERPROFILE%\\.claude\\projects`` on Windows. Each line is a
+    JSON event; assistant turns carry ``message.usage`` with Anthropic
+    token fields.
+    """
+    target_os = os_name or os.name
+    home_path = home or safe_home_path()
+    if target_os == "nt":
+        return [home_path / ".claude" / "projects"]
+    return [home_path / ".claude" / "projects"]
 
 
 def default_discovery_roots(

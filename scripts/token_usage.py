@@ -69,6 +69,7 @@ _STDOUT_JSON_ENSURE_ASCII = _stdout_needs_ascii_json()
 # restored if the scope expands. Model-level breakdowns still work
 # because opencode records modelID per message; you don't need a
 # per-provider adapter to see "glm-4.5 used X tokens today".
+from adapters.claude_code import ClaudeCodeAdapter
 from adapters.generic_openai_compatible import GenericOpenAICompatibleAdapter
 from adapters.opencode import OpenCodeAdapter
 from adapters.trae import TraeAdapter
@@ -101,6 +102,7 @@ def _build_full_registry():
     a user-declared JSONL via TOKEN_USAGE_GENERIC_LOG_GLOBS (ingress
     companion output lands here too)."""
     adapters = [
+        ClaudeCodeAdapter(),
         OpenCodeAdapter(),
         TraeAdapter(),
         GenericOpenAICompatibleAdapter(),
